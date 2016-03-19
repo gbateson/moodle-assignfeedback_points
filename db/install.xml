@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="mod/assign/feedback/points/db" VERSION="20150802" COMMENT="XMLDB file for Moodle mod/assign/feedback/points"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="assignfeedback_points" COMMENT="incremental points awarded for offline activity" NEXT="assignfeedback_points_maps">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="assignid"/>
+        <FIELD NAME="assignid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the assign record these points relate to" PREVIOUS="id" NEXT="gradeid"/>
+        <FIELD NAME="gradeid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the assign_grades record these points relate to" PREVIOUS="assignid" NEXT="awardby"/>
+        <FIELD NAME="awardby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the user by whom these points were awarded" PREVIOUS="gradeid" NEXT="awardto"/>
+        <FIELD NAME="awardto" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the user to whom these points were awarded" PREVIOUS="awardby" NEXT="points"/>
+        <FIELD NAME="points" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the number of points awarded" PREVIOUS="awardto" NEXT="latitude"/>
+        <FIELD NAME="latitude" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the latitude of where the points were awarded" PREVIOUS="points" NEXT="longitude"/>
+        <FIELD NAME="longitude" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the longitude of where the points were awarded" PREVIOUS="latitude" NEXT="commenttext"/>
+        <FIELD NAME="commenttext" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="a comment relating to these points" PREVIOUS="longitude" NEXT="commentformat"/>
+        <FIELD NAME="commentformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the format of the commenttext field" PREVIOUS="commenttext" NEXT="timecreated"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the time this record was created" PREVIOUS="commentformat" NEXT="timeawarded"/>
+        <FIELD NAME="timeawarded" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the time this record was created" PREVIOUS="timecreated" NEXT="timemodified"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the time this record last modified" PREVIOUS="timeawarded"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="the unique id for this points" NEXT="assipoin_ass_fk"/>
+        <KEY NAME="assipoin_ass_fk" TYPE="foreign" FIELDS="assignid" REFTABLE="assign" REFFIELDS="id" COMMENT="the id of the assign record these points relate to" PREVIOUS="primary" NEXT="assipoin_gra_fk"/>
+        <KEY NAME="assipoin_gra_fk" TYPE="foreign" FIELDS="gradeid" REFTABLE="assign_grades" REFFIELDS="id" COMMENT="the id of the assign_grades record these points relate to" PREVIOUS="assipoin_ass_fk" NEXT="assipoin_awa_fk"/>
+        <KEY NAME="assipoin_aby_fk" TYPE="foreign" FIELDS="awardby" REFTABLE="user" REFFIELDS="id" COMMENT="the id of the user by whom these points were awarded" PREVIOUS="assipoin_gra_fk" NEXT="assipoin_ato_fk"/>
+        <KEY NAME="assipoin_ato_fk" TYPE="foreign" FIELDS="awardto" REFTABLE="user" REFFIELDS="id" COMMENT="the id of the user to whom these points were awarded" PREVIOUS="assipoin_aby_fk"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="assignfeedback_points_maps" COMMENT="user-maps used in points feedback for assignments" PREVIOUS="assignfeedback_points" NEXT="assignfeedback_points_coords">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="the name of this user-map" PREVIOUS="id" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the teacher user record that this user-map relates to" PREVIOUS="name" NEXT="groupid"/>
+        <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the group record, if any, that this user-map relates to" PREVIOUS="userid" NEXT="assignid"/>
+        <FIELD NAME="assignid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the assign record that this user-map relates to" PREVIOUS="groupid" NEXT="context"/>
+        <FIELD NAME="context" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="70" SEQUENCE="false" COMMENT="the context level of this user-map" PREVIOUS="assignid" NEXT="mapwidth"/>
+        <FIELD NAME="mapwidth" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the width (in pixels) of this user-map" PREVIOUS="context" NEXT="mapheight"/>
+        <FIELD NAME="mapheight" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the height (in pixels) of this user-map" PREVIOUS="mapwidth" NEXT="userwidth"/>
+        <FIELD NAME="userwidth" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the width (in pixels) of a user-tile in this user-map" PREVIOUS="mapheight" NEXT="userheight"/>
+        <FIELD NAME="userheight" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the height (in pixels) of a user-tile in this user-map" PREVIOUS="userwidth" NEXT="privacy"/>
+        <FIELD NAME="privacy" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0=private, 1==public" PREVIOUS="mapheight"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="the unique id for this user-map" NEXT="assipoinmaps_use_fk"/>
+        <KEY NAME="assipoinmaps_use_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" COMMENT="the id of the teacher user record that this user-map relates to" PREVIOUS="primary" NEXT="assipoinmaps_gro_fk"/>
+        <KEY NAME="assipoinmaps_gro_fk" TYPE="foreign" FIELDS="groupid" REFTABLE="group" REFFIELDS="id" COMMENT="the id of the group record that this user-map relates to" PREVIOUS="assipoinmaps_use_fk" NEXT="assipoinmaps_ass_fk"/>
+        <KEY NAME="assipoinmaps_ass_fk" TYPE="foreign" FIELDS="assignid" REFTABLE="assign" REFFIELDS="id" COMMENT="the id of the assign record that this user-map relates to" PREVIOUS="assipoinmaps_gro_fk"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="assignfeedback_points_coords" COMMENT="(y,x) CSS coordinates of users in maps for points feedback for assignments" PREVIOUS="assignfeedback_points_maps">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="mapid"/>
+        <FIELD NAME="mapid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the user-map record that these coordinates relate to" PREVIOUS="id" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the student user record that these coordinates relate to" PREVIOUS="mapid" NEXT="x"/>
+        <FIELD NAME="x" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the x value for these CSS coordinates" PREVIOUS="userid" NEXT="y"/>
+        <FIELD NAME="y" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the y value for these CSS coordinates" PREVIOUS="x"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="the unique id for this user-map" NEXT="assipoincoor_map_fk"/>
+        <KEY NAME="assipoincoor_map_fk" TYPE="foreign" FIELDS="mapid" REFTABLE="assignfeedback_points_maps" REFFIELDS="id" COMMENT="the id of the user-map record that these coordinates relate to" PREVIOUS="primary" NEXT="assipoincoor_use_fk"/>
+        <KEY NAME="assipoincoor_use_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" COMMENT="the id of the student user record that these coordinates relate to" PREVIOUS="assipoincoor_map_fk"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>

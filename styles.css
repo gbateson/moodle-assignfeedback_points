@@ -1,0 +1,296 @@
+/**********************************
+** feedback: undo link
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.fitem div.felement a#undolink {
+    background-color : #005aa8;
+    background-image : linear-gradient(to bottom,#0070a8,#0038a8);
+    background-repeat: repeat-x;
+    border-color     : rgba(0,0,0,0.1) rgba(0,0,0,0.1) rgba(0,0,0,0.25);
+    border-style     : solid;
+    border-width     : 2px;
+    color            : #ffffff;
+    display          : inline-block;
+    margin-left      : 8px;
+    min-width        : 48px;
+    padding          : 2px 4px;
+    text-align       : center;
+    /* css3    */ border-radius: 4px;
+    /* Opera   */ -o-border-radius: 4px;
+    /* Firefox */ -moz-border-radius: 4px;
+    /* Webkit  */ -webkit-border-radius: 4px;
+    filter           : progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0070a8',endColorstr='#ff0038a8',GradientType=0);
+    filter           : progid:DXImageTransform.Microsoft.gradient(enabled=false);
+}
+
+/**********************************
+** user container
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup {
+    border    : solid 2px #ff9999;
+    max-width :               95%;
+    min-width :                5%;
+    /* cross-browser rounded corners (Note: Safari and Chrome use Webkit) */
+    /* css3    */ border-radius: 8px;
+    /* Opera   */ -o-border-radius: 8px;
+    /* Firefox */ -moz-border-radius: 8px;
+    /* Webkit  */ -webkit-border-radius: 8px;
+}
+
+/**********************************
+** individual actions, users and points
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span,
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span,
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span {
+    border-style    :   solid;
+    border-width    :     1px;
+    border-color    : #999999;
+    display         :   block;
+    float           :    left;
+    margin          : 4px 8px;
+    padding         : 2px 4px;
+    text-align      :  center;
+    /* css3    */ border-radius: 8px;
+    /* Opera   */ -o-border-radius: 8px;
+    /* Firefox */ -moz-border-radius: 8px;
+    /* Webkit  */ -webkit-border-radius: 8px;
+}
+
+/**********************************
+** actions, users: labels
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span label {
+    font-size   : 12px;
+    padding     :  0px;
+}
+
+/**********************************
+** users: labels
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label {
+    font-size   : 11px;
+    line-height : 14px;
+    padding     :  0px;
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.name {
+    font-style: normal;
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.pointstoday,
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.pointstotal {
+    font-style  : italic;
+    white-space : nowrap;
+}
+
+
+/**********************************
+** mapaction: normal, hover, checked
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span {
+    background-color : #ebccff; /* gentle purple */
+    border-color     : #9900ff; /* dark purple */
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span:hover {
+    background-color : #daa3ff; /* pale purple */
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span.checked {
+    background-color : #c266ff; /* dark purple */
+}
+
+/**********************************
+** users: normal, hover, checked
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span {
+    background-color : #ddffdd; /* gentle green */
+    border-color     : #37ff37; /* dark green */
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span:hover {
+    background-color : #a5ffa5; /* pale green */
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.checked {
+    background-color : #00cc00; /* dark green */
+}
+
+/**********************************
+** points: normal, hover, checked
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span {
+    background-color : #ffebcc; /* gentle orange */
+    border-color     : #ff9900; /* dark orange */
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span:hover {
+    background-color : #ffdaa3; /* pale orange */
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span.checked {
+    background-color : #ffc266; /* dark orange */
+}
+
+/**********************************
+** handles to resize user container
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-handle {
+    position : absolute;
+}
+
+/** north handle **/
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-n {
+    top    : 0px;
+    left   : 50%;
+    height : 0px;
+    width  : 0px;
+    cursor : ns-resize;
+    margin-left   : -6px;
+    border-left   :  6px solid transparent;
+    border-right  :  6px solid transparent;
+    border-bottom : 10px solid limegreen;
+}
+
+/** east handle **/
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-e {
+    right  : 0px;
+    top    : 50%;
+    height : 0px;
+    width  : 0px;
+    cursor : ew-resize;
+    margin-top    : -6px;
+    border-top    :  6px solid transparent;
+    border-bottom :  6px solid transparent;
+    border-left   : 10px solid limegreen;
+}
+
+/** south handle **/
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-s {
+    bottom : 0px;
+    left   : 50%;
+    height : 0px;
+    width  : 0px;
+    cursor : ns-resize;
+    margin-left   : -6px;
+    border-left   :  6px solid transparent;
+    border-right  :  6px solid transparent;
+    border-top    : 10px solid limegreen;
+}
+
+/** west handle **/
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-w {
+    left   : 0px;
+    top    : 50%;
+    height : 0px;
+    width  : 0px;
+    cursor : ew-resize;
+    margin-top    : -6px;
+    border-top    :  6px solid transparent;
+    border-bottom :  6px solid transparent;
+    border-right  : 10px solid limegreen;
+}
+
+/** north-west handle **/
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-nw {
+    left   : 0px;
+    top    : 0px;
+    height : 10px;
+    width  : 10px;
+    cursor : nwse-resize;
+    background-color: limegreen;
+    /* css3    */ border-top-left-radius: 8px;
+    /* Opera   */ -o-border-top-left-radius: 8px;
+    /* Firefox */ -moz-border-top-left-radius: 8px;
+    /* Webkit  */ -webkit-border-top-left-radius: 8px;
+}
+
+/** north-east handle **/
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-ne {
+    top    : 0px;
+    right  : 0px;
+    height : 10px;
+    width  : 10px;
+    cursor : nesw-resize;
+    background-color: limegreen;
+    /* css3    */ border-top-right-radius: 8px;
+    /* Opera   */ -o-border-top-right-radius: 8px;
+    /* Firefox */ -moz-border-top-right-radius: 8px;
+    /* Webkit  */ -webkit-border-top-right-radius: 8px;
+}
+
+/** south-west handle **/
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-sw {
+    bottom : 0px;
+    left   : 0px;
+    height : 10px;
+    width  : 10px;
+    cursor : nesw-resize;
+    background-color: limegreen;
+    /* css3    */ border-bottom-left-radius: 8px;
+    /* Opera   */ -o-border-bottom-left-radius: 8px;
+    /* Firefox */ -moz-border-bottom-left-radius: 8px;
+    /* Webkit  */ -webkit-border-bottom-left-radius: 8px;
+}
+
+/** south-east handle **/
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div.ui-resizable-se {
+    bottom : 0px;
+    right  : 0px;
+    height : 10px;
+    width  : 10px;
+    cursor : nwse-resize;
+    background-color: limegreen;
+    /* css3    */ border-bottom-right-radius: 8px;
+    /* Opera   */ -o-border-bottom-right-radius: 8px;
+    /* Firefox */ -moz-border-bottom-right-radius: 8px;
+    /* Webkit  */ -webkit-border-bottom-right-radius: 8px;
+}
+
+/**********************************
+** layouts
+**********************************/
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements input[type="radio"] {
+    margin-right :  2px;
+    margin-left  : 16px;
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements input[type="text"] {
+    margin-right : 4px;
+    margin-left  : 4px;
+}
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements select {
+    margin-right : 4px;
+    margin-left  : 4px;
+}
+
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements input.indent {
+    margin-left : 72px;
+}
+
+/**********************************
+** gradebook feedback
+**********************************/
+
+#page-grade-report-user-index .user-grade .assignfeedback_points {
+    font-size       : 12px;
+    line-height     : 16px;
+    list-style-type : none;
+    margin          :  0px;
+    padding         : 2px 4px;
+}
+#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback { margin: 0px; padding: 2px 0px; }
+#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback span {}
+#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback span.timeawarded { font-weight: bold;}
+#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback span.points {}
+#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback span.comment {font-style: italic;}
