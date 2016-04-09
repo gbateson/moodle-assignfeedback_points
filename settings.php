@@ -31,16 +31,21 @@ $help    = new lang_string($settingname.'_help', $pluginname);
 $setting = new admin_setting_configcheckbox("$pluginname/$settingname", $label, $help, $default);
 $settings->add($setting);
 
+// integer fields
 $settingnames = array('minpoints' => -1, 'maxpoints' => 2, 'increment' => 1);
 foreach ($settingnames as $settingname => $default) {
     $label   = new lang_string($settingname, $pluginname);
     $help    = new lang_string($settingname.'_help', $pluginname);
     $setting = new admin_setting_configtext("$pluginname/$settingname", $label, $help, $default, PARAM_INT, 4);
-    $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
-    $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
+    if (method_exists($setting, 'set_advanced_flag_options')) {
+        // Moodle >= 2.6
+        $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
+        $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
+    }
     $settings->add($setting);
 }
 
+// boolean fields
 $settingnames = array('sendimmediately' =>  1, 'multipleusers'   => 0, 'showelement'  => 0,
                       'showpicture'     =>  1, 'showfullname'    => 0, 'showusername' => 0,
                       'showpointstoday' =>  1, 'showpointstotal' => 1, 'showcomments' => 1,
@@ -49,9 +54,12 @@ foreach ($settingnames as $settingname => $default) {
     $label   = new lang_string($settingname, $pluginname);
     $help    = new lang_string($settingname.'_help', $pluginname);
     $setting = new admin_setting_configcheckbox("$pluginname/$settingname", $label, $help, $default);
-    $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
-    $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
+    if (method_exists($setting, 'set_advanced_flag_options')) {
+        // Moodle >= 2.6
+        $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
+        $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
+    }
     $settings->add($setting);
 }
 
-unset($pluginname, $settingnames, $settingname, $default, $label, $help, $setting);
+unset($pluginname, $settingnames, $settingname, $label, $help, $setting, $enabled, $default);
