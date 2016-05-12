@@ -232,10 +232,10 @@ class assignfeedback_points_award_points_form extends moodleform {
         $userids = array_keys($custom->$name);
 
         // are there any users?
-        $users_exists = (empty($userids) ? false : true);
+        $usersfound = (empty($userids) ? false : true);
 
         // get coords of each user in this usermap
-        if ($users_exists) {
+        if ($usersfound) {
             list($select, $params) = $DB->get_in_or_equal($userids);
             $select = "mapid = ? AND userid $select";
             array_unshift($params, $custom->mapid);
@@ -248,7 +248,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
 
         // get points total for each user, if required
-        if ($users_exists && $custom->config->showpointstotal) {
+        if ($usersfound && $custom->config->showpointstotal) {
             $select = "p.$name";
             $from   = '{assignfeedback_points} p';
             list($where, $params) = $DB->get_in_or_equal($userids);
@@ -273,7 +273,7 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         // when using incremental points (pointstype==0)
         // get points today for each user, if required
-        if ($users_exists && $custom->config->pointstype==0 && $custom->config->showpointstoday) {
+        if ($usersfound && $custom->config->pointstype==0 && $custom->config->showpointstoday) {
             $select = "$name, SUM(points) AS pointstoday";
             $from   = '{assignfeedback_points}';
             list($where, $params) = $DB->get_in_or_equal($userids);
