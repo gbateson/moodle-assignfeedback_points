@@ -123,6 +123,10 @@ body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgrou
     background-color : #00cc00; /* dark green */
 }
 
+body#page-mod-assign-view form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.nousersfound {
+    font-size: 1.5em;
+}
+
 /**********************************
 ** points: normal, hover, checked
 **********************************/

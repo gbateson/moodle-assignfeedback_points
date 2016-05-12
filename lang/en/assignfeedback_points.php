@@ -77,6 +77,7 @@ $string['minpoints'] = 'Minimum points';
 $string['multipleusers_help'] = 'If this setting is enabled, more than one student can be selected when points are awarded. Otherwise, only a single student can be awarded points at one time.';
 $string['multipleusers'] = 'Select multiple users';
 $string['newcomment'] = 'New comment ...';
+$string['nousersfound'] = 'Oops, no users found.';
 $string['numberofislands'] = 'Number of islands';
 $string['numberoflines'] = 'Number of lines';
 $string['peopleperisland'] = 'People per island';

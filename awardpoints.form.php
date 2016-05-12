@@ -228,18 +228,27 @@ class assignfeedback_points_award_points_form extends moodleform {
         $name = 'awardto';
         $label = get_string($name, $plugin);
 
-        // get coords of each user in this usermap
+        // get userids passed via $custom values
         $userids = array_keys($custom->$name);
-        list($select, $params) = $DB->get_in_or_equal($userids);
-        $select = "mapid = ? AND userid $select";
-        array_unshift($params, $custom->mapid);
-        $coords = $DB->get_records_select($plugin.'_coords', $select, $params, 'userid', 'userid,x,y');
+
+        // are there any users?
+        $users_exists = (empty($userids) ? false : true);
+
+        // get coords of each user in this usermap
+        if ($users_exists) {
+            list($select, $params) = $DB->get_in_or_equal($userids);
+            $select = "mapid = ? AND userid $select";
+            array_unshift($params, $custom->mapid);
+            $coords = $DB->get_records_select($plugin.'_coords', $select, $params, 'userid', 'userid,x,y');
+        } else {
+            $coords = false;
+        }
         if ($coords===false) {
             $coords = array();
         }
 
         // get points total for each user, if required
-        if ($custom->config->showpointstotal) {
+        if ($users_exists && $custom->config->showpointstotal) {
             $select = "p.$name";
             $from   = '{assignfeedback_points} p';
             list($where, $params) = $DB->get_in_or_equal($userids);
@@ -264,7 +273,7 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         // when using incremental points (pointstype==0)
         // get points today for each user, if required
-        if ($custom->config->pointstype==0 && $custom->config->showpointstoday) {
+        if ($users_exists && $custom->config->pointstype==0 && $custom->config->showpointstoday) {
             $select = "$name, SUM(points) AS pointstoday";
             $from   = '{assignfeedback_points}';
             list($where, $params) = $DB->get_in_or_equal($userids);
@@ -325,8 +334,16 @@ class assignfeedback_points_award_points_form extends moodleform {
             $elements[] = $mform->createElement('hidden', $name.'y['.$userid.']', $y, array('id' => 'id_awardtoy_'.$userid));
         }
 
+        if (empty($elements)) {
+            $msg = get_string('nousersfound', $plugin);
+            $params = array('class' => 'nousersfound');
+            $msg = html_writer::tag('span', $msg, $params);
+            $elements[] = $mform->createElement('static', '', '', $msg);
+        }
+
         $mform->addGroup($elements, $name.'elements', $label, '', false);
         $mform->addHelpButton($name.'elements', $name, $plugin);
+
         if ($custom->config->multipleusers) {
             foreach ($custom->$name as $userid => $user) {
                 $mform->setType($name.'['.$userid.']', PARAM_INT);
