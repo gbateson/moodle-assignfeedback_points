@@ -1131,11 +1131,22 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * This plugin does not save through the normal interface so this returns false.
+     *
+     * @param stdClass $grade The grade.
+     * @param stdClass $data  Form data from the feedback form.
+     * @return boolean - False
+     */
+    public function is_feedback_modified(stdClass $grade, stdClass $data) {
+        return false;
+    }
+
+    /**
      * If this plugin adds to the gradebook comments field,
      * it must specify the format of the text of the comment
      *
-     * Only one feedback plugin can push comments to the gradebook
-     * and that is chosen by the assignment settings page.
+     * Sadly, only one feedback plugin can push comments to the gradebook
+     * and that is a site-wide setting on the assignment settings page.
      *
      * @param stdClass $grade record from assign_grades table
      * @return int
