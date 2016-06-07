@@ -10,8 +10,9 @@
         <FIELD NAME="assignid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the assign record these points relate to" PREVIOUS="id" NEXT="gradeid"/>
         <FIELD NAME="gradeid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the assign_grades record these points relate to" PREVIOUS="assignid" NEXT="awardby"/>
         <FIELD NAME="awardby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the user by whom these points were awarded" PREVIOUS="gradeid" NEXT="awardto"/>
-        <FIELD NAME="awardto" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the user to whom these points were awarded" PREVIOUS="awardby" NEXT="points"/>
-        <FIELD NAME="points" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the number of points awarded" PREVIOUS="awardto" NEXT="latitude"/>
+        <FIELD NAME="awardto" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the id of the user to whom these points were awarded" PREVIOUS="awardby" NEXT="pointstype"/>
+        <FIELD NAME="pointstype" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the type of points awarded: 0=INCREMENTAL 1=TOTAL" PREVIOUS="awardto" NEXT="points"/>
+        <FIELD NAME="points" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the number of points awarded" PREVIOUS="pointstype" NEXT="latitude"/>
         <FIELD NAME="latitude" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the latitude of where the points were awarded" PREVIOUS="points" NEXT="longitude"/>
         <FIELD NAME="longitude" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="the longitude of where the points were awarded" PREVIOUS="latitude" NEXT="commenttext"/>
         <FIELD NAME="commenttext" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="a comment relating to these points" PREVIOUS="longitude" NEXT="commentformat"/>
@@ -27,6 +28,9 @@
         <KEY NAME="assipoin_aby_fk" TYPE="foreign" FIELDS="awardby" REFTABLE="user" REFFIELDS="id" COMMENT="the id of the user by whom these points were awarded" PREVIOUS="assipoin_gra_fk" NEXT="assipoin_ato_fk"/>
         <KEY NAME="assipoin_ato_fk" TYPE="foreign" FIELDS="awardto" REFTABLE="user" REFFIELDS="id" COMMENT="the id of the user to whom these points were awarded" PREVIOUS="assipoin_aby_fk"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="assipoin_asspoi_ix" UNIQUE="false" FIELDS="assignid, pointstype"/>
+      </INDEXES>
     </TABLE>
     <TABLE NAME="assignfeedback_points_maps" COMMENT="user-maps used in points feedback for assignments" PREVIOUS="assignfeedback_points" NEXT="assignfeedback_points_coords">
       <FIELDS>

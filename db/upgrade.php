@@ -54,6 +54,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         $table->add_field('awardby',       XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('awardto',       XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('points',        XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
+        $table->add_field('pointstype',    XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('latitude',      XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('longitude',     XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('commenttext',   XMLDB_TYPE_TEXT,    null, null, null,          null, null);
@@ -66,6 +67,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         $table->add_key('assipoin_gra_fk', XMLDB_KEY_FOREIGN, array('gradeid'),  'assign_grades', array('id'));
         $table->add_key('assipoin_aby_fk', XMLDB_KEY_FOREIGN, array('awardby'),  'user',          array('id'));
         $table->add_key('assipoin_ato_fk', XMLDB_KEY_FOREIGN, array('awardto'),  'user',          array('id'));
+        $table->add_index('assipoin_asspoi_ix', XMLDB_INDEX_NOTUNIQUE, array('assignid', 'pointstype'));
         $dbman->create_table($table);
 
         $table = 'assignfeedback_points_maps';
@@ -104,6 +106,46 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         $table->add_key('assipoincoor_map_fk', XMLDB_KEY_FOREIGN, array('mapid'),  'assignfeedback_points_maps', array('id'));
         $table->add_key('assipoincoor_use_fk', XMLDB_KEY_FOREIGN, array('userid'), 'user',                       array('id'));
         $dbman->create_table($table);
+
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
+    $newversion = 2016060247;
+    if ($result && $oldversion < $newversion) {
+
+        $table = new xmldb_table('assignfeedback_points');
+        if ($dbman->table_exists($table)) {
+
+            $field = new xmldb_field('pointstype', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            if (! $dbman->field_exists($table, $field)) {
+                if ($dbman->field_exists($table, 'points')) {
+                    $field->setPrevious('points');
+                }
+                $dbman->add_field($table, $field);
+
+                // get all unique assign(ment) ids
+                // in the "assignfeedback_points" table
+                $select = 'assignid, COUNT(*) AS countassignid';
+                if ($ids = $DB->get_records_sql("SELECT $select FROM {assignfeedback_points} GROUP BY assignid", array())) {
+
+                    // get all assign(ment) ids using TOTAL pointstype (=1)
+                    list($select, $params) = $DB->get_in_or_equal(array_keys($ids));
+                    $select = "assignment $select AND plugin = ? AND subtype = ? AND name = ? AND value = ?";
+                    array_push($params, 'points', 'assignfeedback', 'pointstype', '1');
+                    if ($ids = $DB->get_records_select('assign_plugin_config', $select, $params, '', 'assignment AS assignid, value AS pointstype')) {
+
+                        // set all pointstype for awards in assign(ments) using the TOTAL pointstype (=1)
+                        list($select, $params) = $DB->get_in_or_equal(array_keys($ids));
+                        $DB->set_field_select('assignfeedback_points', 'pointstype', 1, "assignid $select", $params);
+                    }
+                }
+            }
+
+            $index = new xmldb_index('assipoin_asstyp_ix', XMLDB_INDEX_NOTUNIQUE, array('assignid', 'pointstype'));
+            if (! $dbman->index_exists($table, $index)) {
+                $dbman->add_index($table, $index);
+            }
+        }
 
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }

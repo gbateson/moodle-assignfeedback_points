@@ -924,6 +924,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     'awardby'       => $USER->id,
                     'awardto'       => $userid,
                     'points'        => $points,
+                    'pointstype'    => $pointstype,
                     'latitude'      => 0,
                     'longitude'     => 0,
                     'commenttext'   => $commenttext,
@@ -948,7 +949,9 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $feedback->userlist .= ($feedback->userlist=='' ? '' : ', ').fullname($userlist[$userid]);
 
                 if ($pointstype==0) { // incremental points
-                    $params = array('assignid' => $instance->id, 'awardto' => $userid);
+                    $params = array('assignid'   => $instance->id,
+                                    'awardto'    => $userid,
+                                    'pointstype' => $pointstype);
                     $grade = $DB->get_field('assignfeedback_points', 'SUM(points)', $params);
                     if (empty($grade)) {
                         $grade = 0.0;

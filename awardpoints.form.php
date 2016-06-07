@@ -252,16 +252,18 @@ class assignfeedback_points_award_points_form extends moodleform {
             $select = "p.$name";
             $from   = '{assignfeedback_points} p';
             list($where, $params) = $DB->get_in_or_equal($userids);
-            $where  = "p.assignid = ? AND p.$name $where";
-            array_unshift($params, $custom->assignid);
+            $where  = "p.assignid = ? AND p.pointstype = ? AND p.$name $where";
+            array_unshift($params, $custom->assignid, $custom->config->pointstype);
             if ($custom->config->pointstype==0) {
+                // incremental points
                 $select .= ', SUM(p.points) AS pointstotal';
                 $where  .= " GROUP BY p.$name";
             } else {
+                // total points
                 $select .= ', p.points AS pointstotal';
                 $where  .= ' AND p.timeawarded = (SELECT MAX(timeawarded) '.
                                                  'FROM {assignfeedback_points} t '.
-                                                 "WHERE p.assignid = t.assignid AND p.$name = t.$name)";
+                                                 "WHERE p.assignid = t.assignid AND p.pointstype = t.pointstype AND p.$name = t.$name)";
             }
             $pointstotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where", $params);
         } else {
@@ -277,8 +279,8 @@ class assignfeedback_points_award_points_form extends moodleform {
             $select = "$name, SUM(points) AS pointstoday";
             $from   = '{assignfeedback_points}';
             list($where, $params) = $DB->get_in_or_equal($userids);
-            $where  = "assignid = ? AND timeawarded > ? AND $name $where";
-            array_unshift($params, $custom->assignid, time() - DAYSECS);
+            $where  = "assignid = ? AND pointstype = ? AND timeawarded > ? AND $name $where";
+            array_unshift($params, $custom->assignid, $custom->config->pointstype, time() - DAYSECS);
             $pointstoday = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $name", $params);
         } else {
             $pointstoday = false;
