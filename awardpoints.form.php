@@ -36,12 +36,6 @@ require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
  */
 class assignfeedback_points_award_points_form extends moodleform {
 
-    protected $integerfields = array('minpoints'       => -1, 'increment'       => 1, 'maxpoints'    => 2);
-    protected $booleanfields = array('sendimmediately' =>  1, 'multipleusers'   => 0, 'showelement'  => 0,
-                                     'showpicture'     =>  1, 'showfullname'    => 0, 'showusername' => 0,
-                                     'showpointstoday' =>  1, 'showpointstotal' => 1, 'showcomments' => 1,
-                                     'showlink'        =>  1);
-
     protected $js_safe_replacements = array('\\'   => '\\\\',  "'"  =>"\\'", '"'=>'\\"',  // slashes and quotes
                                             "\r\n" => '\\n',   "\r" =>'\\n', "\n"=>'\\n', // newlines (win, mac, nix)
                                             "\0"   => '\\0',   '</' =>'<\\/');            // other replacements
@@ -68,11 +62,11 @@ class assignfeedback_points_award_points_form extends moodleform {
         $name = 'awardpoints';
         $this->add_heading($mform, $name, $plugin, true);
         $this->add_field_groups($mform, $custom, $plugin);
-        $this->add_field_feedback($mform, $custom, $plugin);
         $this->add_field_mapaction($mform, $custom, $plugin);
         $this->add_field_awardto($mform, $custom, $plugin);
         $this->add_field_points($mform, $custom, $plugin);
         $this->add_field_commenttext($mform, $custom, $plugin);
+        $this->add_field_feedback($mform, $custom, $plugin);
 
         // ========================
         // layouts section
@@ -86,27 +80,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         // ========================
         //
         $this->add_heading($mform, 'settings', 'moodle', false);
-
-        $this->add_field_pointstype($mform, $custom, $plugin);
-
-        // add the integer fields (min/max number of points)
-        $options = array('size' => 4, 'maxsize' => 4);
-        foreach ($this->integerfields as $name => $default) {
-            $this->add_setting($mform, $custom, $plugin, $name, 'text', $default, $options);
-        }
-
-        // add the boolean fields (show fullname/picture, etc)
-        foreach ($this->booleanfields as $name => $default) {
-            if ($name=='showfullname') {
-                $fields = assign_feedback_points::format_user_name_fields();
-                $this->add_setting($mform, $custom, $plugin, $name, 'select', $default, $fields, PARAM_ALPHA);
-            } else {
-                $this->add_setting($mform, $custom, $plugin, $name, 'checkbox', $default);
-            }
-        }
-
-        // disable "showpointstoday" if we are not using incremental points
-        $mform->disabledIf('showpointstoday', 'pointstype', 'ne', '0');
+        assign_feedback_points::add_settings($mform, $custom);
 
         // ========================
         // hidden fields
@@ -114,33 +88,30 @@ class assignfeedback_points_award_points_form extends moodleform {
         //
         $mform->addElement('hidden', 'id', $custom->cmid);
         $mform->setType('id', PARAM_INT);
+
         $mform->addElement('hidden', 'action', 'viewpluginpage');
         $mform->setType('action', PARAM_ALPHA);
+
         $mform->addElement('hidden', 'pluginaction', 'awardpoints');
         $mform->setType('pluginaction', PARAM_ALPHA);
+
         $mform->addElement('hidden', 'plugin', 'points');
         $mform->setType('plugin', PARAM_PLUGIN);
+
         $mform->addElement('hidden', 'pluginsubtype', 'assignfeedback');
         $mform->setType('pluginsubtype', PARAM_PLUGIN);
 
-        $mform->addElement('hidden', 'mapid', $custom->mapid);
-        $mform->setType('mapid', PARAM_INT);
-        $mform->addElement('hidden', 'mapwidth', $custom->mapwidth, array('id' => 'id_mapwidth'));
-        $mform->setType('mapwidth', PARAM_INT);
-        $mform->addElement('hidden', 'mapheight', $custom->mapheight, array('id' => 'id_mapheight'));
-        $mform->setType('mapheight', PARAM_INT);
-        $mform->addElement('hidden', 'userwidth', $custom->userwidth, array('id' => 'id_userwidth'));
-        $mform->setType('userwidth', PARAM_INT);
-        $mform->addElement('hidden', 'userheight', $custom->userheight, array('id' => 'id_userheight'));
-        $mform->setType('userheight', PARAM_INT);
-        $mform->addElement('hidden', 'groupid', $custom->groupid);
-        $mform->setType('groupid', PARAM_INT);
+        $names = array('mapid', 'mapwidth', 'mapheight', 'userwidth', 'userheight', 'groupid');
+        foreach ($names as $name) {
+            $mform->addElement('hidden', $name, $custom->$name, array('id' => 'id_'.$name));
+            $mform->setType($name, PARAM_INT);
+        }
 
         // ========================
         // buttons
         // ========================
         //
-        $this->add_action_buttons(true, get_string('awardpoints', $plugin));
+        $this->add_action_buttons(true, get_string('savechanges'));
 
         // ========================
         // jQuery (javascript)
@@ -252,8 +223,8 @@ class assignfeedback_points_award_points_form extends moodleform {
             $select = "p.$name";
             $from   = '{assignfeedback_points} p';
             list($where, $params) = $DB->get_in_or_equal($userids);
-            $where  = "p.assignid = ? AND p.pointstype = ? AND p.$name $where";
-            array_unshift($params, $custom->assignid, $custom->config->pointstype);
+            $where  = "p.assignid = ? AND p.pointstype = ? AND p.timecancelled = ? AND p.$name $where";
+            array_unshift($params, $custom->assignid, $custom->config->pointstype, 0);
             if ($custom->config->pointstype==0) {
                 // incremental points
                 $select .= ', SUM(p.points) AS pointstotal';
@@ -261,9 +232,12 @@ class assignfeedback_points_award_points_form extends moodleform {
             } else {
                 // total points
                 $select .= ', p.points AS pointstotal';
-                $where  .= ' AND p.timeawarded = (SELECT MAX(timeawarded) '.
+                $where  .= ' AND p.timeawarded = (SELECT MAX(t.timeawarded) '.
                                                  'FROM {assignfeedback_points} t '.
-                                                 "WHERE p.assignid = t.assignid AND p.pointstype = t.pointstype AND p.$name = t.$name)";
+                                                 'WHERE p.assignid = t.assignid '.
+                                                   'AND p.pointstype = t.pointstype '.
+                                                   'AND p.timecancelled = t.timecancelled '.
+                                                   "AND p.$name = t.$name)";
             }
             $pointstotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where", $params);
         } else {
@@ -279,8 +253,8 @@ class assignfeedback_points_award_points_form extends moodleform {
             $select = "$name, SUM(points) AS pointstoday";
             $from   = '{assignfeedback_points}';
             list($where, $params) = $DB->get_in_or_equal($userids);
-            $where  = "assignid = ? AND pointstype = ? AND timeawarded > ? AND $name $where";
-            array_unshift($params, $custom->assignid, $custom->config->pointstype, time() - DAYSECS);
+            $where  = "assignid = ? AND pointstype = ? AND timeawarded > ? AND cancelby = ? AND $name $where";
+            array_unshift($params, $custom->assignid, $custom->config->pointstype, time() - DAYSECS, 0);
             $pointstoday = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $name", $params);
         } else {
             $pointstoday = false;
@@ -474,20 +448,6 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
     }
 
-    private function add_field_pointstype($mform, $custom, $plugin, $default=0) {
-        $name = 'pointstype';
-        $label = get_string($name, $plugin);
-        $options = array(0 => get_string('incrementalpoints', $plugin),
-                         1 => get_string('totalpoints',       $plugin));
-        $mform->addElement('select', $name, $label, $options);
-        $mform->addHelpButton($name, $name, $plugin);
-        $mform->setType($name, PARAM_INT);
-        if (isset($custom->config->$name)) {
-            $default = $custom->config->$name;
-        }
-        $mform->setDefault($name, $default);
-    }
-
     /**
      * add_field_layouts
      *
@@ -635,31 +595,6 @@ class assignfeedback_points_award_points_form extends moodleform {
     }
 
     /**
-     * add_setting
-     *
-     * @param $mform
-     * @param $custom
-     * @param $plugin
-     * @param $name of field
-     * @param $type of QuickForm field
-     * @param $default (optiona, dedfault = null)
-     * @param $options (optional, default = null)
-     * @param $paramtype (optional, default=PARAM_INT)
-     * @todo Finish documenting this function
-     */
-    private function add_setting($mform, $custom, $plugin, $name, $type, $default, $options=null, $paramtype=PARAM_INT) {
-        $label = get_string($name, $plugin);
-        $mform->addElement($type, $name, $label, $options);
-        $mform->addHelpButton($name, $name, $plugin);
-        $mform->setType($name, $paramtype);
-        if (isset($custom->config->$name)) {
-            $mform->setDefault($name, $custom->config->$name);
-        } else if (isset($default)) {
-            $mform->setDefault($name, $default);
-        }
-    }
-
-    /**
      * add_field_jquery
      *
      * add jQuery javascript to make users draggable in a resizable container
@@ -685,15 +620,13 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
         $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
 
-        $js .= '    PTS.pointstype            = '.$custom->config->pointstype.",\n";
-        $js .= '    PTS.showpointstoday       = '.($custom->config->showpointstoday ? 'true' : 'false').";\n";
-        $js .= '    PTS.showpointstotal       = '.($custom->config->showpointstotal ? 'true' : 'false').";\n";
-
+        $js .= '    PTS.pointstype            = '.$custom->config->pointstype.";\n";
         $js .= '    PTS.sendimmediately       = '.($custom->config->sendimmediately ? 'true' : 'false').";\n";
         $js .= '    PTS.showpointstoday       = '.($custom->config->showpointstoday ? 'true' : 'false').";\n";
         $js .= '    PTS.showpointstotal       = '.($custom->config->showpointstotal ? 'true' : 'false').";\n";
+        $js .= '    PTS.showfeedback          = '.$custom->config->showfeedback.";\n";
 
-        $js .= '    PTS.layouts_container     = "div#fgroup_id_layoutselements"'.",\n";
+        $js .= '    PTS.layouts_container     = "div#fgroup_id_layoutselements"'.";\n";
 
         $js .= '    PTS.mapaction_container   = "div#fgroup_id_mapactionelements fieldset.fgroup";'."\n";
         $js .= '    PTS.mapaction_min_width   = "48"'.";\n";
@@ -714,7 +647,7 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         $js .= '    PTS.cleanup               = {duration : 400};'."\n";
         $js .= '    PTS.separate              = {duration : 400, grid : {x : 12, y : 8}};'."\n";
-        $js .= '    PTS.rotate                = {duration : 400, timeout : 400}'."\n";
+        $js .= '    PTS.rotate                = {duration : 400};'."\n";
         $js .= '    PTS.resize                = {duration : 400};'."\n";
         $js .= '    PTS.shuffle               = {duration : 400};'."\n";
 

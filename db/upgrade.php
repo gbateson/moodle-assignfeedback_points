@@ -53,14 +53,16 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         $table->add_field('gradeid',       XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('awardby',       XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('awardto',       XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
+        $table->add_field('cancelby',      XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('points',        XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('pointstype',    XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('latitude',      XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('longitude',     XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('commenttext',   XMLDB_TYPE_TEXT,    null, null, null,          null, null);
         $table->add_field('commentformat', XMLDB_TYPE_INTEGER,  '4', null, XMLDB_NOTNULL, null,  '0');
-        $table->add_field('timecreated',   XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('timeawarded',   XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
+        $table->add_field('timecancelled', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
+        $table->add_field('timecreated',   XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_field('timemodified',  XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null,  '0');
         $table->add_key('primary',         XMLDB_KEY_PRIMARY, array('id'));
         $table->add_key('assipoin_ass_fk', XMLDB_KEY_FOREIGN, array('assignid'), 'assign',        array('id'));
@@ -110,39 +112,65 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
-    $newversion = 2016060247;
+    $newversion = 2016071751;
     if ($result && $oldversion < $newversion) {
 
         $table = new xmldb_table('assignfeedback_points');
         if ($dbman->table_exists($table)) {
 
-            $field = new xmldb_field('pointstype', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
-            if (! $dbman->field_exists($table, $field)) {
-                if ($dbman->field_exists($table, 'points')) {
-                    $field->setPrevious('points');
+            $fields = array(
+                new xmldb_field('pointstype',    XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'points'),
+                new xmldb_field('cancelby',      XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'awardto'),
+                new xmldb_field('timecancelled', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timemodified'),
+            );
+            foreach ($fields as $field) {
+                if ($dbman->field_exists($table, $field)) {
+                    continue;
+                }
+                if (! $dbman->field_exists($table, $field->getPrevious())) {
+                    $field->setPrevious(null);
                 }
                 $dbman->add_field($table, $field);
 
-                // get all unique assign(ment) ids
-                // in the "assignfeedback_points" table
-                $select = 'assignid, COUNT(*) AS countassignid';
-                if ($ids = $DB->get_records_sql("SELECT $select FROM {assignfeedback_points} GROUP BY assignid", array())) {
+                // post-add processing
+                switch ($field->getName()) {
 
-                    // get all assign(ment) ids using TOTAL pointstype (=1)
-                    list($select, $params) = $DB->get_in_or_equal(array_keys($ids));
-                    $select = "assignment $select AND plugin = ? AND subtype = ? AND name = ? AND value = ?";
-                    array_push($params, 'points', 'assignfeedback', 'pointstype', '1');
-                    if ($ids = $DB->get_records_select('assign_plugin_config', $select, $params, '', 'assignment AS assignid, value AS pointstype')) {
+                    case 'pointstype':
+                        // get all unique assign(ment) ids
+                        // in the "assignfeedback_points" table
+                        $select = 'assignid, COUNT(*) AS countassignid';
+                        if ($ids = $DB->get_records_sql("SELECT $select FROM {assignfeedback_points} GROUP BY assignid", array())) {
 
-                        // set all pointstype for awards in assign(ments) using the TOTAL pointstype (=1)
-                        list($select, $params) = $DB->get_in_or_equal(array_keys($ids));
-                        $DB->set_field_select('assignfeedback_points', 'pointstype', 1, "assignid $select", $params);
-                    }
+                            // get all assign(ment) ids using TOTAL pointstype (=1)
+                            list($select, $params) = $DB->get_in_or_equal(array_keys($ids));
+                            $select = "assignment $select AND plugin = ? AND subtype = ? AND name = ? AND value = ?";
+                            array_push($params, 'points', 'assignfeedback', 'pointstype', '1');
+                            if ($ids = $DB->get_records_select('assign_plugin_config', $select, $params, '', 'assignment AS assignid, value AS pointstype')) {
+
+                                // set all pointstype for awards in assign(ments) using the TOTAL pointstype (=1)
+                                list($select, $params) = $DB->get_in_or_equal(array_keys($ids));
+                                $DB->set_field_select('assignfeedback_points', 'pointstype', 1, "assignid $select", $params);
+                            }
+                        }
+                        break;
+
+                    case 'timecancelled':
+                        $params = array('Undo');
+                        $DB->execute('UPDATE {assignfeedback_points} SET cancelby = awardby WHERE commenttext = ?', $params);
+                        $DB->execute('UPDATE {assignfeedback_points} SET timecancelled = timeawarded WHERE commenttext = ?', $params);
+                        break;
                 }
             }
 
-            $index = new xmldb_index('assipoin_asstyp_ix', XMLDB_INDEX_NOTUNIQUE, array('assignid', 'pointstype'));
-            if (! $dbman->index_exists($table, $index)) {
+            $indexes = array(
+                new xmldb_index('assipoin_asspoi_ix', XMLDB_INDEX_NOTUNIQUE, array('assignid', 'pointstype')),
+                new xmldb_index('assipoin_asstim_ix', XMLDB_INDEX_NOTUNIQUE, array('assignid', 'timeawarded')),
+                new xmldb_index('assipoin_asstim2_ix', XMLDB_INDEX_NOTUNIQUE, array('assignid', 'timecancelled')),
+            );
+            foreach ($indexes as $index) {
+                if ($dbman->index_exists($table, $index)) {
+                    continue;
+                }
                 $dbman->add_index($table, $index);
             }
         }

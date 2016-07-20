@@ -23,6 +23,7 @@
  */
 $string['pluginname'] = 'Feedback points';
 
+$string['automatically'] = 'Automatically';
 $string['awardmanypointsmanyusers'] = '{$a->points} points were awarded to {$a->usercount} users: {$a->userlist}';
 $string['awardmanypointsoneuser'] = '{$a->points} points were awarded to {$a->userlist}';
 $string['awardnopoints'] = 'No points were awarded';
@@ -106,6 +107,17 @@ $string['showcomments_help'] = 'If this setting is enabled, the top ten most fre
 $string['showcomments'] = 'Show frequent comments';
 $string['showelement_help'] = 'If this setting is enabled, the checkbox or radio button used to select each student will be shown alongside the name and/or picture of the student.';
 $string['showelement'] = 'Show form element';
+$string['showfeedback_help'] = 'This setting controls whether feedback about AJAX operations is displayed.
+
+**No**
+: Feedback about AJAX operations is displayed
+
+**Yes**
+: Feedback about AJAX operations is not displayed
+
+**Automatic**
+: Feedback about AJAX operations appears only when an AJAX operation is in progress. Otherwise, it is hidden.';
+$string['showfeedback'] = 'Show AJAX feedback';
 $string['showfullname_help'] = 'If this setting is enabled, the student full names will be shown in the list of students to whom points are awarded.';
 $string['showfullname'] = 'Show user name';
 $string['showlink_help'] = 'If this setting is enabled, a link that goes directly to the page for awarding points will be added on the teacher\'s main view page for this assignment.';
@@ -123,4 +135,8 @@ $string['square'] = 'Square';
 $string['textforgradebook'] = '{$a->timeawarded} ({$a->points} pts) {$a->comment}';
 $string['totalpoints'] = 'Total points';
 $string['undo'] = 'Undo';
+$string['undomanypointsmanyusers'] = 'Cancelled award of {$a->points} points to {$a->usercount} users: {$a->userlist}';
+$string['undomanypointsoneuser'] = 'Cancelled award of {$a->points} points to {$a->usercount} user: {$a->userlist}';
+$string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a->usercount} users: {$a->userlist}';
+$string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
 $string['vertical'] = 'Vertical';

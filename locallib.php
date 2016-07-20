@@ -33,12 +33,6 @@ defined('MOODLE_INTERNAL') || die();
  */
 class assign_feedback_points extends assign_feedback_plugin {
 
-    protected $integerfields = array('minpoints'       => -1, 'increment'       =>  1, 'maxpoints'    => 2);
-    protected $booleanfields = array('sendimmediately' =>  1, 'multipleusers'   =>  0, 'showelement'  => 0,
-                                     'showpicture'     =>  1, 'showfullname'    => '', 'showusername' => 0,
-                                     'showpointstoday' =>  1, 'showpointstotal' =>  1, 'showcomments' => 1,
-                                     'showlink'        =>  1);
-
     /**
      * Get the name of the feedback points plugin.
      * @return string
@@ -76,43 +70,84 @@ class assign_feedback_points extends assign_feedback_plugin {
             $mform->setExpanded($name, false);
         }
 
-        $name = 'pointstype';
-        $label = get_string($name, $plugin);
-        $options = array(0 => get_string('incrementalpoints', $plugin),
-                         1 => get_string('totalpoints',       $plugin));
-        $mform->addElement('select', $name, $label, $options);
-        $mform->addHelpButton($name, $name, $plugin);
-        $mform->setType($name, PARAM_INT);
-        if (isset($config->$name)) {
-            $mform->setDefault($name, $config->$name);
-        }
+        self::add_settings($mform, $config);
+   }
+
+    /**
+     * get_integerfields
+     *
+     * @return array(name => default)
+     */
+    public static function get_integerfields() {
+        return array('pointstype' =>  0,
+                     'minpoints'  => -1,
+                     'increment'  =>  1,
+                     'maxpoints'  =>  2);
+    }
+
+    /**
+     * get_booleanfields
+     *
+     * @return array(name => default)
+     */
+    public static function get_booleanfields() {
+        return array('sendimmediately' => 1,
+                     'multipleusers'   => 0,
+                     'showelement'     => 0,
+                     'showpicture'     => 1,
+                     'showfullname'    => '',
+                     'showusername'    => 0,
+                     'showpointstoday' => 1,
+                     'showpointstotal' => 1,
+                     'showcomments'    => 1,
+                     'showfeedback'    => 1,
+                     'showlink'        => 1);
+    }
+
+    /**
+     * get_selectfields
+     *
+     * @return array(name => default)
+     */
+    public static function get_selectfields() {
+       return array('pointstype'   => PARAM_INT,
+                    'showfullname' => PARAM_ALPHA,
+                    'showfeedback' => PARAM_INT);
+    }
+
+    /**
+     * add_config_settings
+     *
+     * @param $mform
+     * @param $config
+     * @param $plugin
+     * @param $integerfields
+     * @param $booleanfields
+     * @param $selectfields
+     * @todo Finish documenting this function
+     */
+    public static function add_settings($mform, $config) {
 
         // add the integer fields (min/max number of points)
         $options = array('size' => 4, 'maxsize' => 4);
-        foreach ($this->integerfields as $name => $default) {
-            $this->add_setting($mform, $config, $plugin, $name, 'text', $default, $options);
+        foreach (self::get_integerfields() as $name => $default) {
+            self::add_setting($mform, $config, $name, 'text', $default, $options);
         }
 
         // add the boolean fields (show fullname/picture, etc)
-        foreach ($this->booleanfields as $name => $default) {
-            if ($name=='showfullname') {
-                $fields = self::format_user_name_fields();
-                $this->add_setting($mform, $config, $plugin, $name, 'select', $default, $fields, PARAM_ALPHA);
-            } else {
-                $this->add_setting($mform, $config, $plugin, $name, 'checkbox', $default);
-            }
+        foreach (self::get_booleanfields() as $name => $default) {
+            self::add_setting($mform, $config, $name, 'checkbox', $default);
         }
 
         // disable "showpointstoday" if we are not using incremental points
         $mform->disabledIf('showpointstoday', 'pointstype', 'ne', '0');
-   }
+    }
 
     /**
      * add_setting
      *
      * @param $mform
      * @param $config
-     * @param $plugin
      * @param $name of field
      * @param $type of QuickForm field
      * @param $default (optional, default = null)
@@ -120,7 +155,16 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param $paramtype (optional, default=PARAM_INT)
      * @todo Finish documenting this function
      */
-    private function add_setting($mform, $config, $plugin, $name, $type, $default=null, $options=null, $paramtype=PARAM_INT) {
+    public static function add_setting($mform, $config, $name, $type, $default=null, $options=null, $paramtype=PARAM_INT) {
+
+        $selectfields = self::get_selectfields();
+        if (array_key_exists($name, $selectfields)) {
+            $type = 'select';
+            $paramtype = $selectfields[$name];
+            $options = call_user_func(array('assign_feedback_points', 'get_'.$name.'_options'));
+        }
+
+        $plugin = 'assignfeedback_points';
         $label = get_string($name, $plugin);
         $mform->addElement($type, $name, $label, $options);
         $mform->addHelpButton($name, $name, $plugin);
@@ -135,7 +179,9 @@ class assign_feedback_points extends assign_feedback_plugin {
         if (isset($config->$name_adv)) {
             $mform->setAdvanced($name, $config->$name_adv);
         }
-        $mform->disabledIf($name, $plugin.'_enabled', 'notchecked');
+        if ($mform->elementExists('feedbackplugins')) {
+            $mform->disabledIf($name, $plugin.'_enabled', 'notchecked');
+        }
     }
 
     /**
@@ -145,26 +191,23 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return bool
      */
     public function save_settings(stdClass $data) {
-        $name = 'pointstype';
-        $this->set_config($name, empty($data->$name) ? 0 : intval($data->$name));
+        return $this->save_settings_allowmissing($data, true);
+    }
 
-        foreach ($this->integerfields as $name => $default) {
-            $this->set_config($name, empty($data->$name) ? 0 : intval($data->$name));
+    /**
+     * Save the settings for feedback points plugin
+     *
+     * @param stdClass $data
+     * @param boolean  $allowmissing
+     * @return bool
+     */
+    public function save_settings_allowmissing(stdClass $data, $allowmissing=false) {
+        foreach (self::get_integerfields() as $name => $default) {
+            $this->save_setting_allowmissing($data, $name, PARAM_INT, $allowmissing);
         }
-
-        foreach ($this->booleanfields as $name => $default) {
-            if ($name=='showfullname') {
-                $fields = self::format_user_name_fields();
-                if (isset($data->$name) && array_key_exists($data->$name, $fields)) {
-                    $this->set_config($name, $data->$name);
-                } else {
-                    $this->set_config($name, '');
-                }
-            } else {
-                $this->set_config($name, empty($data->$name) ? 0 : 1);
-            }
+        foreach (self::get_booleanfields() as $name => $default) {
+            $this->save_setting_allowmissing($data, $name, PARAM_BOOL, $allowmissing);
         }
-
         return true;
     }
 
@@ -172,27 +215,40 @@ class assign_feedback_points extends assign_feedback_plugin {
      * Save the settings for feedback points plugin
      *
      * @param stdClass $data
-     * @return bool
+     * @param string   $name
+     * @param integer  $paratype
+     * @param boolean  $allowmissing
+     * @return void
      */
-    public function save_settings_if_present(stdClass $data) {
-        $name = 'pointstype';
-        if (isset($data->$name)) {
-            $this->set_config($name, intval($data->$name));
-        }
-
-        foreach ($this->integerfields as $name => $default) {
-            if (isset($data->$name)) {
-                $this->set_config($name, intval($data->$name));
+    public function save_setting_allowmissing($data, $name, $paramtype, $allowmissing) {
+        $exists = isset($data->$name);
+        if ($exists || $allowmissing) {
+            $value = null;
+            $selectfields = self::get_selectfields();
+            if (array_key_exists($name, $selectfields)) {
+                $paramtype = $selectfields[$name];
+                if ($exists) {
+                    $options = call_user_func(array('assign_feedback_points', 'get_'.$name.'_options'));
+                    if (array_key_exists($data->$name, $options)) {
+                        $value = $data->$name;
+                    }
+                }
+            } else {
+                if ($exists) {
+                    $value = $data->$name;
+                }
             }
-        }
-
-        foreach ($this->booleanfields as $name => $default) {
-            if (isset($data->$name)) {
-                $this->set_config($name, empty($data->$name) ? 0 : 1);
+            if ($value===null) {
+                $value = '';
             }
+            if ($paramtype==PARAM_INT) {
+                $value = intval($value);
+            }
+            if ($paramtype==PARAM_BOOL) {
+                $value = ($value ? 1 : 0);
+            }
+            $this->set_config($name, $value);
         }
-
-        return true;
     }
 
     /**
@@ -277,11 +333,11 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $params = array(
-            'id' => '8',
-            'plugin' => 'points',
+            'id'            => $cm->id,
+            'plugin'        => 'points',
             'pluginsubtype' => 'assignfeedback',
-            'action' => 'viewpluginpage',
-            'pluginaction' => 'awardpoints'
+            'action'        => 'viewpluginpage',
+            'pluginaction'  => 'awardpoints'
         );
         $PAGE->set_url(new moodle_url('/mod/assign/view.php', $params));
 
@@ -345,6 +401,12 @@ class assign_feedback_points extends assign_feedback_plugin {
         $ajax = optional_param('ajax', 0, PARAM_INT);
         $undo = optional_param('undo', 0, PARAM_INT);
 
+        // cache the current time
+        $time = time();
+
+        // feedback string
+        $feedback = null;
+
         // get multipleusers setting that was used to create incoming form data
         if ($ajax) {
             $multipleusers = 0; // i.e. one user at a time
@@ -352,13 +414,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $multipleusers = $this->get_config('multipleusers');
         }
 
-        // simulate data_submitted(), but detect $_GET as well as $_POST
-        if ($undo) {
-            $data = (empty($_GET) ? false : (object)fix_utf8($_GET));
-        } else {
-            $data = (empty($_POST) ? false : (object)fix_utf8($_POST));
-        }
-
+        // handle "undo" request - i.e. cancel previously awarded points
         // get original groupid
         $groupid = optional_param('groupid', false, PARAM_INT);
         if ($groupid===false) {
@@ -371,18 +427,66 @@ class assign_feedback_points extends assign_feedback_plugin {
         // get userlist for original $groupid
         $userlist = $this->assignment->list_participants($groupid, false);
 
-        // process incoming $data, if any
-        if ($data) {
+        if ($undo) {
 
-            if ($ajax) {
-                // don't save settings
-            } else if ($undo) {
-                $this->save_settings_if_present($data);
+            // get ids from incoming data
+            $name = 'pointsid';
+            if ((isset($_GET[$name]) && is_array($_GET[$name])) || (isset($_POST[$name]) && is_array($_POST[$name]))) {
+                $ids = optional_param_array($name, 0, PARAM_INT);
             } else {
-                $this->save_settings($data);
+                $ids = array(optional_param($name, 0, PARAM_INT));
+            }
+            $ids = array_filter($ids);
+
+            // initialize "feedback" details
+            $feedback = (object)array('points'     => 0,
+                                      'stringname' => '',
+                                      'usercount'  => 0,
+                                      'userlist'   => array());
+
+            // undo the points
+            foreach($ids as $id) {
+                $params = array('id' => $id, 'assignid' => $instance->id);
+                if ($points = $DB->get_record('assignfeedback_points', $params)) {
+
+                    // cancel these $points
+                    $points->cancelby = $USER->id;
+                    $points->timemodified = $time;
+                    $points->timecancelled = $time;
+                    $DB->update_record('assignfeedback_points', $points);
+
+                    // append "feedback" details
+                    if (array_key_exists($points->awardto, $userlist)) {
+                        $feedback->points = $points->points;
+                        $feedback->userlist[] = fullname($userlist[$points->awardto]);
+                    }
+                }
             }
 
-            $time = time();
+            // set up feedback
+            if ($feedback->usercount = count($feedback->userlist)) {
+                $feedback->userlist = implode(', ', $feedback->userlist);
+                switch (true) {
+                    case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'undoonepointoneuser'; break;
+                    case ($feedback->points==1 && $feedback->usercount<>1): $feedback->stringname = 'undoonepointmanyusers'; break;
+                    case ($feedback->points<>1 && $feedback->usercount==1): $feedback->stringname = 'undomanypointsoneuser'; break;
+                    case ($feedback->points<>1 && $feedback->usercount<>1): $feedback->stringname = 'undomanypointsmanyusers'; break;
+                    default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
+                }
+                $feedback = get_string($feedback->stringname, $plugin, $feedback);
+            } else {
+                $feedback = null;
+            }
+        }
+
+        // process incoming POST $data, if any
+        if ($data = data_submitted()) {
+
+            if ($ajax || $undo) {
+                // don't save settings
+            } else {
+                $this->save_settings_allowmissing($data, true);
+            }
 
             // get/update user map
             $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id, true);
@@ -801,7 +905,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                         }
                     }
                     break;
-            }
+            } // end switch "layouts"
 
             // remove all layout settings because
             // we do not want them in the outgoing form
@@ -844,9 +948,9 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             // initialize "feedback" details
             $feedback = (object)array('points'     => $points,
+                                      'stringname' => '',
                                       'usercount'  => 0,
-                                      'userlist'   => '',
-                                      'stringname' => '');
+                                      'userlist'   => array());
 
             // setup undo, if required
             if ($undo==0) {
@@ -868,7 +972,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                                     'group'         => $groupid,
                                     'groupid'       => $groupid,
                                     'mapid'         => $mapid,
-                                    'points'        => -$points,
+                                    'pointsid'      => array(),
                                     'multipleusers' => $multipleusers,
                                     'commenttext'   => $undo_commenttext);
             }
@@ -935,18 +1039,13 @@ class assign_feedback_points extends assign_feedback_plugin {
                 );
                 $assignfeedbackpoints->id = $DB->insert_record('assignfeedback_points', $assignfeedbackpoints);
 
-                // append this userid to the "undo" parameters
+                // append this pointsid to the "undo" parameters
                 if ($undo==0) {
-                    if ($multipleusers) {
-                        $undoparams['awardto['.$userid.']'] = 1;
-                    } else {
-                        $undoparams['awardto'] = $userid;
-                    }
+                    $undoparams['pointsid'][] = $assignfeedbackpoints->id;
                 }
 
-                // append "feedback" details
-                $feedback->usercount++;
-                $feedback->userlist .= ($feedback->userlist=='' ? '' : ', ').fullname($userlist[$userid]);
+                // append this user to "feedback" details
+                $feedback->userlist[] = fullname($userlist[$userid]);
 
                 if ($pointstype==0) { // incremental points
                     $params = array('assignid'   => $instance->id,
@@ -964,16 +1063,18 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $this->assignment->save_grade($userid, $gradedata);
             }
 
-            if ($feedback->userlist) {
+            if ($feedback->usercount = count($feedback->userlist)) {
+                $feedback->userlist = implode(', ', $feedback->userlist);
                 switch (true) {
-                    case ($feedback->points==1 && $feedback->usercount==1): $stringname = 'awardonepointoneuser'; break;
-                    case ($feedback->points==1 && $feedback->usercount<>1): $stringname = 'awardonepointmanyusers'; break;
-                    case ($feedback->points<>1 && $feedback->usercount==1): $stringname = 'awardmanypointsoneuser'; break;
-                    case ($feedback->points<>1 && $feedback->usercount<>1): $stringname = 'awardmanypointsmanyusers'; break;
-                    default: $stringname = 'awardnopoints'; // shouldn't happen !!
+                    case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'awardonepointoneuser'; break;
+                    case ($feedback->points==1 && $feedback->usercount<>1): $feedback->stringname = 'awardonepointmanyusers'; break;
+                    case ($feedback->points<>1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
+                    case ($feedback->points<>1 && $feedback->usercount<>1): $feedback->stringname = 'awardmanypointsmanyusers'; break;
+                    default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
                 }
-                $feedback = get_string($stringname, $plugin, $feedback);
-                if ($undo==0 && $points) {
+                $feedback = get_string($feedback->stringname, $plugin, $feedback);
+                if ($undo==0 && count($undoparams['pointsid'])) {
+                    $undoparams['pointsid'] = implode(',', $undoparams['pointsid']);
                     $link = new moodle_url('/mod/assign/view.php', $undoparams);
                     $link = html_writer::link($link, get_string('undo', $plugin), array('id' => 'undolink'));
                     $feedback .= " $link";
@@ -981,7 +1082,6 @@ class assign_feedback_points extends assign_feedback_plugin {
             } else {
                 $feedback = '';
             }
-            $feedback = html_writer::tag('span', $feedback, array('id' => 'feedback'));
 
             // get latest groupid (it may have changed)
             $groupid = groups_get_activity_group($cm, true);
@@ -1007,7 +1107,12 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
         } else {
             $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
+        }
+
+        if ($feedback===null) {
             $feedback = '';
+        } else {
+            $feedback = html_writer::tag('span', $feedback, array('id' => 'feedback'));
         }
 
         return array($multipleusers, $groupid, $map, $feedback, $userlist);
@@ -1321,14 +1426,28 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * format_user_name_fields
+     * get_pointstype_options
      *
-     * return an array of formatted user fields
+     * return an array of formatted pointstype options
      * suitable for use in a Moodle form
      *
      * @return array of field names
      */
-    static public function format_user_name_fields() {
+    static public function get_pointstype_options() {
+        $plugin = 'assignfeedback_points';
+        return array(0 => get_string('incrementalpoints', $plugin),
+                     1 => get_string('totalpoints',       $plugin));
+    }
+
+    /**
+     * get_showfullname_options
+     *
+     * return an array of formatted user name options
+     * suitable for use in a Moodle form
+     *
+     * @return array of field names
+     */
+    static public function get_showfullname_options() {
         $fields = array('' => '', 'default' => 1);
         $fields += self::get_all_user_name_fields();
         foreach (array_keys($fields) as $field) {
@@ -1337,6 +1456,21 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
         }
         return $fields;
+    }
+
+    /**
+     * get_showfeedback_options
+     *
+     * return an array of formatted showfeedback options
+     * suitable for use in a Moodle form
+     *
+     * @return array of field names
+     */
+    static public function get_showfeedback_options() {
+        $plugin = 'assignfeedback_points';
+        return array(0 => get_string('no'),
+                     1 => get_string('yes'),
+                     2 => get_string('automatically', $plugin));
     }
 
     /**

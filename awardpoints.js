@@ -28,13 +28,39 @@ if (typeof(window.PTS)=="undefined") {
 }
 
 /**
+ * set_feedback
+ *
+ * @param string msg
+ * @return void
+ */
+PTS.set_feedback = function(msg) {
+    $("#feedback").html(msg);
+    PTS.set_feedback_visibility();
+}
+
+/**
+ * set_ajax_feedback
+ *
+ * @param string msg
+ * @return void
+ */
+PTS.set_ajax_feedback = function(msg) {
+    $("#feedback").parent().html(msg);
+    PTS.set_feedback_visibility();
+}
+
+/**
  * set_feedback_visibility
  *
  * @return void
  */
 PTS.set_feedback_visibility = function() {
     var feedback = $("#feedback");
-    var display = (feedback.html() ? "initial" : "none");
+    if (PTS.showfeedback==1 || (PTS.showfeedback==2 && feedback.html())) {
+        var display = "initial";
+    } else {
+        var display = "none";
+    }
     feedback.parents("div.fitem").css("display", display);
 }
 
@@ -62,17 +88,22 @@ PTS.get_input_userid = function(input) {
  * @return void
  */
 PTS.set_awardto_xy = function(span, x, y) {
-    if (typeof(x)=="undefined") {
-        x = $(span).css("left");
-    }
-    if (typeof(y)=="undefined") {
-        y = $(span).css("top")
+    if (typeof(x)=="undefined" || typeof(y)=="undefined") {
+        var p = $(span).position();
+        x = p.left;
+        y = p.top;
     }
     $(span).find("input[type=checkbox],input[type=radio]").each(function(){
         var userid = PTS.get_input_userid($(this));
         if (userid) {
-            $("#id_awardtox_" + userid).val(x);
-            $("#id_awardtoy_" + userid).val(y);
+            if (x != $("#id_awardtox_" + userid).val()) {
+                $("#id_awardtox_" + userid).val(x);
+                PTS.update_map = true;
+            }
+            if (y != $("#id_awardtoy_" + userid).val()) {
+                $("#id_awardtoy_" + userid).val(y);
+                PTS.update_map = true;
+            }
         }
     });
 }
@@ -137,8 +168,8 @@ PTS.do_map_reset = function() {
  */
 PTS.do_map_cleanup = function() {
     var separate = false;
-    var grid = { x : $("#id_userwidth").val(),
-                 y : $("#id_userheight").val()}
+    var grid = {x : $("#id_userwidth").val(),
+                y : $("#id_userheight").val()}
     $(PTS.user_container + " span").each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var css = {};
@@ -291,7 +322,7 @@ PTS.do_map_separate = function(resize) {
     }
 
     if (resize) {
-        setTimeout(PTS.do_map_resize, parseInt(PTS.separate.duration));
+        setTimeout(PTS.do_map_resize, PTS.separate.duration);
     } else {
         // clear the mapaction
         PTS.clear_map_action();
@@ -393,14 +424,12 @@ PTS.positions = {
                     }
                 }
             }
-       }
+        }
         if (best) {
             this.fix(span, best.x, best.y);
             var css = {"left" : best.x, "top" : best.y};
-            var complete = function() {
-                PTS.set_awardto_xy($(this));
-            };
-            $(span).animate(css, PTS.separate.duration, "swing", complete);
+            $(span).animate(css, PTS.separate.duration);
+            PTS.set_awardto_xy($(this), best.x, best.y);
         } else {
             // no positions were available,
             // so add a new row for this span
@@ -496,10 +525,9 @@ PTS.do_map_shuffle = function() {
         PTS.shuffle_user(spans[x], spans[i]);
     }
 
-    if (PTS.update_map) {
-        PTS.update_map = false;
-        PTS.update_map_via_ajax();
-    }
+    // send new map settings to server
+    // if any of the SPANs were moved
+    setTimeout(PTS.update_map_via_ajax, PTS.shuffle.duration);
 
     // clear the mapaction
     PTS.clear_map_action();
@@ -518,21 +546,7 @@ PTS.shuffle_user = function(a, b) {
     var p = $(b).position();
     var css = {"left" : p.left, "top" : p.top};
     $(a).animate(css, PTS.shuffle.duration);
-    $(a).find("input[type=checkbox],input[type=radio]").each(function(){
-        var userid = PTS.get_input_userid($(this));
-        if (userid) {
-            var x = $("#id_awardtox_" + userid).val();
-            var y = $("#id_awardtoy_" + userid).val();
-            if (x != p.left) {
-                $("#id_awardtox_" + userid).val(p.left);
-                PTS.update_map = true;
-            }
-            if (y != p.top) {
-                $("#id_awardtoy_" + userid).val(p.top);
-                PTS.update_map = true;
-            }
-        }
-    });
+    PTS.set_awardto_xy(a, p.left, p.top);
 }
 
 
@@ -547,6 +561,8 @@ PTS.do_map_resize = function() {
     var w = 0; // required new width for user container
     var h = 0; // required new height for user container
 
+    // get minimum (x,y) coordinates
+    // and maximum w(idth) and h(eight)
     $(PTS.user_container + " span").each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var p = $(this).position();
@@ -557,6 +573,7 @@ PTS.do_map_resize = function() {
         }
     });
 
+    // adjust position of spans
     if (x || y) {
         css = {"left" : (x > 0  ? "-=" + x : "+=" + Math.abs(x)),
                "top"  : (y > 0  ? "-=" + y : "+=" + Math.abs(y))}
@@ -582,14 +599,10 @@ PTS.do_map_resize = function() {
         PTS.update_map = true;
     }
 
-    if (PTS.update_map) {
-        PTS.update_map = false;
-        PTS.update_map_via_ajax();
-    }
-
     // do (animated) map resize
+    // and then update map via ajax
     var css = {"width" : w, "height" : h};
-    $(PTS.user_container).animate(css, PTS.resize.duration);
+    $(PTS.user_container).animate(css, PTS.resize.duration, "swing", PTS.update_map_via_ajax);
 
     // clear the mapaction
     PTS.clear_map_action();
@@ -600,7 +613,7 @@ PTS.do_map_resize = function() {
  *
  * @return void
  */
-PTS.do_map_rotate = function(timeout) {
+PTS.do_map_rotate = function() {
     var resize = false;
     var x_max = $(PTS.user_container).width();
     $(PTS.user_container + " span").each(function(){
@@ -608,18 +621,16 @@ PTS.do_map_rotate = function(timeout) {
             var p = $(this).position();
             var w = $(this).outerWidth();
             var h = $(this).outerHeight();
-            var x = ((w / h) * p.top);
-            var y = ((h / w) * (x_max - p.left - w));
+            var x = Math.round((w / h) * p.top);
+            var y = Math.round((h / w) * (x_max - p.left - w));
+            PTS.set_awardto_xy($(this), x, y);
             var css = {"left" : x, "top" : y};
-            var complete = function() {
-                PTS.set_awardto_xy($(this));
-            };
-            $(this).animate(css, PTS.rotate.duration, "swing", complete);
+            $(this).animate(css, PTS.rotate.duration);
             resize = true;
         }
     });
     if (resize) {
-        setTimeout(PTS.do_map_resize, parseInt(PTS.rotate.timeout));
+        setTimeout(PTS.do_map_resize, PTS.rotate.duration);
     } else {
         PTS.clear_map_action();
     }
@@ -654,33 +665,36 @@ PTS.update_points_html = function(input, type, points) {
  * @return void
  */
 PTS.update_map_via_ajax = function() {
-    $("#feedback").html(PTS.contacting_server_msg);
-    PTS.set_feedback_visibility();
-    var data = {ajax        : 1,
-                mapid       : $("#id_mapid").val(),
-                mapwidth    : $("#id_mapwidth").val(),
-                mapheight   : $("#id_mapheight").val(),
-                userwidth   : $("#id_userwidth").val(),
-                userheight  : $("#id_userheight").val(),
-                group       : PTS.groupid,
-                groupid     : PTS.groupid,
-                sesskey     : PTS.sesskey}
-    $("input[name^=awardtox]").each(function(){
-        data[$(this).prop("name")] = $(this).val();
-    });
-    $("input[name^=awardtoy]").each(function(){
-        data[$(this).prop("name")] = $(this).val();
-    });
-    $.ajax({
-        cache   : false,
-        data    : data,
-        datatype: "html",
-        method  : "post",
-        url     : PTS.awardpoints_ajax_php
-    }).done(function(feedback){
-        $("#feedback").parent().html(feedback);
-        PTS.set_feedback_visibility();
-    });
+
+    if (PTS.update_map) {
+        PTS.update_map = false;
+
+        PTS.set_feedback(PTS.contacting_server_msg);
+        var data = {ajax        : 1,
+                    mapid       : $("#id_mapid").val(),
+                    mapwidth    : $("#id_mapwidth").val(),
+                    mapheight   : $("#id_mapheight").val(),
+                    userwidth   : $("#id_userwidth").val(),
+                    userheight  : $("#id_userheight").val(),
+                    group       : PTS.groupid,
+                    groupid     : PTS.groupid,
+                    sesskey     : PTS.sesskey}
+        $("input[name^=awardtox]").each(function(){
+            data[$(this).prop("name")] = $(this).val();
+        });
+        $("input[name^=awardtoy]").each(function(){
+            data[$(this).prop("name")] = $(this).val();
+        });
+        $.ajax({
+            cache   : false,
+            data    : data,
+            datatype: "html",
+            method  : "post",
+            url     : PTS.awardpoints_ajax_php
+        }).done(function(feedback){
+            PTS.set_ajax_feedback(feedback);
+        });
+    }
 }
 
 /**
@@ -708,8 +722,7 @@ PTS.send_points_via_ajax = function(input) {
                     group       : PTS.groupid,
                     groupid     : PTS.groupid,
                     sesskey     : PTS.sesskey}
-        $("#feedback").html(PTS.contacting_server_msg);
-        PTS.set_feedback_visibility();
+        PTS.set_feedback(PTS.contacting_server_msg);
         $.ajax({
             cache   : false,
             data    : data,
@@ -717,8 +730,7 @@ PTS.send_points_via_ajax = function(input) {
             method  : "post",
             url     : PTS.awardpoints_ajax_php
         }).done(function(feedback){
-            $("#feedback").parent().html(feedback);
-            PTS.set_feedback_visibility();
+            PTS.set_ajax_feedback(feedback);
             if (PTS.showpointstoday) {
                 PTS.update_points_html(input, "today", points);
             }
@@ -951,10 +963,9 @@ $(document).ready(function() {
     PTS.set_span_event_handlers(user_spans,   do_user_action);
     PTS.set_span_event_handlers(points_spans, false);
 
-    if (PTS.update_map) {
-        PTS.update_map = false;
-        PTS.update_map_via_ajax();
-    }
+    // send new map settings to server
+    // if PTS.update_map was set to TRUE
+    PTS.update_map_via_ajax();
 
     user_spans.draggable({
         containment: PTS.user_container,
@@ -985,8 +996,8 @@ $(document).ready(function() {
         create: function(event, ui) {
             var w = $("#id_mapwidth").val();
             var h = $("#id_mapheight").val();
-            $(this).css("width", w);
-            $(this).css("height", h);
+            user_container.css("width", w);
+            user_container.css("height", h);
         },
         // restrict the max/min size of the user-map (DISABLED)
         //start: function(event, ui) {
@@ -1001,11 +1012,17 @@ $(document).ready(function() {
         //    $(this).resizable("option", "minHeight", h + 14);
         //},
         stop: function(event, ui) {
+            var w = parseInt(user_container.css("width"));
+            if (w != $("#id_mapwidth").val()) {
+                $("#id_mapwidth").val(w);
+                PTS.update_map = true;
+            }
+            var h = parseInt(user_container.css("height"));
+            if (h != $("#id_mapheight").val()) {
+                $("#id_mapheight").val(h);
+                PTS.update_map = true;
+            }
             PTS.update_map_via_ajax();
-            var w = $(this).css("width");
-            var h = $(this).css("height");
-            $("#id_mapwidth").val(parseInt(w));
-            $("#id_mapheight").val(parseInt(h));
         }
     });
 
