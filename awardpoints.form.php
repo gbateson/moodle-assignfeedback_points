@@ -62,11 +62,11 @@ class assignfeedback_points_award_points_form extends moodleform {
         $name = 'awardpoints';
         $this->add_heading($mform, $name, $plugin, true);
         $this->add_field_groups($mform, $custom, $plugin);
+        $this->add_field_feedback($mform, $custom, $plugin);
         $this->add_field_mapaction($mform, $custom, $plugin);
         $this->add_field_awardto($mform, $custom, $plugin);
         $this->add_field_points($mform, $custom, $plugin);
         $this->add_field_commenttext($mform, $custom, $plugin);
-        $this->add_field_feedback($mform, $custom, $plugin);
 
         // ========================
         // layouts section
@@ -80,7 +80,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         // ========================
         //
         $this->add_heading($mform, 'settings', 'moodle', false);
-        assign_feedback_points::add_settings($mform, $custom);
+        assign_feedback_points::add_settings($mform, $custom->config);
 
         // ========================
         // hidden fields
@@ -179,11 +179,12 @@ class assignfeedback_points_award_points_form extends moodleform {
      */
     private function add_field_feedback($mform, $custom, $plugin) {
         $name = 'feedback';
-        $label = get_string($name);
-        if ($custom->feedback=='') {
-            $custom->feedback = html_writer::tag('span', '', array('id' => 'feedback'));
+        $label = get_string($name, $plugin);
+        if ($custom->$name=='') {
+            $custom->$name = html_writer::tag('span', '', array('id' => 'feedback'));
         }
-        $mform->addElement('static', $name.'feedback', get_string('feedback'), $custom->feedback);
+        $mform->addElement('static', $name.'feedback', $label, $custom->$name);
+        $mform->addHelpButton($name.'feedback', $name, $plugin);
     }
 
     /**
@@ -620,29 +621,29 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
         $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
 
-        $js .= '    PTS.pointstype            = '.$custom->config->pointstype.";\n";
-        $js .= '    PTS.sendimmediately       = '.($custom->config->sendimmediately ? 'true' : 'false').";\n";
-        $js .= '    PTS.showpointstoday       = '.($custom->config->showpointstoday ? 'true' : 'false').";\n";
-        $js .= '    PTS.showpointstotal       = '.($custom->config->showpointstotal ? 'true' : 'false').";\n";
-        $js .= '    PTS.showfeedback          = '.$custom->config->showfeedback.";\n";
+        $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
+        $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
+        $js .= '    PTS.showpointstoday       = '.intval($custom->config->showpointstoday).";\n";
+        $js .= '    PTS.showpointstotal       = '.intval($custom->config->showpointstotal).";\n";
+        $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
 
         $js .= '    PTS.layouts_container     = "div#fgroup_id_layoutselements"'.";\n";
 
         $js .= '    PTS.mapaction_container   = "div#fgroup_id_mapactionelements fieldset.fgroup";'."\n";
-        $js .= '    PTS.mapaction_min_width   = "48"'.";\n";
-        $js .= '    PTS.mapaction_min_height  = "18"'.";\n";
+        $js .= '    PTS.mapaction_min_width   = 48;'."\n";
+        $js .= '    PTS.mapaction_min_height  = 18;'."\n";
 
         $js .= '    PTS.user_container        = "div#fgroup_id_awardtoelements fieldset.fgroup";'."\n";
-        $js .= '    PTS.user_min_width        = "60"'.";\n";
-        $js .= '    PTS.user_min_height       = "18"'.";\n";
+        $js .= '    PTS.user_min_width        = 60;'."\n";
+        $js .= '    PTS.user_min_height       = 18;'."\n";
 
         $js .= '    PTS.points_container      = "div#fgroup_id_pointselements fieldset.fgroup";'."\n";
-        $js .= '    PTS.points_min_width      = "48"'.";\n";
-        $js .= '    PTS.points_min_height     = "24"'.";\n";
+        $js .= '    PTS.points_min_width      = 48;'."\n";
+        $js .= '    PTS.points_min_height     = 24;'."\n";
 
         $js .= '    PTS.contacting_server_msg = "'.$this->js_safe($contacting_server_msg).'";'."\n";
         $js .= '    PTS.awardpoints_ajax_php  = "'.$this->js_safe($awardpoints_ajax_php).'";'."\n";
-        $js .= '    PTS.groupid               = "'.$custom->groupid.'";'."\n";
+        $js .= '    PTS.groupid               = '.intval($custom->groupid).";\n";
         $js .= '    PTS.sesskey               = "'.sesskey().'";'."\n";
 
         $js .= '    PTS.cleanup               = {duration : 400};'."\n";
@@ -650,6 +651,8 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.rotate                = {duration : 400};'."\n";
         $js .= '    PTS.resize                = {duration : 400};'."\n";
         $js .= '    PTS.shuffle               = {duration : 400};'."\n";
+
+        $js .= '    PTS.allowselectable       = '.intval($custom->config->allowselectable).';'."\n";
 
         $js .= '//]]>'."\n";
         $js .= '</script>'."\n";

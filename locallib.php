@@ -43,6 +43,47 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * Get the all config settings for this feedback points object
+     * and supply defaults values for any settings not yet defined
+     *
+     * @param $plugin name (usually "assignfeedback_points")
+     * @return object
+     */
+    public function get_all_config($plugin) {
+
+        // get the site wide defaults for this $plugin
+        $config = get_config($plugin);
+
+        // add defaults for integer fields
+        foreach (self::get_integerfields() as $name => $value) {
+            if (! property_exists($config, $name)) {
+                $config->$name = $value;
+            }
+        }
+
+        // add defaults for boolean fields
+        foreach (self::get_booleanfields() as $name => $value) {
+            if (! property_exists($config, $name)) {
+                $config->$name = $value;
+            }
+        }
+
+        // override with settings for this assign(ment) activity
+        if ($this->assignment->has_instance()) {
+            foreach ($this->get_config() as $name => $value) {
+                if (! is_numeric($name)) {
+                    $config->$name = $value;
+                }
+            }
+        }
+
+        unset($config->default);
+        unset($config->enabled);
+
+        return $config;
+    }
+
+    /**
      * Get the default setting for feedback points plugin
      *
      * @param MoodleQuickForm $mform The form to add elements to
@@ -51,15 +92,8 @@ class assign_feedback_points extends assign_feedback_plugin {
     public function get_settings(MoodleQuickForm $mform) {
         $plugin = 'assignfeedback_points';
 
-        // get the site wide defaults for this $plugin
-        $config = get_config($plugin);
-
-        // override with settings for this assign(ment) activity
-        if ($this->assignment->has_instance()) {
-            foreach ($this->get_config() as $name => $value) {
-                $config->$name = $value;
-            }
-        }
+        // get config settings
+        $config = $this->get_all_config($plugin);
 
         // add header for new section
         // (because there are quite a few settings)
@@ -100,8 +134,10 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'showpointstoday' => 1,
                      'showpointstotal' => 1,
                      'showcomments'    => 1,
-                     'showfeedback'    => 1,
-                     'showlink'        => 1);
+                     'showfeedback'    => 0,
+                     'showlink'        => 1,
+                     'showfeedback'    => 0,
+                     'allowselectable' => 0);
     }
 
     /**
@@ -172,6 +208,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         if (isset($config->$name)) {
             $default = $config->$name;
         }
+
         if (isset($default)) {
             $mform->setDefault($name, $default);
         }
@@ -327,9 +364,9 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // cancel if necessary - mimic is_cancelled() in "lib/formslib.php"
         if (optional_param('cancel', false, PARAM_RAW)) {
-            $params = array('id' => $cm->id, 'action' => 'grading');
+            $params = array('id' => $cm->id);
             redirect(new moodle_url('view.php', $params));
-            return;
+            return; // script finishes here
         }
 
         $params = array(
@@ -372,7 +409,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             'context'    => $context,
             'courseid'   => $course->id,
             'assignid'   => $instance->id,
-            'config'     => $this->get_config(),
+            'config'     => $this->get_all_config($plugin),
             'awardto'    => $userlist,
             'feedback'   => $feedback
         );
@@ -915,7 +952,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
 
             $name = 'awardto';
-            if ($multipleusers) {
+            if ((isset($_GET[$name]) && is_array($_GET[$name])) || (isset($_POST[$name]) && is_array($_POST[$name]))) {
                 $userids = optional_param_array($name, array(), PARAM_INT);
             } else if ($userid = optional_param($name, 0, PARAM_INT)) {
                 $userids = array($userid => 1);
@@ -1074,7 +1111,14 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
                 $feedback = get_string($feedback->stringname, $plugin, $feedback);
                 if ($undo==0 && count($undoparams['pointsid'])) {
-                    $undoparams['pointsid'] = implode(',', $undoparams['pointsid']);
+                    if (count($undoparams['pointsid'])==1) {
+                        $undoparams['pointsid'] = reset($undoparams['pointsid']);
+                    } else {
+                        foreach ($undoparams['pointsid'] as $i => $id) {
+                            $undoparams['pointsid['.$i.']'] = $id;
+                        }
+                        unset($undoparams['pointsid']);
+                    }
                     $link = new moodle_url('/mod/assign/view.php', $undoparams);
                     $link = html_writer::link($link, get_string('undo', $plugin), array('id' => 'undolink'));
                     $feedback .= " $link";

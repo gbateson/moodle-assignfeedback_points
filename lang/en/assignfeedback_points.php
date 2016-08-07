@@ -23,6 +23,8 @@
  */
 $string['pluginname'] = 'Feedback points';
 
+$string['allowselectable_help'] = 'If this setting is enabled, jQuery\'s selectable functionality can be used to selected multiple students at once.';
+$string['allowselectable'] = 'Allow selectable functionality';
 $string['automatically'] = 'Automatically';
 $string['awardmanypointsmanyusers'] = '{$a->points} points were awarded to {$a->usercount} users: {$a->userlist}';
 $string['awardmanypointsoneuser'] = '{$a->points} points were awarded to {$a->userlist}';
@@ -42,6 +44,10 @@ $string['default'] = 'Enabled by default';
 $string['delete'] = 'Delete';
 $string['enabled_help'] = 'If enabled, the marker can award points to other users.';
 $string['enabled'] = 'Incremental points';
+$string['feedback_help'] = 'Messages will be displayed here regarding the transfer, via AJAX to the Moodle server, of data about point awards.
+
+You can control whether this item is visible or hidden using the the "Show AJAX feedback" item in the "Settings" section at the bottom of this page.';
+$string['feedback'] = 'Feedback';
 $string['horizontal'] = 'Horizontal';
 $string['increment_help'] = 'the number of points in each step between the minimum number of points and the maximum number of points';
 $string['increment'] = 'Points increment';

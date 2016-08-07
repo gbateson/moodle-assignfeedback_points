@@ -27,6 +27,17 @@ if (typeof(window.PTS)=="undefined") {
     window.PTS = {};
 }
 
+// array of selected elements
+PTS.selected = $([]);
+
+// current offset of element being dragged
+// this will be added to all selected elements
+PTS.offset = {top: 0, left: 0};
+
+// a unique number for debugging purposes
+// console.log((PTS.i++) + ": some message");
+PTS.i = 1;
+
 /**
  * set_feedback
  *
@@ -56,12 +67,12 @@ PTS.set_ajax_feedback = function(msg) {
  */
 PTS.set_feedback_visibility = function() {
     var feedback = $("#feedback");
-    if (PTS.showfeedback==1 || (PTS.showfeedback==2 && feedback.html())) {
-        var display = "initial";
+    if (PTS.showfeedback==2) {
+        var css = {"visibility" : (feedback.html() ? "initial" : "hidden")}
     } else {
-        var display = "none";
+        var css = {"display" : (PTS.showfeedback==1 ? "initial" : "none")};
     }
-    feedback.parents("div.fitem").css("display", display);
+    feedback.parents("div.fitem").css(css);
 }
 
 /**
@@ -85,6 +96,7 @@ PTS.get_input_userid = function(input) {
 /**
  * set_awardto_xy
  *
+ * @param span a DOM element
  * @return void
  */
 PTS.set_awardto_xy = function(span, x, y) {
@@ -125,10 +137,11 @@ PTS.clear_map_action = function() {
 /**
  * do_map_action
  *
+ * @param object event
  * @param object input
  * @return void
  */
-PTS.do_map_action = function(input) {
+PTS.do_map_action = function(event, input) {
     var fnc = "do_map_" + input.val();
     if (PTS[fnc]) {
         PTS[fnc]();
@@ -143,19 +156,21 @@ PTS.do_map_action = function(input) {
 PTS.do_map_reset = function() {
 
     // convert spans to relative position
-    $(PTS.user_container + " span").each(function(){
+    $(PTS.user_container + " > span").each(function(){
         $(this).find("input[type=checkbox],input[type=radio]").each(function(){
             var userid = PTS.get_input_userid($(this));
             if (userid) {
                 $("#id_awardtox_" + userid).val("");
                 $("#id_awardtoy_" + userid).val("");
-                $(this).parent().css({"position" : "relative", "left" : "0px", "top" : "0px"});
+                $(this).parent().css({"position" : "relative",
+                                      "left" : "0px",
+                                      "top" : "0px"});
             }
         });
     });
 
     // convert spans to absolute position
-    PTS.set_span_position($(PTS.user_container + " span"));
+    PTS.set_span_position($(PTS.user_container + " > span"));
 
     // resize the user-map
     PTS.do_map_resize();
@@ -170,7 +185,7 @@ PTS.do_map_cleanup = function() {
     var separate = false;
     var grid = {x : $("#id_userwidth").val(),
                 y : $("#id_userheight").val()}
-    $(PTS.user_container + " span").each(function(){
+    $(PTS.user_container + " > span").each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var css = {};
             var p = $(this).position();
@@ -195,7 +210,7 @@ PTS.do_map_cleanup = function() {
                 }
             }
             if (x || y) {
-                PTS.set_awardto_xy($(this, p.left + x, p.top + y));
+                PTS.set_awardto_xy(this, p.left + x, p.top + y);
                 $(this).animate(css, PTS.cleanup.duration);
                 PTS.update_map = true;
                 separate = true;
@@ -249,7 +264,7 @@ PTS.do_map_separate = function(resize) {
     //   [y] : y-coordinate
     //   [x] : x-coordinate
     var spans = [];
-    $(PTS.user_container + " span").each(function(){
+    $(PTS.user_container + " > span").each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var p = $(this).position();
             var x = parseInt(p.left);
@@ -429,7 +444,7 @@ PTS.positions = {
             this.fix(span, best.x, best.y);
             var css = {"left" : best.x, "top" : best.y};
             $(span).animate(css, PTS.separate.duration);
-            PTS.set_awardto_xy($(this), best.x, best.y);
+            PTS.set_awardto_xy(span, best.x, best.y);
         } else {
             // no positions were available,
             // so add a new row for this span
@@ -485,7 +500,7 @@ PTS.do_map_shuffle = function() {
     var i = 0;
     var spans = [];
     var indexes = [];
-    $(PTS.user_container + " span").each(function(){
+    $(PTS.user_container + " > span").each(function(){
         if ($(this).hasClass("ui-draggable")) {
             spans[i] = this;
             indexes[i] = i++;
@@ -563,7 +578,7 @@ PTS.do_map_resize = function() {
 
     // get minimum (x,y) coordinates
     // and maximum w(idth) and h(eight)
-    $(PTS.user_container + " span").each(function(){
+    $(PTS.user_container + " > span").each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var p = $(this).position();
             x = (x===null ? p.left : Math.min(x, p.left));
@@ -577,10 +592,10 @@ PTS.do_map_resize = function() {
     if (x || y) {
         css = {"left" : (x > 0  ? "-=" + x : "+=" + Math.abs(x)),
                "top"  : (y > 0  ? "-=" + y : "+=" + Math.abs(y))}
-        $(PTS.user_container + " span").each(function(){
+        $(PTS.user_container + " > span").each(function(){
             if ($(this).hasClass("ui-draggable")) {
                 var complete = function() {
-                    PTS.set_awardto_xy($(this));
+                    PTS.set_awardto_xy(this);
                 };
                 $(this).animate(css, PTS.resize.duration, "swing", complete);
             }
@@ -616,14 +631,14 @@ PTS.do_map_resize = function() {
 PTS.do_map_rotate = function() {
     var resize = false;
     var x_max = $(PTS.user_container).width();
-    $(PTS.user_container + " span").each(function(){
+    $(PTS.user_container + " > span").each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var p = $(this).position();
             var w = $(this).outerWidth();
             var h = $(this).outerHeight();
             var x = Math.round((w / h) * p.top);
             var y = Math.round((h / w) * (x_max - p.left - w));
-            PTS.set_awardto_xy($(this), x, y);
+            PTS.set_awardto_xy(this, x, y);
             var css = {"left" : x, "top" : y};
             $(this).animate(css, PTS.rotate.duration);
             resize = true;
@@ -646,16 +661,18 @@ PTS.do_map_rotate = function() {
  */
 PTS.update_points_html = function(input, type, points) {
     var regexp = new RegExp("-?[0-9]+$");
-    var html = input.parent().find("em.points" + type).html();
-    var match = html.match(regexp);
-    if (match) {
-        points = parseInt(points);
-        if (PTS.pointstype==0) { // incremental points
-            points += parseInt(html.substring(match.index));
+    input.each(function(){
+        var html = $(this).parent().find("em.points" + type).html();
+        var match = html.match(regexp);
+        if (match) {
+            var newpoints = parseInt(points);
+            if (PTS.pointstype==0) { // incremental points
+                newpoints += parseInt(html.substring(match.index));
+            }
+            html = html.substring(0, match.index) + newpoints;
+            $(this).parent().find("em.points" + type).html(html);
         }
-        html = html.substring(0, match.index) + points;
-        input.parent().find("em.points" + type).html(html);
-    }
+    });
 }
 
 /**
@@ -713,7 +730,19 @@ PTS.send_points_via_ajax = function(input) {
     if (commenttext=="") {
         commenttext = $("#id_commenttext").val();
     }
-    var userid = PTS.get_input_userid(input);
+    if (input.length==0) {
+        var userid = 0; // shouldn't happen !!
+    } else if (input.length==1) {
+        var userid = PTS.get_input_userid(input)
+    } else if (input.length) {
+        var userid = [];
+        input.each(function(){
+            var uid = PTS.get_input_userid($(this));
+            if (uid) {
+                userid[uid] = 1;
+            }
+        })
+    }
     if (userid) {
         var data = {ajax        : 1,
                     points      : points,
@@ -746,32 +775,32 @@ PTS.send_points_via_ajax = function(input) {
 /**
  * set_span_size_color
  *
- * @param object  span
+ * @param object  spans
  * @param integer w
  * @param integer h
  * @param string display (optional)
  * @return void
  */
-PTS.set_span_size_color = function(span, w, h, display) {
-    span.each(function(){
+PTS.set_span_size_color = function(spans, w, h, display) {
+    spans.each(function(){
         if (display==null) {
             display = PTS.elementdisplay;
         }
         $(this).find("input").css("display", display);
     });
-    span.each(function(){
+    spans.each(function(){
         w = Math.max($(this).width(), w);
     });
-    span.each(function(){
+    spans.each(function(){
         $(this).css("min-width", w);
     });
-    span.each(function(){
+    spans.each(function(){
         h = Math.max($(this).height(), h);
     });
-    span.each(function(){
+    spans.each(function(){
         $(this).css("min-height", h);
     });
-    span.each(function(){
+    spans.each(function(){
         $(this).find("input").each(function(){
             if ($(this).prop("checked")) {
                 $(this).parent().addClass("checked");
@@ -809,12 +838,12 @@ PTS.set_usermap_size = function(map) {
 /**
  * set_span_position
  *
- * @param object span
+ * @param object spans
  * @return void
  */
-PTS.set_span_position = function(span) {
+PTS.set_span_position = function(spans) {
     var update = false;
-    $(span.get().reverse()).each(function(){
+    $(spans.get().reverse()).each(function(){
         var p = $(this).position();
         var x = p.left;
         var y = p.top;
@@ -826,10 +855,14 @@ PTS.set_span_position = function(span) {
                 if (awardtox==="" || awardtoy==="") {
                     $("#id_awardtox_" + userid).val(x);
                     $("#id_awardtoy_" + userid).val(y);
-                    $(this).parent().css({"position" : "absolute", "left" : x+"px", "top" : y+"px"});
+                    $(this).parent().css({"position" : "absolute",
+                                          "left" : x + "px",
+                                          "top" : y + "px"});
                     PTS.update_map = true;
                 } else {
-                    $(this).parent().css({"position" : "absolute", "left" : awardtox+"px", "top" : awardtoy+"px"});
+                    $(this).parent().css({"position" : "absolute",
+                                          "left" : awardtox + "px",
+                                          "top" : awardtoy + "px"});
                 }
             }
         });
@@ -839,25 +872,25 @@ PTS.set_span_position = function(span) {
 /**
  * set_user_size
  *
- * @param object span
+ * @param object spans
  * @return void
  */
-PTS.set_user_size = function(span) {
+PTS.set_user_size = function(spans) {
     var widths  = []; // width => frequency
     var heights = []; // height => frequency
-    span.each(function(){
+    spans.each(function(){
         // width           : content width
         // outerWidth      : width + padding + border
         // outerWidth(true): outerWidth + margin
         var w = $(this).outerWidth(true);
         var h = $(this).outerHeight(true);
         if (widths.hasOwnProperty(w)) {
-            widths[w] ++;
+            widths[w]++;
         } else {
             widths[w] = 1;
         }
         if (heights.hasOwnProperty(h)) {
-            heights[h] ++;
+            heights[h]++;
         } else {
             heights[h] = 1;
         }
@@ -887,48 +920,114 @@ PTS.set_user_size = function(span) {
 /**
  * set_span_event_handlers
  *
- * @param object   span
+ * @param object   spans
  * @param function onclick, additional onclick function, or FALSE
  * @return void
  */
-PTS.set_span_event_handlers = function(span, onclick) {
-    span.each(function(){
-        $(this).find("input").click(function(event){
-            if ($(this).prop("checked")) {
+PTS.set_span_event_handlers = function(spans, onclick) {
+    spans.each(function(){
+
+        $(this).find("input").click(function(event, ui){
+            if ($(this).parent().hasClass("ui-selectee") && event.metaKey) {
+                // ignore Ctrl-click on selectable items
+                event.preventDefault();
+            } else if ($(this).prop("checked")) {
                 $(this).parent().addClass("checked");
                 if ($(this).prop("type")=="radio") {
                     $(this).parent().siblings().removeClass("checked");
-                }
-                if (onclick) {
-                    onclick($(this));
                 }
             } else {
                 $(this).parent().removeClass("checked");
             }
         });
-        $(this).click(function(event){
-            if (event.target.nodeName.toUpperCase()=="SPAN") {
-                if ($(this).hasClass("disableclick")) {
-                    $(this).removeClass("disableclick");
-                } else {
-                    var input = $(this).find("input");
+
+        $(this).click(function(event, ui){
+            var siblings = $(this).siblings();
+
+            if ($(event.target).closest("label").length) {
+                nodeName = "LABEL";
+            } else if (event.target.nodeName=="INPUT") {
+                nodeName = "INPUT";
+            } else {
+                nodeName = "SPAN";
+            }
+
+            var is_selectable = $(this).hasClass("ui-selectee");
+            var toggle_selected = (is_selectable && event.metaKey);
+            var trigger_onclick = (toggle_selected ? false : true);
+
+            if (nodeName=="LABEL") {
+                trigger_onclick = false;
+            } else {
+                if ($(this).hasClass("ui-dragging")) {
+                    $(this).removeClass("ui-dragging");
+                    toggle_selected = false;
+                    trigger_onclick = false;
+                }
+            }
+            if (nodeName=="INPUT") {
+                toggle_selected = false;
+            }
+            if (toggle_selected) {
+                $(this).toggleClass("ui-selected");
+            }
+            if (trigger_onclick) {
+                var input = $(this).find("input").first();
+                if (nodeName=="SPAN") {
                     if (input.prop("checked")==false) {
                         input.prop("checked", true);
                         $(this).addClass("checked");
                         if (input.prop("type")=="radio") {
-                            $(this).siblings().removeClass("checked");
-                        }
-                        if (onclick) {
-                            onclick(input);
+                            siblings.removeClass("checked");
                         }
                     } else if (input.prop("type")=="checkbox") {
                         input.prop("checked", false);
                         $(this).removeClass("checked");
                     }
                 }
+                if (input.prop("checked") && onclick) {
+                    if (is_selectable) {
+                        var selected = $(this).siblings(".ui-selected");
+                        var notselected = $(this).siblings(":not(.ui-selected)");
+                    } else {
+                        var selected = null;
+                        var notselected = null;
+                    }
+                    if (is_selectable && $(this).hasClass("ui-selected")) {
+                        // do onclick for ALL selected items
+                        selected.addClass("checked");
+                        notselected.removeClass("checked");
+                        if (input.prop("type")=="radio") {
+                            siblings.andSelf().find("input").prop("checked", false);
+                        } else if (input.prop("type")=="checkbox") {
+                            selected.find("input").prop("checked", true);
+                            notselected.find("input").prop("checked", false);
+                        }
+                        onclick(event, selected.andSelf().find("input"));
+                    } else {
+                        // do onclick for ONE single item
+                        if (selected) {
+                            selected.removeClass("ui-selected");
+                        }
+                        onclick(event, input);
+                    }
+                }
             }
         });
     });
+}
+
+/**
+ * do_user_click
+ *
+ * @param object event
+ * @param object input
+ * @return void
+ */
+PTS.do_user_click = function(event, input) {
+    if (PTS.sendimmediately) {
+        PTS.send_points_via_ajax(input);
+    }
 }
 
 /**
@@ -939,10 +1038,9 @@ PTS.set_span_event_handlers = function(span, onclick) {
 $(document).ready(function() {
 
     var user_container = $(PTS.user_container);
-    var action_spans   = $(PTS.mapaction_container + " span");
-    var user_spans     = $(PTS.user_container      + " span");
-    var points_spans   = $(PTS.points_container    + " span");
-    var do_user_action = (PTS.sendimmediately ? PTS.send_points_via_ajax : false);
+    var action_spans   = $(PTS.mapaction_container + " > span");
+    var user_spans     = $(PTS.user_container      + " > span");
+    var points_spans   = $(PTS.points_container    + " > span");
 
     // this flag will be set to true
     // if the user map changes size
@@ -960,7 +1058,7 @@ $(document).ready(function() {
     PTS.set_span_position(user_spans);
 
     PTS.set_span_event_handlers(action_spans, PTS.do_map_action);
-    PTS.set_span_event_handlers(user_spans,   do_user_action);
+    PTS.set_span_event_handlers(user_spans,   PTS.do_user_click);
     PTS.set_span_event_handlers(points_spans, false);
 
     // send new map settings to server
@@ -972,12 +1070,42 @@ $(document).ready(function() {
         scroll: true,
         stack: "span",
         start: function(event, ui) {
-            $(this).addClass("disableclick");
+            $(this).addClass("ui-dragging");
+            if ($(this).hasClass("ui-selected")){
+                PTS.selected = $("span.ui-selected").each(function(){
+                    $(this).data("offset", $(this).offset());
+                });
+            } else {
+                PTS.selected = $([]);
+                $(this).siblings().removeClass("ui-selected");
+            }
+            PTS.offset = $(this).offset();
+        },
+        drag: function(event, ui) {
+            var dt = (ui.position.top - PTS.offset.top);
+            var dl = (ui.position.left - PTS.offset.left);
+            // adjust the offset of all selected elements
+            // except $(this) - the element being dragged
+            PTS.selected.not(this).each(function(){
+                var offset = $(this).data("offset");
+                $(this).css({top : offset.top + dt,
+                             left: offset.left + dl});
+            });
         },
         stop: function(event, ui) {
-            PTS.set_awardto_xy($(this));
+            PTS.selected.not(this).each(function(){
+                PTS.set_awardto_xy(this);
+            });
+            PTS.set_awardto_xy(this);
             PTS.update_map_via_ajax();
         }
+    });
+
+    // make the user container selectable
+    user_container.selectable({
+        cancel: "div.ui-resizable-handle",
+        disabled: (PTS.allowselectable ? false : true),
+        filter: "span"
     });
 
     var handles = {"e":"egrip", "se":"segrip", "s":"sgrip"};
@@ -1032,3 +1160,4 @@ $(document).ready(function() {
     var input = $(PTS.layouts_container + " input[name=layouts]");
     input.parent().css({"display" : "inline-block", "min-width" : "76px"});
 });
+
