@@ -64,6 +64,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         $this->add_field_groups($mform, $custom, $plugin);
         $this->add_field_feedback($mform, $custom, $plugin);
         $this->add_field_mapaction($mform, $custom, $plugin);
+        $this->add_field_mapmode($mform, $custom, $plugin);
         $this->add_field_awardto($mform, $custom, $plugin);
         $this->add_field_points($mform, $custom, $plugin);
         $this->add_field_commenttext($mform, $custom, $plugin);
@@ -360,7 +361,31 @@ class assignfeedback_points_award_points_form extends moodleform {
         $mform->addGroup($elements, $name.'elements', $label, '', false);
         $mform->addHelpButton($name.'elements', $name, $plugin);
         $mform->setType($name, PARAM_ALPHA);
-        $mform->setDefault($name, 'none');
+        $mform->setDefault($name, "none");
+    }
+
+    /**
+     * add_field_mapmode
+     *
+     * @param object  $mform
+     * @param string  $custom
+     * @param string  $plugin
+     */
+    private function add_field_mapmode($mform, $custom, $plugin) {
+        $name = 'mapmode';
+        $label = get_string($name, $plugin);
+        $mapmodes = array('award'  => get_string('award',  $plugin),
+                          'select' => get_string('select'),
+                          'absent' => get_string('absent', $plugin),
+                          'report' => get_string('report'));
+        $elements = array();
+        foreach ($mapmodes as $value => $text) {
+            $elements[] = $mform->createElement('radio', $name, '', $text, $value);
+        }
+        $mform->addGroup($elements, $name.'elements', $label, '', false);
+        $mform->addHelpButton($name.'elements', $name, $plugin);
+        $mform->setType($name, PARAM_ALPHA);
+        $mform->setDefault($name, "award");
     }
 
     /**
@@ -632,6 +657,10 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.mapaction_container   = "div#fgroup_id_mapactionelements fieldset.fgroup";'."\n";
         $js .= '    PTS.mapaction_min_width   = 48;'."\n";
         $js .= '    PTS.mapaction_min_height  = 18;'."\n";
+
+        $js .= '    PTS.mapmode_container     = "div#fgroup_id_mapmodeelements fieldset.fgroup";'."\n";
+        $js .= '    PTS.mapmode_min_width     = 48;'."\n";
+        $js .= '    PTS.mapmode_min_height    = 18;'."\n";
 
         $js .= '    PTS.user_container        = "div#fgroup_id_awardtoelements fieldset.fgroup";'."\n";
         $js .= '    PTS.user_min_width        = 60;'."\n";

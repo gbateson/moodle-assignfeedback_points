@@ -50,6 +50,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 **********************************/
 
 body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span,
+body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span,
 body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span,
 body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span {
     border-style    :   solid;
@@ -67,10 +68,11 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 }
 
 /**********************************
-** actions, users: labels
+** actions, modes: labels
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span label {
+body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span label,
+body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span label {
     font-size   : 12px;
     padding     :  0px;
 }
@@ -114,6 +116,23 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 }
 
 /**********************************
+** mapmode: normal, hover, checked
+**********************************/
+
+body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span {
+    background-color : #ffcce6; /* gentle pink */
+    border-color     : #ff0080; /* dark pink */
+}
+
+body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span:hover {
+    background-color : #ff99cc; /* pale pink */
+}
+
+body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span.checked {
+    background-color : #ff66b3; /* dark pink */
+}
+
+/**********************************
 ** users: normal, hover, selecting,
 ** selected checked, nousersfound
 ** NOTE: order is important :-)
@@ -126,6 +145,10 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 
 body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span:hover {
     background-color : #a5ffa5; /* pale green */
+}
+
+body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.absent {
+    background-color : #eeeeee; /* light grey */
 }
 
 body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.ui-selecting {

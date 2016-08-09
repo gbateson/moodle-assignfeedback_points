@@ -23,9 +23,11 @@
  */
 $string['pluginname'] = 'Feedback points';
 
+$string['absent'] = 'Absent';
 $string['allowselectable_help'] = 'If this setting is enabled, jQuery\'s selectable functionality can be used to selected multiple students at once.';
 $string['allowselectable'] = 'Allow selectable functionality';
 $string['automatically'] = 'Automatically';
+$string['award'] = 'Award';
 $string['awardmanypointsmanyusers'] = '{$a->points} points were awarded to {$a->usercount} users: {$a->userlist}';
 $string['awardmanypointsoneuser'] = '{$a->points} points were awarded to {$a->userlist}';
 $string['awardnopoints'] = 'No points were awarded';
@@ -78,6 +80,8 @@ $string['mapaction_help'] = 'Click these buttons to perform operations on the us
 : The entire user-map will be rotated by ¼, ½, or ¾ or a full turn.';
 $string['mapaction'] = 'User-map action';
 $string['maxpoints_help'] = 'the maximum number of points for any single award of points';
+$string['mapmode'] = 'User-map mode';
+$string['mapmode_help'] = 'the action that will be taken when you click on a user in the user-map';
 $string['maxpoints'] = 'Maximum points';
 $string['minpoints_help'] = 'the minimum number of points for any single award of points - this can be a negative number';
 $string['minpoints'] = 'Minimum points';
