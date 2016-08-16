@@ -726,7 +726,53 @@ PTS.update_map_via_ajax = function() {
  * @return void
  */
 PTS.send_points_via_ajax = function(input) {
-    var points = $(PTS.points_container + " > span > input[name=points]:checked").val();
+
+    switch (PTS.gradingmethod) {
+        case "rubric":
+
+            var points = 0;
+            var advancedgrading = [];
+
+            // a RegExp to parse the name of a rubric criteria element (radio or checkbox)
+            // e.g. advancedgrading[criteria][1][levelid]
+            var regexp = new RegExp("^[a-z]+\\[([a-z]+)\\]\\[([0-9]+)\\]\\[([a-z]+)\\]$");
+            // [0] : the full element name, starting with "advancedgrading"
+            // [1] : "criteria"
+            // [2] : integer (a criteria id)
+            // [3] : "levelid" or "remark"
+
+            // select all radio and textarea elements within the rubric table
+            var selector = PTS.rubric_container + " input[type=radio][name^=advancedgrading]:checked,"
+                         + PTS.rubric_container + " textarea[name^=advancedgrading]";
+
+            $(selector).each(function(){
+                var name = $(this).prop("name");
+                var type = $(this).prop("type");
+                var value = $(this).val();
+                advancedgrading[name] = value;
+                if (type=="radio") {
+                    var m = name.match(regexp);
+                    if (m) {
+                        // the selector for the SPAN element containing the score for this criteria level
+                        // e.g. <span id="advancedgrading-criteria-2-levels-7-score" ...>
+                        var selector = "#advancedgrading-" + m[1] + "-" + m[2] + "-levels-" + value + "-score";
+                        points += parseInt($(selector).html());
+                    }
+                }
+            });
+            break
+
+        case "guide":
+            var points = 0;
+            var advancedgrading = false;
+            break;
+
+        default: // simple direct grading
+            var points = $(PTS.points_container + " > span > input[name=points]:checked").val();
+            var advancedgrading = false;
+            break;
+    }
+
     if ($("#id_commenttextmenu").length==0) {
         var commenttext = "";
     } else {
@@ -735,6 +781,7 @@ PTS.send_points_via_ajax = function(input) {
     if (commenttext=="") {
         commenttext = $("#id_commenttext").val();
     }
+
     if (input.length==0) {
         var userid = 0; // shouldn't happen !!
     } else if (input.length==1) {
@@ -748,6 +795,7 @@ PTS.send_points_via_ajax = function(input) {
             }
         })
     }
+
     if (userid) {
         var data = {ajax        : 1,
                     points      : points,
@@ -756,6 +804,13 @@ PTS.send_points_via_ajax = function(input) {
                     group       : PTS.groupid,
                     groupid     : PTS.groupid,
                     sesskey     : PTS.sesskey}
+        if (advancedgrading) {
+            for (var name in advancedgrading) {
+                data[name] = advancedgrading[name];
+            }
+            var selector = "input[type=hidden][name=advancedgradinginstanceid]";
+            data.advancedgradinginstanceid = $(selector).val();
+        }
         PTS.set_feedback(PTS.contacting_server_msg);
         $.ajax({
             cache   : false,

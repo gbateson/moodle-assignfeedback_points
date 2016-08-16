@@ -468,10 +468,9 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             // get ids from incoming data
             $name = 'pointsid';
-            if ((isset($_GET[$name]) && is_array($_GET[$name])) || (isset($_POST[$name]) && is_array($_POST[$name]))) {
-                $ids = optional_param_array($name, 0, PARAM_INT);
-            } else {
-                $ids = array(optional_param($name, 0, PARAM_INT));
+            $ids = $this->optional_param_array($name, 0, PARAM_INT);
+            if (is_scalar($ids)) {
+                $ids = array($ids);
             }
             $ids = array_filter($ids);
 
@@ -952,12 +951,9 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
 
             $name = 'awardto';
-            if ((isset($_GET[$name]) && is_array($_GET[$name])) || (isset($_POST[$name]) && is_array($_POST[$name]))) {
-                $userids = optional_param_array($name, array(), PARAM_INT);
-            } else if ($userid = optional_param($name, 0, PARAM_INT)) {
-                $userids = array($userid => 1);
-            } else {
-                $userids = array();
+            $userids = $this->optional_param_array($name, array(), PARAM_INT);
+            if (is_scalar($userids)) {
+                $userids = array($userids => 1);
             }
 
             $x = optional_param_array('awardtox', array(), PARAM_INT);
@@ -1165,7 +1161,9 @@ class assign_feedback_points extends assign_feedback_plugin {
     /**
      * get_grade_data
      *
-     * @param  object $assigngrade
+     * @param  object  $assigngrade
+     * @param  decimal $grade
+     * @param  boolean $sendnotifications
      * @return object
      */
     protected function get_grade_data($assigngrade, $grade, $sendnotifications) {
@@ -1175,8 +1173,17 @@ class assign_feedback_points extends assign_feedback_plugin {
             'grade'           => $grade,
             'applytoall'      => 0,
             'attemptnumber'   => $assigngrade->attemptnumber,
-            'sendstudentnotifications' => $sendnotifications,
+            'sendstudentnotifications' => $sendnotifications
         );
+
+        $context = $this->assignment->get_context();
+        $gradingmanager = get_grading_manager($context, 'mod_assign', 'submissions');
+        if ($gradingmethod = $gradingmanager->get_active_method()) {
+            $name = 'advancedgradinginstanceid';
+            $gradedata->$name = optional_param($name, null, PARAM_INT);
+            $name = 'advancedgrading';
+            $gradedata->$name = $this->optional_param_array($name, null, PARAM_ALPHANUM);
+        }
 
         // the "assignment->save_grade()" method
         // will call the "save()" method of each feedback plugin,
@@ -1545,5 +1552,32 @@ class assign_feedback_points extends assign_feedback_plugin {
         $method = array_shift($args);
         $callback = array($textlib, $method);
         return call_user_func_array($callback, $args);
+    }
+
+    /**
+     * optional_param_array
+     *
+     * a wrapper method to offer consistent API for getting array parameters
+     *
+     * @param string $name the name of the parameter
+     * @param mixed $default
+     * @param mixed $type one of the PARAM_xxx constants
+     * @param mixed $recursive (optional, default = true)
+     * @return either an array of form values or the $default value
+     */
+    public static function optional_param_array($name, $default, $type, $recursive=true) {
+
+        switch (true) {
+            case isset($_POST[$name]): $param = $_POST[$name]; break;
+            case isset($_GET[$name]) : $param = $_GET[$name]; break;
+            default: return $default; // param not found
+        }
+
+        if (is_array($param) && function_exists('clean_param_array')) {
+            return clean_param_array($param, $type, $recursive);
+        }
+
+        // not an array (or Moodle <= 2.1)
+        return clean_param($param, $type);
     }
 }

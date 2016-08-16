@@ -49,6 +49,8 @@ class assignfeedback_points_award_points_form extends moodleform {
         $custom = $this->_customdata;
         $plugin = 'assignfeedback_points';
 
+        $gradingmanager = get_grading_manager($custom->context, 'mod_assign', 'submissions');
+
         // ========================
         // set form id (for CSS)
         // ========================
@@ -66,15 +68,15 @@ class assignfeedback_points_award_points_form extends moodleform {
         $this->add_field_mapaction($mform, $custom, $plugin);
         $this->add_field_mapmode($mform, $custom, $plugin);
         $this->add_field_awardto($mform, $custom, $plugin);
-        $this->add_field_points($mform, $custom, $plugin);
-        $this->add_field_commenttext($mform, $custom, $plugin);
+        $this->add_field_points($mform, $custom, $plugin, $gradingmanager);
+        $this->add_field_commenttext($mform, $custom, $plugin, $gradingmanager);
 
         // ========================
         // layouts section
         // ========================
         //
         $this->add_heading($mform, 'layouts', $plugin, false);
-        $this->add_field_layouts($mform, $custom, $plugin);
+        $this->add_field_layouts($mform, $custom, $plugin, $gradingmanager);
 
         // ========================
         // settings section
@@ -118,7 +120,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         // jQuery (javascript)
         // ========================
         //
-        $this->add_field_jquery($mform, $custom, $plugin);
+        $this->add_field_jquery($mform, $custom, $plugin, $gradingmanager);
     }
 
     /**
@@ -153,7 +155,7 @@ class assignfeedback_points_award_points_form extends moodleform {
      * add_field_groups
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
      */
     private function add_field_groups($mform, $custom, $plugin) {
@@ -175,7 +177,7 @@ class assignfeedback_points_award_points_form extends moodleform {
      * add_field_feedback
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
      */
     private function add_field_feedback($mform, $custom, $plugin) {
@@ -192,7 +194,7 @@ class assignfeedback_points_award_points_form extends moodleform {
      * add_field_awardto
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
      */
     private function add_field_awardto($mform, $custom, $plugin) {
@@ -341,7 +343,7 @@ class assignfeedback_points_award_points_form extends moodleform {
      * add_field_mapaction
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
      */
     private function add_field_mapaction($mform, $custom, $plugin) {
@@ -368,7 +370,7 @@ class assignfeedback_points_award_points_form extends moodleform {
      * add_field_mapmode
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
      */
     private function add_field_mapmode($mform, $custom, $plugin) {
@@ -392,46 +394,77 @@ class assignfeedback_points_award_points_form extends moodleform {
      * add_field_points
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
+     * @param object  $gradingmanager
      */
-    private function add_field_points($mform, $custom, $plugin) {
-        $name = 'points';
-        $label = get_string($name, $plugin);
-        $min = (empty($custom->config->minpoints) ? 0 : $custom->config->minpoints);
-        $inc = (empty($custom->config->increment) ? 0 : $custom->config->increment);
-        $max = (empty($custom->config->maxpoints) ? 0 : $custom->config->maxpoints);
-        if ($max > $min) {
-            $inc = max(1, $inc);
-        } else {
-            $inc = min(-1, $inc);
-        }
-        $elements = array();
-        // add a reset element if necessary
-        if (($min<0 && $max<0) || ($min>0 && $max>0)) {
-            $elements[] = $mform->createElement('radio', $name, 0, get_string('reset'), 0);
-        }
-        // add one element for each point value
-        for ($i=$min; $i<($max + $inc); $i+=$inc) {
-            if ($i > $max) {
-                $i = $max;
+    private function add_field_points($mform, $custom, $plugin, $gradingmanager) {
+        global $USER;
+
+        // the following code mimics $custom->assignment->get_grading_instance()
+        // which is a protected method (for details, see: mod/assign/locallib.php)
+        if ($gradingmethod = $gradingmanager->get_active_method()) {
+
+            // an advanced grading method e.g. "rubric" or "guide"
+            // form elements are produced by the "display_xxx()" method
+            // in the "grade/grading/form/xxx/renderer.php" script file
+            $name = 'advancedgrading';
+            $label = get_string('gradingmanagement', 'grading');
+
+            $controller = $gradingmanager->get_controller($gradingmethod);
+            if ($controller->is_form_available()) {
+                $label = $controller->get_definition()->name;
+                $gradinginstanceid = optional_param($name.'instanceid', 0, PARAM_INT);
+                $gradinginstance = $controller->get_or_create_instance($gradinginstanceid, $USER->id, null);
+                $mform->addElement('grading', $name, $label, array('gradinginstance' => $gradinginstance));
+                $mform->addElement('hidden', $name.'instanceid', $gradinginstance->get_id());
+                $mform->setType($name.'instanceid', PARAM_INT);
+            } else {
+                // shoudln't happen !!
+                $mform->addElement('static', $name, $label, $controller->form_unavailable_notification());
             }
-            $elements[] = $mform->createElement('radio', $name, $i, $i, $i);
+
+        } else {
+
+            // simple direct grading
+            $name = 'points';
+            $label = get_string($name, $plugin);
+            $min = (empty($custom->config->minpoints) ? 0 : $custom->config->minpoints);
+            $inc = (empty($custom->config->increment) ? 0 : $custom->config->increment);
+            $max = (empty($custom->config->maxpoints) ? 0 : $custom->config->maxpoints);
+            if ($max > $min) {
+                $inc = max(1, $inc);
+            } else {
+                $inc = min(-1, $inc);
+            }
+            $elements = array();
+            // add a reset element if necessary
+            if (($min<0 && $max<0) || ($min>0 && $max>0)) {
+                $elements[] = $mform->createElement('radio', $name, 0, get_string('reset'), 0);
+            }
+            // add one element for each point value
+            for ($i=$min; $i<($max + $inc); $i+=$inc) {
+                if ($i > $max) {
+                    $i = $max;
+                }
+                $elements[] = $mform->createElement('radio', $name, $i, $i, $i);
+            }
+            $mform->addGroup($elements, $name.'elements', $label, '', false);
+            $mform->addHelpButton($name.'elements', $name, $plugin);
+            $mform->setType($name, PARAM_INT);
+            $mform->setDefault($name, 0);
         }
-        $mform->addGroup($elements, $name.'elements', $label, '', false);
-        $mform->addHelpButton($name.'elements', $name, $plugin);
-        $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, 0);
     }
 
     /**
      * add_field_commenttext
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
+     * @param object  $gradingmanager
      */
-    private function add_field_commenttext($mform, $custom, $plugin) {
+    private function add_field_commenttext($mform, $custom, $plugin, $gradingmanager) {
         global $DB, $USER;
 
         $name = 'commenttext';
@@ -478,10 +511,11 @@ class assignfeedback_points_award_points_form extends moodleform {
      * add_field_layouts
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
+     * @param object  $gradingmanager
      */
-    private function add_field_layouts($mform, $custom, $plugin) {
+    private function add_field_layouts($mform, $custom, $plugin, $gradingmanager) {
         global $DB, $USER;
 
         // square   full 3/4 1/2 1/4 percent
@@ -626,10 +660,11 @@ class assignfeedback_points_award_points_form extends moodleform {
      * add jQuery javascript to make users draggable in a resizable container
      *
      * @param object  $mform
-     * @param string  $custom
+     * @param object  $custom
      * @param string  $plugin
+     * @param object  $gradingmanager
      */
-    private function add_field_jquery($mform, $custom, $plugin) {
+    private function add_field_jquery($mform, $custom, $plugin, $gradingmanager) {
 
         $contacting_server_msg = get_string('contactingserver', $plugin);
         $awardpoints_ajax_php = '/mod/assign/feedback/points/awardpoints.ajax.php';
@@ -643,6 +678,12 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '        window.PTS = {};'."\n";
         $js .= '    }'."\n";
 
+        $js .= '    PTS.gradingmethod         = "'.$gradingmanager->get_active_method().'";'."\n";
+
+        $js .= '    PTS.grading_container     = "#fitem_id_advancedgrading";'."\n";
+        $js .= '    PTS.guide_container       = "#advancedgrading-criteria tr.criterion td.levels";'."\n";
+        $js .= '    PTS.rubric_container      = "#advancedgrading-criteria tr.criterion td.levels";'."\n";
+
         $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
         $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
 
@@ -652,21 +693,21 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.showpointstotal       = '.intval($custom->config->showpointstotal).";\n";
         $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
 
-        $js .= '    PTS.layouts_container     = "div#fgroup_id_layoutselements"'.";\n";
+        $js .= '    PTS.layouts_container     = "#fgroup_id_layoutselements"'.";\n";
 
-        $js .= '    PTS.mapaction_container   = "div#fgroup_id_mapactionelements fieldset.fgroup";'."\n";
+        $js .= '    PTS.mapaction_container   = "#fgroup_id_mapactionelements fieldset.fgroup";'."\n";
         $js .= '    PTS.mapaction_min_width   = 48;'."\n";
         $js .= '    PTS.mapaction_min_height  = 18;'."\n";
 
-        $js .= '    PTS.mapmode_container     = "div#fgroup_id_mapmodeelements fieldset.fgroup";'."\n";
+        $js .= '    PTS.mapmode_container     = "#fgroup_id_mapmodeelements fieldset.fgroup";'."\n";
         $js .= '    PTS.mapmode_min_width     = 48;'."\n";
         $js .= '    PTS.mapmode_min_height    = 18;'."\n";
 
-        $js .= '    PTS.user_container        = "div#fgroup_id_awardtoelements fieldset.fgroup";'."\n";
+        $js .= '    PTS.user_container        = "#fgroup_id_awardtoelements fieldset.fgroup";'."\n";
         $js .= '    PTS.user_min_width        = 60;'."\n";
         $js .= '    PTS.user_min_height       = 18;'."\n";
 
-        $js .= '    PTS.points_container      = "div#fgroup_id_pointselements fieldset.fgroup";'."\n";
+        $js .= '    PTS.points_container      = "#fgroup_id_pointselements fieldset.fgroup";'."\n";
         $js .= '    PTS.points_min_width      = 48;'."\n";
         $js .= '    PTS.points_min_height     = 24;'."\n";
 
