@@ -1029,6 +1029,24 @@ class assign_feedback_points extends assign_feedback_plugin {
             $name = 'pointstype';
             $pointstype = $this->get_config($name);
 
+            // get advanced grading data, if any
+            $gradingdata = new stdClass();
+            $context = $this->assignment->get_context();
+            $gradingmanager = get_grading_manager($context, 'mod_assign', 'submissions');
+            if ($gradingmethod = $gradingmanager->get_active_method()) {
+                $name = 'advancedgradinginstanceid';
+                $gradingdata->$name = optional_param($name, 0, PARAM_INT);
+                $name = 'advancedgrading';
+                $gradingdata->$name = $this->optional_param_array($name, array(), PARAM_TEXT);
+                if ($gradingmethod=="guide") {
+                    $name = 'showmarkerdesc';
+                    $gradingdata->$name = optional_param($name, true, PARAM_BOOL);
+                    $name = 'showstudentdesc';
+                    $gradingdata->$name = optional_param($name, true, PARAM_BOOL);
+                }
+                $pointstype = 1; // total points
+            }
+
             // add points for each user
             foreach ($userids as $userid => $checked) {
 
@@ -1092,7 +1110,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     $grade = $points;
                 }
 
-                $gradedata = $this->get_grade_data($assigngrade, $grade, $sendnotifications);
+                $gradedata = $this->get_grade_data($assigngrade, $grade, $sendnotifications, $gradingdata);
                 $this->assignment->save_grade($userid, $gradedata);
             }
 
@@ -1164,9 +1182,10 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param  object  $assigngrade
      * @param  decimal $grade
      * @param  boolean $sendnotifications
+     * @param  object  $gradingdata required by "rubric" and "guide" grading methods
      * @return object
      */
-    protected function get_grade_data($assigngrade, $grade, $sendnotifications) {
+    protected function get_grade_data($assigngrade, $grade, $sendnotifications, $gradingdata) {
 
         $gradedata = (object)array(
             'id'              => $assigngrade->id,
@@ -1176,13 +1195,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             'sendstudentnotifications' => $sendnotifications
         );
 
-        $context = $this->assignment->get_context();
-        $gradingmanager = get_grading_manager($context, 'mod_assign', 'submissions');
-        if ($gradingmethod = $gradingmanager->get_active_method()) {
-            $name = 'advancedgradinginstanceid';
-            $gradedata->$name = optional_param($name, null, PARAM_INT);
-            $name = 'advancedgrading';
-            $gradedata->$name = $this->optional_param_array($name, null, PARAM_ALPHANUM);
+        foreach (get_object_vars($gradingdata) as $name => $value) {
+            $gradedata->$name = $value;
         }
 
         // the "assignment->save_grade()" method

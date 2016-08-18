@@ -727,50 +727,50 @@ PTS.update_map_via_ajax = function() {
  */
 PTS.send_points_via_ajax = function(input) {
 
-    switch (PTS.gradingmethod) {
-        case "rubric":
+    if (PTS.gradingmethod=="") {
+        // simple direct grading
 
-            var points = 0;
-            var advancedgrading = [];
+        var points = $(PTS.points_container + " > span > input[name=points]:checked").val();
+        var advancedgrading = false;
 
-            // a RegExp to parse the name of a rubric criteria element (radio or checkbox)
-            // e.g. advancedgrading[criteria][1][levelid]
-            var regexp = new RegExp("^[a-z]+\\[([a-z]+)\\]\\[([0-9]+)\\]\\[([a-z]+)\\]$");
-            // [0] : the full element name, starting with "advancedgrading"
-            // [1] : "criteria"
-            // [2] : integer (a criteria id)
-            // [3] : "levelid" or "remark"
+    } else {
+        // advanced grading e.g. "rubric" or "guide"
 
-            // select all radio and textarea elements within the rubric table
-            var selector = PTS.rubric_container + " input[type=radio][name^=advancedgrading]:checked,"
-                         + PTS.rubric_container + " textarea[name^=advancedgrading]";
+        var points = 0;
+        var advancedgrading = [];
 
-            $(selector).each(function(){
-                var name = $(this).prop("name");
-                var type = $(this).prop("type");
-                var value = $(this).val();
-                advancedgrading[name] = value;
-                if (type=="radio") {
-                    var m = name.match(regexp);
-                    if (m) {
-                        // the selector for the SPAN element containing the score for this criteria level
-                        // e.g. <span id="advancedgrading-criteria-2-levels-7-score" ...>
-                        var selector = "#advancedgrading-" + m[1] + "-" + m[2] + "-levels-" + value + "-score";
-                        points += parseInt($(selector).html());
-                    }
+        // a RegExp to parse the name of an advanced grading element (radio or textarea)
+        // e.g. advancedgrading[criteria][1][levelid]
+        var regexp = new RegExp("^[a-z]+\\[([a-z]+)\\]\\[([0-9]+)\\]\\[([a-z]+)\\]$");
+        // [0] : the full element name, starting with "advancedgrading"
+        // [1] : "criteria"
+        // [2] : integer (a criteria id)
+        // [3] : RUBRIC radio: "levelid", textarea: "remark"
+        //       GUIDE  text: "score", textarea: "remark"
+
+        // select all radio and textarea elements within the rubric table
+        var selector = PTS.gradingcontainer + " input[type=radio][name^=advancedgrading]:checked,"
+                     + PTS.gradingcontainer + " input[type=text][name^=advancedgrading],"
+                     + PTS.gradingcontainer + " textarea[name^=advancedgrading]";
+
+        $(selector).each(function(){
+            var name = $(this).prop("name");
+            var type = $(this).prop("type");
+            var value = $(this).val();
+            advancedgrading[name] = value;
+            var m = name.match(regexp);
+            if (m) {
+                if (PTS.gradingmethod=="rubric" && type=="radio" && m[3]=="levelid") {
+                    // the selector for the SPAN element containing the score for this criteria level
+                    // e.g. <span id="advancedgrading-criteria-2-levels-7-score" ...>
+                    var selector = "#advancedgrading-" + m[1] + "-" + m[2] + "-levels-" + value + "-score";
+                    points += parseInt($(selector).html());
                 }
-            });
-            break
-
-        case "guide":
-            var points = 0;
-            var advancedgrading = false;
-            break;
-
-        default: // simple direct grading
-            var points = $(PTS.points_container + " > span > input[name=points]:checked").val();
-            var advancedgrading = false;
-            break;
+                if (PTS.gradingmethod=="guide" && type=="text" && m[3]=="score") {
+                    points += parseInt(value);
+                }
+            }
+        });
     }
 
     if ($("#id_commenttextmenu").length==0) {
@@ -808,8 +808,11 @@ PTS.send_points_via_ajax = function(input) {
             for (var name in advancedgrading) {
                 data[name] = advancedgrading[name];
             }
-            var selector = "input[type=hidden][name=advancedgradinginstanceid]";
-            data.advancedgradinginstanceid = $(selector).val();
+            data.advancedgradinginstanceid = $("input[type=hidden][name=advancedgradinginstanceid]").val();
+        }
+        if (PTS.gradingmethod=="guide") {
+            data.showmarkerdesc = $(PTS.gradingcontainer + " input[type=radio][name=showmarkerdesc]:checked").val();
+            data.showstudentdesc = $(PTS.gradingcontainer + " input[type=radio][name=showstudentdesc]:checked").val();
         }
         PTS.set_feedback(PTS.contacting_server_msg);
         $.ajax({
