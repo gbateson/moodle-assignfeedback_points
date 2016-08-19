@@ -284,14 +284,20 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $params = array('courseid' => $custom->courseid, 'link' => false);
                 $text[] = $OUTPUT->user_picture($user, $params);
             }
-            if ($custom->config->showfullname) {
-                $field = $custom->config->showfullname;
+            if ($field = $custom->config->showrealname) {
                 $fields = assign_feedback_points::get_all_user_name_fields();
                 if (in_array($field, $fields) && property_exists($user, $field) && $user->$field) {
-                    $text[] = html_writer::tag('em', $user->$field, array('class' => 'name'));
+                    $fullname = $user->$field;
                 } else {
-                    $text[] = html_writer::tag('em', fullname($user), array('class' => 'name'));
+                    $fullname = fullname($user);
+                    if ($custom->config->splitrealname) {
+                        $search = '/^('.preg_quote($user->firstname, '/').') +/';
+                        $fullname = preg_replace($search, '$1<br />', $fullname);
+                        $search = '/ +('.preg_quote($user->lastname, '/').')$/';
+                        $fullname = preg_replace($search, '<br />$1', $fullname);
+                    }
                 }
+                $text[] = html_writer::tag('em', $fullname, array('class' => 'name'));
             }
             if ($custom->config->showusername || count($text)==0) {
                 $text[] = html_writer::tag('em', $user->username, array('class' => 'name'));

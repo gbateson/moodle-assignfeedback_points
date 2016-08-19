@@ -112,7 +112,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return array(name => default)
      */
-    public static function get_integerfields() {
+    static public function get_integerfields() {
         return array('pointstype' =>  0,
                      'minpoints'  => -1,
                      'increment'  =>  1,
@@ -124,12 +124,13 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return array(name => default)
      */
-    public static function get_booleanfields() {
+    static public function get_booleanfields() {
         return array('sendimmediately' => 1,
                      'multipleusers'   => 0,
                      'showelement'     => 0,
                      'showpicture'     => 1,
-                     'showfullname'    => '',
+                     'showrealname'    => '',
+                     'splitrealname'   => 1,
                      'showusername'    => 0,
                      'showpointstoday' => 1,
                      'showpointstotal' => 1,
@@ -145,9 +146,9 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return array(name => default)
      */
-    public static function get_selectfields() {
+    static public function get_selectfields() {
        return array('pointstype'   => PARAM_INT,
-                    'showfullname' => PARAM_ALPHA,
+                    'showrealname' => PARAM_ALPHA,
                     'showfeedback' => PARAM_INT);
     }
 
@@ -162,7 +163,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param $selectfields
      * @todo Finish documenting this function
      */
-    public static function add_settings($mform, $config) {
+    static public function add_settings($mform, $config) {
 
         // add the integer fields (min/max number of points)
         $options = array('size' => 4, 'maxsize' => 4);
@@ -177,6 +178,9 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // disable "showpointstoday" if we are not using incremental points
         $mform->disabledIf('showpointstoday', 'pointstype', 'ne', '0');
+
+        // disable "splitrealname" if we are not using incremental points
+        $mform->disabledIf('splitrealname', 'showrealname', 'ne', 'default');
     }
 
     /**
@@ -191,7 +195,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param $paramtype (optional, default=PARAM_INT)
      * @todo Finish documenting this function
      */
-    public static function add_setting($mform, $config, $name, $type, $default=null, $options=null, $paramtype=PARAM_INT) {
+    static public function add_setting($mform, $config, $name, $type, $default=null, $options=null, $paramtype=PARAM_INT) {
 
         $selectfields = self::get_selectfields();
         if (array_key_exists($name, $selectfields)) {
@@ -1471,25 +1475,6 @@ class assign_feedback_points extends assign_feedback_plugin {
         return $map;
     }
 
-
-    /**
-     * get_all_user_name_fields
-     *
-     * return an array of user field names
-     * suitable for use in a Moodle form
-     *
-     * @return array of field names
-     */
-    static public function get_all_user_name_fields() {
-       if (function_exists('get_all_user_name_fields')) {
-           // Moodle >= 2.6
-           return get_all_user_name_fields();
-       } else {
-           // Moodle <= 2.5
-           return array('firstname' => 'firstname', 'lastname' => 'lastname');
-       }
-    }
-
     /**
      * get_pointstype_options
      *
@@ -1505,21 +1490,24 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_showfullname_options
+     * get_showrealname_options
      *
      * return an array of formatted user name options
      * suitable for use in a Moodle form
      *
      * @return array of field names
      */
-    static public function get_showfullname_options() {
-        $fields = array('' => '', 'default' => 1);
+    static public function get_showrealname_options() {
+        $fields = array('' => '', 'default' => '');
         $fields += self::get_all_user_name_fields();
         foreach (array_keys($fields) as $field) {
             if ($field) {
                 $fields[$field] = get_string($field);
             }
         }
+        $defaultnames = (object)$fields;
+        $defaultnames = fullname($defaultnames);
+        $fields['default'] .= " ($defaultnames)";
         return $fields;
     }
 
@@ -1539,6 +1527,24 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * get_all_user_name_fields
+     *
+     * return an array of user field names
+     * suitable for use in a Moodle form
+     *
+     * @return array of field names
+     */
+    static public function get_all_user_name_fields() {
+       $fields = array('firstname' => 'firstname',
+                       'lastname'  => 'lastname');
+       if (function_exists('get_all_user_name_fields')) {
+           // Moodle >= 2.6
+           $fields += get_all_user_name_fields();
+       }
+       return $fields;
+    }
+
+    /**
      * textlib
      *
      * a wrapper method to offer consistent API for textlib class
@@ -1551,7 +1557,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return result from the textlib $method
      * @todo Finish documenting this function
      */
-    public static function textlib() {
+    static public function textlib() {
         if (class_exists('core_text')) {
             // Moodle >= 2.6
             $textlib = 'core_text';
@@ -1579,7 +1585,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param mixed $recursive (optional, default = true)
      * @return either an array of form values or the $default value
      */
-    public static function optional_param_array($name, $default, $type, $recursive=true) {
+    static public function optional_param_array($name, $default, $type, $recursive=true) {
 
         switch (true) {
             case isset($_POST[$name]): $param = $_POST[$name]; break;

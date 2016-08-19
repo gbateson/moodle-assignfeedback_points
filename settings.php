@@ -47,7 +47,7 @@ foreach ($settingnames as $settingname => $default) {
 
 // boolean fields
 $settingnames = array('sendimmediately' =>  1, 'multipleusers'   => 0, 'showelement'  => 0,
-                      'showpicture'     =>  1, 'showfullname'    => 0, 'showusername' => 0,
+                      'showpicture'     =>  1, 'showrealname'    => 0, 'showusername' => 0,
                       'showpointstoday' =>  1, 'showpointstotal' => 1, 'showcomments' => 1,
                       'showlink'        =>  1);
 foreach ($settingnames as $settingname => $default) {

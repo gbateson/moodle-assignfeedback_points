@@ -77,7 +77,7 @@ $string['mapaction_help'] = 'Click these buttons to perform operations on the us
 : User-tiles will be shrunk or enlarged to match the current size of the user-map.
 
 **Rotate**
-: The entire user-map will be rotated by ¼, ½, or ¾ or a full turn.';
+: The entire user-map will be rotated by ¼, ½, ¾ or a full turn.';
 $string['mapaction'] = 'User-map action';
 $string['maxpoints_help'] = 'the maximum number of points for any single award of points';
 $string['mapmode'] = 'User-map mode';
@@ -128,19 +128,21 @@ $string['showfeedback_help'] = 'This setting controls whether feedback about AJA
 **Automatic**
 : Feedback about AJAX operations appears only when an AJAX operation is in progress. Otherwise, it is hidden.';
 $string['showfeedback'] = 'Show AJAX feedback';
-$string['showfullname_help'] = 'If this setting is enabled, the student full names will be shown in the list of students to whom points are awarded.';
-$string['showfullname'] = 'Show user name';
 $string['showlink_help'] = 'If this setting is enabled, a link that goes directly to the page for awarding points will be added on the teacher\'s main view page for this assignment.';
 $string['showlink'] = 'Show link from view page';
 $string['showpicture_help'] = 'If this setting is enabled, the students\' pictures will be shown in the list of students to whom points are awarded.';
-$string['showpicture'] = 'Show user picture';
-$string['showpointstoday_help'] = 'If this setting is eneabled, the number points awarded today to each student will be displayed.';
+$string['showpicture'] = 'Show user pictures';
+$string['showpointstoday_help'] = 'If this setting is enabled, the number points awarded today to each student will be displayed.';
 $string['showpointstoday'] = 'Show points awarded today';
-$string['showpointstotal_help'] = 'If this setting is eneabled, the total number of points ever awarded to each student will be displayed.';
+$string['showpointstotal_help'] = 'If this setting is enabled, the total number of points ever awarded to each student will be displayed.';
 $string['showpointstotal'] = 'Show total points awarded';
+$string['showrealname_help'] = 'If this setting is enabled, the students\' real names will be shown in the list of students to whom points are awarded.';
+$string['showrealname'] = 'Show real names';
 $string['showusername_help'] = 'If this setting is enabled, the students\' login usernames will be shown in the list of students to whom points are awarded.';
-$string['showusername'] = 'Show username';
+$string['showusername'] = 'Show usernames';
 $string['shuffle'] = 'Shuffle';
+$string['splitrealname_help'] = 'If this setting is enabled, the students\' default real name, if used, will be split into two lines, in order to minimize the width of the student tiles.';
+$string['splitrealname'] = 'Split real names';
 $string['square'] = 'Square';
 $string['textforgradebook'] = '{$a->timeawarded} ({$a->points} pts) {$a->comment}';
 $string['totalpoints'] = 'Total points';
