@@ -277,6 +277,17 @@ class assignfeedback_points_award_points_form extends moodleform {
             $pointstoday = array();
         }
 
+        if ($custom->config->splitrealname) {
+            $namefields = assign_feedback_points::get_all_user_name_fields();
+            $fullname = fullname((object)$namefields);
+            $fullname = explode(' ', $fullname);
+            $fullname = array_flip($fullname);
+            $namefields = array_intersect_key($fullname, $namefields);
+            $namefields = array_keys($namefields);
+        } else {
+            $namefields = array();
+        }
+
         $elements = array();
         foreach ($custom->$name as $userid => $user) {
             $text = array();
@@ -290,11 +301,15 @@ class assignfeedback_points_award_points_form extends moodleform {
                     $fullname = $user->$field;
                 } else {
                     $fullname = fullname($user);
-                    if ($custom->config->splitrealname) {
-                        $search = '/^('.preg_quote($user->firstname, '/').') +/';
-                        $fullname = preg_replace($search, '$1<br />', $fullname);
-                        $search = '/ +('.preg_quote($user->lastname, '/').')$/';
-                        $fullname = preg_replace($search, '<br />$1', $fullname);
+                    $pos = 0;
+                    foreach($namefields as $field) {
+                        if ($len = assign_feedback_points::textlib('strlen', $user->$field)) {
+                            if ($pos = assign_feedback_points::textlib('strpos', $fullname, ' '.$user->$field, ($pos ? $pos : 0))) {
+                                $fullname = assign_feedback_points::textlib('substr', $fullname, 0, $pos).
+                                            html_writer::empty_tag('br').
+                                            assign_feedback_points::textlib('substr', $fullname, $pos + 1);
+                            }
+                        }
                     }
                 }
                 $text[] = html_writer::tag('em', $fullname, array('class' => 'name'));
