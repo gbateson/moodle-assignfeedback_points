@@ -23,7 +23,7 @@
  */
 
 /** Prevent direct access to this script */
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * xmldb_assignfeedback_points_upgrade
