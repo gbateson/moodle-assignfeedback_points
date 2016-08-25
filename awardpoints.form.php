@@ -22,7 +22,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die('Direct access to this script is forbidden.');
+defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/lib/formslib.php');
 require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
@@ -288,6 +288,9 @@ class assignfeedback_points_award_points_form extends moodleform {
             $namefields = array();
         }
 
+        $linebreak = html_writer::empty_tag('br');
+        $increment = strlen($linebreak) + 1;
+
         $elements = array();
         foreach ($custom->$name as $userid => $user) {
             $text = array();
@@ -300,16 +303,19 @@ class assignfeedback_points_award_points_form extends moodleform {
                 if (in_array($field, $fields) && property_exists($user, $field) && $user->$field) {
                     $fullname = $user->$field;
                 } else {
+                    $offset = 0;
                     $fullname = fullname($user);
-                    $pos = 0;
                     foreach($namefields as $field) {
-                        if ($len = assign_feedback_points::textlib('strlen', $user->$field)) {
-                            if ($pos = assign_feedback_points::textlib('strpos', $fullname, ' '.$user->$field, ($pos ? $pos : 0))) {
-                                $fullname = assign_feedback_points::textlib('substr', $fullname, 0, $pos).
-                                            html_writer::empty_tag('br').
-                                            assign_feedback_points::textlib('substr', $fullname, $pos + 1);
-                            }
+                        if (assign_feedback_points::textlib('strlen', $user->$field)==0) {
+                            continue; // name field is empty
                         }
+                        $pos = assign_feedback_points::textlib('strpos', $fullname, ' '.$user->$field, $offset);
+                        if ($pos===false) {
+                            continue; // name field is not used in fullname
+                        }
+                        $fullname = assign_feedback_points::textlib('substr', $fullname, 0, $pos).$linebreak.
+                                    assign_feedback_points::textlib('substr', $fullname, $pos + 1);
+                        $offset = ($pos + $increment);
                     }
                 }
                 $text[] = html_writer::tag('em', $fullname, array('class' => 'name'));
@@ -697,9 +703,13 @@ class assignfeedback_points_award_points_form extends moodleform {
      */
     private function add_field_jquery($mform, $custom, $plugin) {
 
-        $contacting_server_msg = get_string('contactingserver', $plugin);
-        $awardpoints_ajax_php = '/mod/assign/feedback/points/awardpoints.ajax.php';
-        $awardpoints_ajax_php = new moodle_url($awardpoints_ajax_php, array('id' => $custom->cm->id));
+        $contacting_server_msg = get_string('contactingserver',  $plugin);
+
+        $awardpoints_ajax_php  = '/mod/assign/feedback/points/awardpoints.ajax.php';
+        $awardpoints_ajax_php  = new moodle_url($awardpoints_ajax_php, array('id' => $custom->cm->id));
+
+        $reportpoints_ajax_php = '/mod/assign/feedback/points/reportpoints.ajax.php';
+        $reportpoints_ajax_php = new moodle_url($reportpoints_ajax_php, array('id' => $custom->cm->id));
 
         $js = '';
         $js .= '<script type="text/javascript">'."\n";
@@ -739,8 +749,12 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.points_min_width      = 48;'."\n";
         $js .= '    PTS.points_min_height     = 24;'."\n";
 
+        $js .= '    PTS.report_container_id   = "id_report_container";'."\n";
+        $js .= '    PTS.report_container      = "#" + PTS.report_container_id;'."\n";
+
         $js .= '    PTS.contacting_server_msg = "'.$this->js_safe($contacting_server_msg).'";'."\n";
         $js .= '    PTS.awardpoints_ajax_php  = "'.$this->js_safe($awardpoints_ajax_php).'";'."\n";
+        $js .= '    PTS.reportpoints_ajax_php = "'.$this->js_safe($reportpoints_ajax_php).'";'."\n";
         $js .= '    PTS.groupid               = '.intval($custom->groupid).";\n";
         $js .= '    PTS.sesskey               = "'.sesskey().'";'."\n";
 

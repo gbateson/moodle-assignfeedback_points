@@ -1167,6 +1167,55 @@ PTS.do_user_click = function(event, input) {
             break;
 
         case PTS.is_mapmode_report(event):
+
+            var userid = PTS.get_input_userid(input.first())
+            if (userid) {
+                PTS.set_feedback(PTS.contacting_server_msg);
+                $.ajax({
+                    cache   : false,
+                    data    : {ajax    : 1,
+                               userid  : userid,
+                               sesskey : PTS.sesskey},
+                    datatype: "html",
+                    method  : "post",
+                    url     : PTS.reportpoints_ajax_php
+                }).done(function(report){
+                    PTS.set_feedback("");
+
+                    var report_container = document.getElementById(PTS.report_container_id);
+                    if (report_container==null) {
+                        // create report dialog div
+                        var report_container = document.createElement("DIV");
+                        report_container.setAttribute("id", PTS.report_container_id);
+                        document.body.appendChild(report_container);
+                        $(report_container).dialog({
+                            autoOpen : false,
+                            width    : 'auto'
+                        });
+                    } else {
+                        if ($(report_container).dialog("isOpen")) {
+                            $(report_container).dialog("close");
+                        }
+                    }
+
+                    // insert the report into the DIV
+                    $(report_container).html(report);
+
+                    // position the DIV at top left of user tile
+                    $(report_container).dialog("option", "position", {my: "left top",
+                                                                      at: "left top",
+                                                                      of: span});
+
+                    // use the user name as the report title
+                    var title = span.find("em.name").html();
+                    title = title.replace(new RegExp("<[^>]*>", "g"), " ");
+                    $(report_container).dialog("option", "title", title);
+
+                    // reveal the report
+                    $(report_container).dialog("open");
+                });
+            }
+
             break;
     }
 }
@@ -1317,6 +1366,8 @@ $(document).ready(function() {
         }
     });
 
+
+    // adjust CSS for input elements in layouts_container 
     var input = $(PTS.layouts_container + " input[class=indent]");
     input.parent().css({"display" : "inline-block", "min-width" : "140px"});
 

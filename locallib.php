@@ -387,10 +387,12 @@ class assign_feedback_points extends assign_feedback_plugin {
             // Moodle >= 2.5
             $PAGE->requires->jquery();
             $PAGE->requires->jquery_plugin('ui');
+            $PAGE->requires->jquery_plugin('ui-css');
             $PAGE->requires->jquery_plugin('ui.touch-punch', $plugin);
         } else {
             // Moodle <= 2.4
             $jquery = '/mod/assign/feedback/points/jquery';
+            $PAGE->requires->css($jquery.'/jquery-ui.css');
             $PAGE->requires->js($jquery.'/jquery.js', true);
             $PAGE->requires->js($jquery.'/jquery-ui.js', true);
             $PAGE->requires->js($jquery.'/jquery-ui.touch-punch.js', true);

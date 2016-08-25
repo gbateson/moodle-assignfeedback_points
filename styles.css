@@ -324,6 +324,14 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 }
 
 /**********************************
+** Points report dialog box
+**********************************/
+
+body.path-mod-assign .ui-button-icon-only .ui-button-text, .ui-button-icons-only .ui-button-text {
+    padding : 0px;
+}
+
+/**********************************
 ** gradebook feedback
 **********************************/
 
