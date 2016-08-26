@@ -277,6 +277,22 @@ class assignfeedback_points_award_points_form extends moodleform {
             $pointstoday = array();
         }
 
+        // get usergrades if required
+        if ($usersfound && $custom->config->showusergrades) {
+            $usergrades = grade_get_grades($custom->courseid, 'mod', 'assign', $custom->cm->instance, $userids);
+            if ($usergrades = reset($usergrades->items)) {
+                $usergrades = $usergrades->grades;
+                foreach ($usergrades as $userid => $grade) {
+                    $usergrades[$userid] = $grade->str_grade;
+                }
+            }
+        } else {
+            $usergrades = false;
+        }
+        if ($usergrades===false) {
+            $usergrades = array();
+        }
+
         if ($custom->config->splitrealname) {
             $namefields = assign_feedback_points::get_all_user_name_fields();
             $fullname = fullname((object)$namefields);
@@ -324,14 +340,19 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $text[] = html_writer::tag('em', $user->username, array('class' => 'name'));
             }
             if ($custom->config->showpointstotal) {
-                $points = (isset($pointstotal[$userid]) ? $pointstotal[$userid] : 0);
-                $points = get_string('pointstotal', $plugin, $points);
-                $text[] = html_writer::tag('em', $points, array('class' => 'pointstotal'));
+                $value = (isset($pointstotal[$userid]) ? $pointstotal[$userid] : 0);
+                $value = get_string('pointstotal', $plugin, $value);
+                $text[] = html_writer::tag('em', $value, array('class' => 'pointstotal'));
             }
             if ($custom->config->showpointstoday) {
-                $points = (isset($pointstoday[$userid]) ? $pointstoday[$userid] : 0);
-                $points = get_string('pointstoday', $plugin, $points);
-                $text[] = html_writer::tag('em', $points, array('class' => 'pointstoday'));
+                $value = (isset($pointstoday[$userid]) ? $pointstoday[$userid] : 0);
+                $value = get_string('pointstoday', $plugin, $value);
+                $text[] = html_writer::tag('em', $value, array('class' => 'pointstoday'));
+            }
+            if ($custom->config->showusergrades) {
+                $value = (isset($usergrades[$userid]) ? $usergrades[$userid] : 0);
+                $value = get_string('usergrade', $plugin, $value);
+                $text[] = html_writer::tag('em', $value, array('class' => 'usergrade'));
             }
             $text = implode(html_writer::empty_tag('br'), $text);
 

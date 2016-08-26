@@ -331,6 +331,26 @@ body.path-mod-assign .ui-button-icon-only .ui-button-text, .ui-button-icons-only
     padding : 0px;
 }
 
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>th,
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>td {
+    background-color: #fff5e6; /* light orange */
+}
+
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>th:hover,
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>td:hover {
+    background-color: #ffebcc; /* pale orange */
+}
+
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>th,
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>td {
+    background-color: #ffe0b3; /* medium orange */
+}
+
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>th:hover,
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>td:hover {
+    background-color: #ffd699; /* dark orange */
+}
+
 /**********************************
 ** gradebook feedback
 **********************************/

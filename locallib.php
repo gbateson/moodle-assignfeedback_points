@@ -128,17 +128,18 @@ class assign_feedback_points extends assign_feedback_plugin {
         return array('sendimmediately' => 1,
                      'multipleusers'   => 0,
                      'showelement'     => 0,
-                     'showpicture'     => 1,
+                     'showpicture'     => 0,
                      'showrealname'    => '',
                      'splitrealname'   => 1,
                      'showusername'    => 0,
                      'showpointstoday' => 1,
                      'showpointstotal' => 1,
+                     'showusergrades'  => 0,
                      'showcomments'    => 1,
                      'showfeedback'    => 0,
                      'showlink'        => 1,
                      'showfeedback'    => 0,
-                     'allowselectable' => 0);
+                     'allowselectable' => 1);
     }
 
     /**

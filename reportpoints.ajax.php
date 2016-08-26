@@ -65,8 +65,8 @@ $plugin = 'assignfeedback_points';
 
 // get the points type and description strings
 $pointstype = $points->get_config('pointstype');
-$pointstypes = array(0 => get_string('incrementalpoints', $plugin),
-                     1 => get_string('totalpoints',       $plugin));
+$pointstypes = array(0 => get_string('incremental', $plugin),
+                     1 => get_string('total',       $plugin));
 
 // the date formats for the timeawarded + timecancelled
 $newdateformat = get_string('strftimerecent'); // e.g. 26 Aug, 09:16
@@ -85,53 +85,35 @@ if (strpos($olddateformat, '%m')===false) {
     $olddateformat = str_replace('%m', 'MM', $olddateformat);
 }
 
-$startnewdates = mktime(0, 0, 0, 8, 8, date('Y')); // 1st day of current year
+$startnewdates = mktime(0, 0, 0, 1, 1, date('Y')); // 1st day of current year
 
 // start main $table in report
 $table = new html_table();
-
-// create $table headers
-$table->head = array(
-    '', // no heading for the index column
-    get_string('timeawarded',   $plugin),
-    get_string('awardby',       $plugin),
-    get_string('commenttext',   $plugin),
-    get_string('pointstype',    $plugin),
-    get_string('points',        $plugin),
-    get_string('total'),
-    get_string('timecancelled', $plugin),
-    get_string('cancelby',      $plugin)
-);
-
-// specify alignment of text for each column
-$table->align = array(
-    'center',
-    'right',  'left',   'left',
-    'center', 'center', 'center',
-    'left',   'left'
-);
-
-// initialize loop variables
-$count = 0;
-$total = 0;
-$fullnames = array();
-$removecomment = true;
-$removecancelled = true;
+$table->id = 'id_assignfeedback_points_report';
 
 // add data rows to the $table
 if ($userid = optional_param('userid', 0, PARAM_INT)) {
+
+    // initialize loop variables
+    $count = 0;
+    $total = 0;
+    $fullnames = array();
+    $addcomment = false;
+    $addcancelled = false;
+    $lastactiveawardid = 0;
+
     if ($awards = $DB->get_records('assignfeedback_points', array('awardto' => $userid), 'timeawarded')) {
+
         foreach ($awards as $award) {
-
-            // update $total, if required
-            if ($award->timecancelled) {
-                // do nothing
-            } else if ($pointstype==0) {
-                $total += $award->points;
-            } else {
-                $total = $award->points;
+            if ($award->timecancelled==0 && $pointstype==$award->pointstype) {
+                $lastactiveawardid = $award->id;
             }
-
+            if ($award->commenttext) {
+                $addcomment = true;
+            }
+            if ($award->timecancelled) {
+                $addcancelled = true;
+            }
             // get user info, if required
             if ($award->awardby && ! array_key_exists($award->awardby, $fullnames)) {
                 $params = array('id' => $award->awardby);
@@ -140,6 +122,55 @@ if ($userid = optional_param('userid', 0, PARAM_INT)) {
             if ($award->cancelby && ! array_key_exists($award->cancelby, $fullnames)) {
                 $params = array('id' => $award->cancelby);
                 $fullnames[$award->cancelby] = fullname($DB->get_record('user', $params));
+            }
+        }
+
+        // create $table headers
+        $table->head = array(
+            '', // no heading for the index column
+            get_string('timeawarded',   $plugin),
+            get_string('awardby',       $plugin),
+            get_string('commenttext',   $plugin),
+            get_string('pointstype',    $plugin),
+            get_string('points',        $plugin),
+            get_string('total'),
+            get_string('timecancelled', $plugin),
+            get_string('cancelby',      $plugin)
+        );
+
+        // specify alignment of text for each column
+        $table->align = array(
+            'center', // index column
+            'right',  'left',   'left',
+            'center', 'center', 'center',
+            'left',   'left'
+        );
+
+        // remove "comment" and "cancel" columns, if they are not needed
+        if ($addcomment==false) {
+            array_splice($table->head,  3, 1);
+            array_splice($table->align, 3, 1);
+        }
+        if ($addcancelled==false) {
+            array_splice($table->head,  -2);
+            array_splice($table->align, -2);
+        }
+
+        // add data rows to $table
+        foreach ($awards as $award) {
+
+            // set $rowclass and update $total, if required
+            $rowclass = 'inactive';
+            if ($award->timecancelled==0 && $pointstype==$award->pointstype) {
+                if ($award->pointstype==0) {
+                    $total += $award->points;
+                    $rowclass = 'active';
+                } else if ($award->pointstype==1) {
+                    $total = $award->points;
+                    if ($award->id==$lastactiveawardid) {
+                        $rowclass = 'active';
+                    }
+                }
             }
 
             // set date format
@@ -171,11 +202,12 @@ if ($userid = optional_param('userid', 0, PARAM_INT)) {
             $row->cells[] = $fullnames[$award->awardby];
 
             // commenttext
-            if ($award->commenttext=='') {
-                $row->cells[] = '';
-            } else {
-                $row->cells[] = $award->commenttext;
-                $removecomment = false;
+            if ($addcomment) {
+                if (empty($award->commenttext)) {
+                    $row->cells[] = '';
+                } else {
+                    $row->cells[] = $award->commenttext;
+                }
             }
 
             // pointstype, points, and total
@@ -184,49 +216,33 @@ if ($userid = optional_param('userid', 0, PARAM_INT)) {
             $row->cells[] = $total;
 
             // timecancelled and cancelby
-            if (empty($award->timecancelled)) {
-                $row->cells[] = '';
-                $row->cells[] = '';
-            } else {
-                $userdate = userdate($award->timecancelled, $dateformat);
-                if ($fixmonth) {
-                    $m = strftime(' %m', $award->timecancelled);
-                    $m = ltrim(str_replace(array(' 0', ' '), '', $m));
-                    $userdate = str_replace('MM', $m, $userdate);
+            if ($addcancelled) {
+                if (empty($award->timecancelled)) {
+                    $row->cells[] = '';
+                    $row->cells[] = '';
+                } else {
+                    $userdate = userdate($award->timecancelled, $dateformat);
+                    if ($fixmonth) {
+                        $m = strftime(' %m', $award->timecancelled);
+                        $m = ltrim(str_replace(array(' 0', ' '), '', $m));
+                        $userdate = str_replace('MM', $m, $userdate);
+                    }
+                    $row->cells[] = $userdate;
+                    $row->cells[] = $fullnames[$award->cancelby];
+                    $removecancelled = false;
                 }
-                $row->cells[] = $userdate;
-                $row->cells[] = $fullnames[$award->cancelby];
-                $removecancelled = false;
             }
+
+            $row->attributes['class'] = $rowclass;
             $table->data[] = $row;
         }
     }
 }
 
-if ($count==0) {
-    $report = html_writer::tag('p', get_string('nopointsyet', $plugin));
-} else {
-    // remove "cancelled" or "comment" columns, if they are not needed
-    if ($removecomment || $removecancelled) {
-        if ($removecomment) {
-            array_splice($table->head,  3, 1);
-            array_splice($table->align, 3, 1);
-        }
-        if ($removecancelled) {
-            array_splice($table->head,  -2);
-            array_splice($table->align, -2);
-        }
-        foreach ($table->data as $i => $row) {
-            if ($removecomment) {
-                array_splice($row->cells, 3, 1);
-            }
-            if ($removecancelled) {
-                array_splice($row->cells, -2);
-            }
-            $table->data[$i] = $row;
-        }
-    }
+if (count($table->data)) {
     $report = html_writer::table($table);
+} else {
+    $report = html_writer::tag('p', get_string('nopointsyet', $plugin));
 }
 
 // send $report to browser
