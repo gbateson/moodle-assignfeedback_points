@@ -68,15 +68,31 @@ $pointstype = $points->get_config('pointstype');
 $pointstypes = array(0 => get_string('incrementalpoints', $plugin),
                      1 => get_string('totalpoints',       $plugin));
 
-// the date format for the timeawarded/cancelled
-$dateformat = get_string('strftimerecent');
+// the date formats for the timeawarded + timecancelled
+$newdateformat = get_string('strftimerecent'); // e.g. 26 Aug, 09:16
+if (strpos($newdateformat, '%m')===false) {
+    $newfixmonth = false;
+} else {
+    $newfixmonth = true;
+    $newdateformat = str_replace('%m', 'MM', $newdateformat);
+}
+
+$olddateformat = get_string('strftimerecentfull'); // Fri, 26 Aug 2016, 9:16 am
+if (strpos($olddateformat, '%m')===false) {
+    $oldfixmonth = false;
+} else {
+    $oldfixmonth = true;
+    $olddateformat = str_replace('%m', 'MM', $olddateformat);
+}
+
+$startnewdates = mktime(0, 0, 0, 8, 8, date('Y')); // 1st day of current year
 
 // start main $table in report
 $table = new html_table();
 
 // create $table headers
 $table->head = array(
-    '',
+    '', // no heading for the index column
     get_string('timeawarded',   $plugin),
     get_string('awardby',       $plugin),
     get_string('commenttext',   $plugin),
@@ -90,7 +106,7 @@ $table->head = array(
 // specify alignment of text for each column
 $table->align = array(
     'center',
-    'left',   'left',   'left',
+    'right',  'left',   'left',
     'center', 'center', 'center',
     'left',   'left'
 );
@@ -98,7 +114,7 @@ $table->align = array(
 // initialize loop variables
 $count = 0;
 $total = 0;
-$users = array();
+$fullnames = array();
 $removecomment = true;
 $removecancelled = true;
 
@@ -117,37 +133,69 @@ if ($userid = optional_param('userid', 0, PARAM_INT)) {
             }
 
             // get user info, if required
-            if ($award->awardby && empty($users[$award->awardby])) {
-                $users[$award->awardby] = $DB->get_record('user', array('id' => $award->awardby));
+            if ($award->awardby && ! array_key_exists($award->awardby, $fullnames)) {
+                $params = array('id' => $award->awardby);
+                $fullnames[$award->awardby] = fullname($DB->get_record('user', $params));
             }
-            if ($award->cancelby && empty($users[$award->cancelby])) {
-                $users[$award->cancelby] = $DB->get_record('user', array('id' => $award->cancelby));
+            if ($award->cancelby && ! array_key_exists($award->cancelby, $fullnames)) {
+                $params = array('id' => $award->cancelby);
+                $fullnames[$award->cancelby] = fullname($DB->get_record('user', $params));
             }
 
+            // set date format
+            if ($award->timeawarded >= $startnewdates) {
+                $dateformat = $newdateformat;
+                $fixmonth = $newfixmonth;
+            } else {
+                $dateformat = $olddateformat;
+                $fixmonth = $oldfixmonth;
+            }
+
+            // initialize the new row
             $row = new html_table_row();
 
+            // index
             $count++;
             $cell = new html_table_cell("$count.");
             $cell->header = true;
             $row->cells[] = $cell;
 
-            $row->cells[] = userdate($award->timeawarded, $dateformat);
-            $row->cells[] = fullname($users[$award->awardby]);
-            if (empty($award->commenttext)) {
+            // timeawarded and awardby
+            $userdate = userdate($award->timeawarded, $dateformat);
+            if ($fixmonth) {
+                $m = strftime(' %m', $award->timeawarded);
+                $m = ltrim(str_replace(array(' 0', ' '), '', $m));
+                $userdate = str_replace('MM', $m, $userdate);
+            }
+            $row->cells[] = $userdate;
+            $row->cells[] = $fullnames[$award->awardby];
+
+            // commenttext
+            if ($award->commenttext=='') {
                 $row->cells[] = '';
             } else {
                 $row->cells[] = $award->commenttext;
                 $removecomment = false;
             }
+
+            // pointstype, points, and total
             $row->cells[] = $pointstypes[$award->pointstype];
             $row->cells[] = $award->points;
             $row->cells[] = $total;
+
+            // timecancelled and cancelby
             if (empty($award->timecancelled)) {
                 $row->cells[] = '';
                 $row->cells[] = '';
             } else {
-                $row->cells[] = userdate($award->timecancelled, $dateformat);
-                $row->cells[] = fullname($users[$award->cancelby]);
+                $userdate = userdate($award->timecancelled, $dateformat);
+                if ($fixmonth) {
+                    $m = strftime(' %m', $award->timecancelled);
+                    $m = ltrim(str_replace(array(' 0', ' '), '', $m));
+                    $userdate = str_replace('MM', $m, $userdate);
+                }
+                $row->cells[] = $userdate;
+                $row->cells[] = $fullnames[$award->cancelby];
                 $removecancelled = false;
             }
             $table->data[] = $row;
