@@ -314,6 +314,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
     margin-right : 4px;
     margin-left  : 4px;
 }
+
 body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements select {
     margin-right : 4px;
     margin-left  : 4px;
@@ -352,18 +353,30 @@ body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.acti
 }
 
 /**********************************
-** gradebook feedback
+** assign grading table
+** and gradebook feedback
 **********************************/
 
-#page-grade-report-user-index .user-grade .assignfeedback_points {
+body.path-mod-assign .gradingtable .assignfeedback_points,
+body.path-grade-report-user .user-grade .assignfeedback_points {
     font-size       : 12px;
     line-height     : 16px;
     list-style-type : none;
     margin          :  0px;
     padding         : 2px 4px;
 }
-#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback { margin: 0px; padding: 2px 0px; }
-#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback span {}
-#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback span.timeawarded { font-weight: bold;}
-#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback span.points {}
-#page-grade-report-user-index .user-grade .assignfeedback_points li.feedback span.comment {font-style: italic;}
+
+body.path-mod-assign .gradingtable .assignfeedback_points li.feedback,
+body.path-grade-report-user .user-grade .assignfeedback_points li.feedback { margin: 0px; padding: 2px 0px; }
+
+body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span,
+body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span {}
+
+body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span.timeawarded,
+body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.timeawarded { font-weight: bold;}
+
+body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span.points,
+body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.points {}
+
+body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span.comment,
+body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.comment {font-style: italic;}

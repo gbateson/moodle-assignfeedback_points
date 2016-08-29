@@ -125,21 +125,24 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array(name => default)
      */
     static public function get_booleanfields() {
-        return array('sendimmediately' => 1,
-                     'multipleusers'   => 0,
-                     'showelement'     => 0,
-                     'showpicture'     => 0,
-                     'showrealname'    => '',
-                     'splitrealname'   => 1,
-                     'showusername'    => 0,
-                     'showpointstoday' => 1,
-                     'showpointstotal' => 1,
-                     'showusergrades'  => 0,
-                     'showcomments'    => 1,
-                     'showfeedback'    => 0,
-                     'showlink'        => 1,
-                     'showfeedback'    => 0,
-                     'allowselectable' => 1);
+        return array('sendimmediately'  => 1,
+                     'multipleusers'    => 0,
+                     'showelement'      => 0,
+                     'showpicture'      => 0,
+                     'showrealname'     => '',
+                     'splitrealname'    => 1,
+                     'showusername'     => 0,
+                     'showpointstoday'  => 1,
+                     'showpointstotal'  => 1,
+                     'showpointsrubric' => 0,
+                     'showpointsguide'  => 0,
+                     'showgradesassign' => 0,
+                     'showgradescourse' => 0,
+                     'showcomments'     => 1,
+                     'showfeedback'     => 0,
+                     'showlink'         => 1,
+                     'showfeedback'     => 0,
+                     'allowselectable'  => 1);
     }
 
     /**
@@ -383,22 +386,8 @@ class assign_feedback_points extends assign_feedback_plugin {
         );
         $PAGE->set_url(new moodle_url('/mod/assign/view.php', $params));
 
-        // add jQuery to this page
-        if (method_exists($PAGE->requires, 'jquery')) {
-            // Moodle >= 2.5
-            $PAGE->requires->jquery();
-            $PAGE->requires->jquery_plugin('ui');
-            $PAGE->requires->jquery_plugin('ui-css');
-            $PAGE->requires->jquery_plugin('ui.touch-punch', $plugin);
-        } else {
-            // Moodle <= 2.4
-            $jquery = '/mod/assign/feedback/points/jquery';
-            $PAGE->requires->css($jquery.'/jquery-ui.css');
-            $PAGE->requires->js($jquery.'/jquery.js', true);
-            $PAGE->requires->js($jquery.'/jquery-ui.js', true);
-            $PAGE->requires->js($jquery.'/jquery-ui.touch-punch.js', true);
-        }
-        $PAGE->requires->js('/mod/assign/feedback/points/awardpoints.js');
+        // add jQuery script to this page
+        self::requires_jquery('/mod/assign/feedback/points/awardpoints.js', $plugin);
 
         // process incoming formdata, and fetch output settings
         // $multipleusers, $groupid, $map, $feedback, $userlist
@@ -1322,6 +1311,17 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * return a string so it can be consumed by webservices.
+     *
+     * @param stdClass The assign_grade data
+     * @param bool $showviewlink Modifed to return whether or not to show a link to the full submission/feedback
+     * @return string - return a string representation of the submission in full
+     */
+    public function view_summary(stdClass $grade, &$showviewlink) {
+        return $this->text_for_gradebook($grade);
+    }
+
+    /**
      * If this plugin adds to the gradebook comments field,
      * it must specify the format of the text of the comment
      *
@@ -1348,14 +1348,31 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return string
      */
     public function text_for_gradebook(stdClass $grade) {
-        global $DB;
-        $text = array();
+        global $DB, $PAGE;
+        static $firsttime = true;
+        $plugin = 'assignfeedback_points';
+
+        $count = 0;
+        $total = 0;
+        $list = array();
+
         if ($this->assignment->has_instance()) {
-            $params = array('assignid' => $this->assignment->get_instance()->id, 'awardto'  => $grade->userid);
+            $pointstype = $this->get_config('pointstype');
+            $params = array('assignid'   => $this->assignment->get_instance()->id,
+                            'awardto'    => $grade->userid,
+                            'pointstype' => $pointstype,
+                            'timecancelled' => 0);
             if ($awards = $DB->get_records('assignfeedback_points', $params, 'timeawarded ASC')) {
+                if ($pointstype==1) {
+                    // total points - use most recent award only
+                    $awards = array_slice($awards, -1, 1, true);
+                }
                 $maxcommentlength = 16;
                 $dateformat = get_string('strftimerecent', 'langconfig');
                 foreach ($awards as $award) {
+
+                    $count++;
+                    $total += $award->points;
 
                     // format each component
                     $award->timeawarded = userdate($award->timeawarded, $dateformat);
@@ -1376,15 +1393,58 @@ class assign_feedback_points extends assign_feedback_plugin {
                     $award->points      = html_writer::tag('span', $award->points,      array('class' => 'points'));
                     $award->comment     = html_writer::tag('span', $award->comment,     array('class' => 'comment'));
 
-                    $feedback = get_string('textforgradebook', 'assignfeedback_points', $award);
-                    $text[] = html_writer::tag('li', $feedback, array('class' => 'feedback', 'title' => $award->title));
+                    $feedback = get_string('textforgradebook', $plugin, $award);
+                    $list[] = html_writer::tag('li', $feedback, array('class' => 'feedback', 'title' => $award->title));
                 }
             }
         }
-        if (empty($text)) {
+        if ($count==0) {
             return '';
+        } else {
+
+            $js = '';
+            if ($firsttime) {
+                $firsttime = false;
+                $js .= '<script type="text/javascript">'."\n";
+                $js .= "//<![CDATA[\n";
+                $js .= "function toggleawardlist(img, listid) {\n";
+                $js .= "    var obj = document.getElementById(listid);\n";
+                $js .= "    if (obj) {\n";
+                $js .= "        if (obj.style.display=='none') {\n";
+                $js .= "            obj.style.display = '';\n";
+                $js .= "            img.src = img.src.replace('plus','minus');\n";
+                $js .= "        } else {\n";
+                $js .= "            obj.style.display = 'none';\n";
+                $js .= "            img.src = img.src.replace('minus','plus');;\n";
+                $js .= "        }\n";
+                $js .= "    }\n";
+                $js .= "    return false;\n";
+                $js .= "}\n";
+                $js .= "//]]>\n";
+                $js .= "</script>\n";
+            }
+
+            $listid = 'awards_'.$grade->userid;
+
+            // format count and average
+            $average = round($total / $count, 1);
+            $average = array('count' => $count, 'average' => $average);
+            $average = get_string('averagepoints', $plugin, (object)$average);
+
+            // append icon to expand list
+            $img = $PAGE->theme->pix_url('t/switch_plus', 'core')->out();
+            $img = array('src' => $img, 'onclick' => 'toggleawardlist(this, "'.$listid.'")');
+            $img = ' '.html_writer::empty_tag('img', $img);
+            $average = html_writer::tag('p', "$average $img", array('class' => 'averagepoints'));
+
+            // convert list of awards to HTML
+            $list = html_writer::tag('ol', implode($list), array('id'    => $listid,
+                                                                 'class' => 'awards',
+                                                                 'style' => 'display:none;'));
+
+            // return formatted $average and $list
+            return html_writer::tag('div', $js.$average.$list, array('class' => 'assignfeedback_points'));
         }
-        return html_writer::tag('ol', implode($text), array('class' => 'assignfeedback_points'));
     }
 
     /**
@@ -1488,8 +1548,8 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_pointstype_options() {
         $plugin = 'assignfeedback_points';
-        return array(0 => get_string('incrementalpoints', $plugin),
-                     1 => get_string('totalpoints',       $plugin));
+        return array(0 => get_string('pointstypeincremental', $plugin),
+                     1 => get_string('pointstypetotal',       $plugin));
     }
 
     /**
@@ -1527,6 +1587,39 @@ class assign_feedback_points extends assign_feedback_plugin {
         return array(0 => get_string('no'),
                      1 => get_string('yes'),
                      2 => get_string('automatically', $plugin));
+    }
+
+    /**
+     * requires_jquery
+     *
+     * add standard jquery base to this page
+     *
+     * @param array extra JS $scripts to be added to this $PAGE
+     * @param string name of the this $plugin e.g. assignfeedback_points
+     * @return void, but will add several JS files to this $PAGE
+     */
+    static public function requires_jquery($scripts, $plugin) {
+        global $PAGE;
+        if (method_exists($PAGE->requires, 'jquery')) {
+            // Moodle >= 2.5
+            $PAGE->requires->jquery();
+            $PAGE->requires->jquery_plugin('ui');
+            $PAGE->requires->jquery_plugin('ui-css');
+            $PAGE->requires->jquery_plugin('ui.touch-punch', $plugin);
+        } else {
+            // Moodle <= 2.4
+            $jquery = '/mod/assign/feedback/points/jquery';
+            $PAGE->requires->css($jquery.'/jquery-ui.css');
+            $PAGE->requires->js($jquery.'/jquery.js', true);
+            $PAGE->requires->js($jquery.'/jquery-ui.js', true);
+            $PAGE->requires->js($jquery.'/jquery-ui.touch-punch.js', true);
+        }
+        if (is_scalar($scripts)) {
+            $scripts = array($scripts);
+        }
+        foreach ($scripts as $script) {
+            $PAGE->requires->js($script);
+        }
     }
 
     /**
