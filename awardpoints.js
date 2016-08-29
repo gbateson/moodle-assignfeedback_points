@@ -1179,40 +1179,38 @@ PTS.do_user_click = function(event, input) {
                     datatype: "html",
                     method  : "post",
                     url     : PTS.reportpoints_ajax_php
-                }).done(function(report){
+                }).done(function(report_content){
                     PTS.set_feedback("");
 
-                    var report_container = document.getElementById(PTS.report_container_id);
-                    if (report_container==null) {
-                        // create report dialog div
-                        var report_container = document.createElement("DIV");
-                        report_container.setAttribute("id", PTS.report_container_id);
-                        document.body.appendChild(report_container);
-                        $(report_container).dialog({
-                            autoOpen : false,
-                            width    : 'auto'
-                        });
-                    } else {
-                        if ($(report_container).dialog("isOpen")) {
-                            $(report_container).dialog("close");
-                        }
+                    // create reference to report element
+                    var report = $(PTS.report_container);
+
+                    // close the report.dialog()
+                    if (report.dialog("isOpen")) {
+                        report.dialog("close");
                     }
 
-                    // insert the report into the DIV
-                    $(report_container).html(report);
+                    // insert the report content
+                    report.html(report_content);
 
-                    // position the DIV at top left of user tile
-                    $(report_container).dialog("option", "position", {my: "left top",
-                                                                      at: "left top",
-                                                                      of: span});
+                    // position the report at top left of user tile
+                    report.dialog("option", "position", {my: "left top",
+                                                         at: "left top",
+                                                         of: span});
 
-                    // use the user name as the report title
-                    var title = span.find("em.name").html();
-                    title = title.replace(new RegExp("<[^>]*>", "g"), " ");
-                    $(report_container).dialog("option", "title", title);
+                    // get clean user's name
+                    var name = span.find("em.name").html();
+                    name = name.replace(new RegExp("<[^>]*>", "g"), " ");
+
+                    // get clean report title
+                    var title = report.dialog("option", "title");
+                    title = title.replace(new RegExp(": .*$"), "");
+
+                    // append user's name to report title
+                    report.dialog("option", "title", title + ": " + name);
 
                     // reveal the report
-                    $(report_container).dialog("open");
+                    report.dialog("open");
                 });
             }
 
@@ -1367,11 +1365,20 @@ $(document).ready(function() {
     });
 
 
-    // adjust CSS for input elements in layouts_container 
+    // adjust CSS for input elements in layouts_container
     var input = $(PTS.layouts_container + " input[class=indent]");
     input.parent().css({"display" : "inline-block", "min-width" : "140px"});
 
     var input = $(PTS.layouts_container + " input[name=layouts]");
     input.parent().css({"display" : "inline-block", "min-width" : "76px"});
+
+    // create the report.dialog()
+    $(PTS.report_container).dialog({
+        autoOpen : false,
+        width    : 'auto'
+    });
+
+    // and remove the "report" section header
+    $("#id_report_hdr").remove();
 });
 

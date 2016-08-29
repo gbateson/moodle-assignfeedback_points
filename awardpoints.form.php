@@ -102,6 +102,13 @@ class assignfeedback_points_award_points_form extends moodleform {
         assign_feedback_points::add_settings($mform, $custom->config);
 
         // ========================
+        // report section
+        // ========================
+        //
+        $this->add_heading($mform, 'report', 'moodle', false);
+        $this->add_field_report($mform, $custom, $plugin);
+
+        // ========================
         // hidden fields
         // ========================
         //
@@ -795,6 +802,22 @@ class assignfeedback_points_award_points_form extends moodleform {
         if ($layouts) {
             $mform->disabledIf($name.'deleteid', $name, 'ne', 'delete');
         }
+    }
+
+    /**
+     * add_field_report
+     *
+     * add report of point awards for a single user
+     *
+     * @param object  $mform
+     * @param object  $custom
+     * @param string  $plugin
+     */
+    private function add_field_report($mform, $custom, $plugin) {
+        $params = array('id' => 'id_report_container',
+                        'title' => get_string('pointsreporttitle', $plugin));
+        $report = html_writer::tag('div', '', $params);
+        $mform->addElement('html', $report);
     }
 
     /**

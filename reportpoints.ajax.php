@@ -63,30 +63,6 @@ $points = new assign_feedback_points($assign, 'points');
 // cache the plugin name - it's quite long ;-)
 $plugin = 'assignfeedback_points';
 
-// get the points type and description strings
-$pointstype = $points->get_config('pointstype');
-$pointstypes = array(0 => get_string('incremental', $plugin),
-                     1 => get_string('total'));
-
-// the date formats for the timeawarded + timecancelled
-$newdateformat = get_string('strftimerecent'); // e.g. 26 Aug, 09:16
-if (strpos($newdateformat, '%m')===false) {
-    $newfixmonth = false;
-} else {
-    $newfixmonth = true;
-    $newdateformat = str_replace('%m', 'MM', $newdateformat);
-}
-
-$olddateformat = get_string('strftimerecentfull'); // Fri, 26 Aug 2016, 9:16 am
-if (strpos($olddateformat, '%m')===false) {
-    $oldfixmonth = false;
-} else {
-    $oldfixmonth = true;
-    $olddateformat = str_replace('%m', 'MM', $olddateformat);
-}
-
-$startnewdates = mktime(0, 0, 0, 1, 1, date('Y')); // 1st day of current year
-
 // start main $table in report
 $table = new html_table();
 $table->id = 'id_assignfeedback_points_report';
@@ -104,6 +80,33 @@ if ($userid = optional_param('userid', 0, PARAM_INT)) {
 
     if ($awards = $DB->get_records('assignfeedback_points', array('awardto' => $userid), 'timeawarded')) {
 
+        // get the points type and description strings
+        $pointstype = $points->get_config('pointstype');
+        $pointstypes = array(0 => get_string('pointstypeincremental', $plugin),
+                             1 => get_string('pointstypetotal',       $plugin));
+
+        // the date formats for the timeawarded + timecancelled
+        $newdateformat = get_string('strftimerecent'); // e.g. 26 Aug, 09:16
+        if (strpos($newdateformat, '%m')===false) {
+            $newfixmonth = false;
+        } else {
+            $newfixmonth = true;
+            $newdateformat = str_replace('%m', 'MM', $newdateformat);
+        }
+
+        $olddateformat = get_string('strftimerecentfull'); // Fri, 26 Aug 2016, 9:16 am
+        if (strpos($olddateformat, '%m')===false) {
+            $oldfixmonth = false;
+        } else {
+            $oldfixmonth = true;
+            $olddateformat = str_replace('%m', 'MM', $olddateformat);
+        }
+
+        $startnewdates = mktime(0, 0, 0, 1, 1, date('Y')); // 1st day of current year
+
+        // locate id of most recent active points record
+        // check whether "comment" or "cancel" columns are required
+        // and build cache of required $fullnames
         foreach ($awards as $award) {
             if ($award->timecancelled==0 && $pointstype==$award->pointstype) {
                 $lastactiveawardid = $award->id;
@@ -146,7 +149,8 @@ if ($userid = optional_param('userid', 0, PARAM_INT)) {
             'left',   'left'
         );
 
-        // remove "comment" and "cancel" columns, if they are not needed
+        // remove "comment" and "cancel" columns,
+        // if they are not needed
         if ($addcomment==false) {
             array_splice($table->head,  3, 1);
             array_splice($table->align, 3, 1);
@@ -239,11 +243,9 @@ if ($userid = optional_param('userid', 0, PARAM_INT)) {
     }
 }
 
+// send report content to browser
 if (count($table->data)) {
-    $report = html_writer::table($table);
+    echo html_writer::table($table);
 } else {
-    $report = html_writer::tag('p', get_string('nopointsyet', $plugin));
+    echo html_writer::tag('p', get_string('nopointsyet', $plugin));
 }
-
-// send $report to browser
-echo $report;
