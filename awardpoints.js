@@ -660,22 +660,23 @@ PTS.do_map_rotate = function() {
  * update_points_html
  *
  * @param object  input
- * @param string  type
+ * @param string  type ("today" or "total")
  * @param integer points
  * @return void
  */
 PTS.update_points_html = function(input, type, points) {
     var regexp = new RegExp("-?[0-9]+$");
     input.each(function(){
-        var html = $(this).parent().find("em.points" + type).html();
+        var selector = "em." + type + "points";
+        var html = $(this).parent().find(selector).html();
         var match = html.match(regexp);
         if (match) {
             var newpoints = parseInt(points);
-            if (PTS.pointstype==0) { // incremental points
+            if (type=="today") { // PTS.pointstype==0, incremental
                 newpoints += parseInt(html.substring(match.index));
             }
             html = html.substring(0, match.index) + newpoints;
-            $(this).parent().find("em.points" + type).html(html);
+            $(this).parent().find(selector).html(html);
         }
     });
 }
@@ -1094,6 +1095,7 @@ PTS.set_span_event_handlers = function(spans, onclick, ondblclick) {
             } else {
                 if ($(this).hasClass("ui-dragging")) {
                     $(this).removeClass("ui-dragging");
+                    toggle_checked = false;
                     toggle_selected = false;
                     trigger_onclick = false;
                 }
@@ -1167,7 +1169,6 @@ PTS.do_user_click = function(event, input) {
             break;
 
         case PTS.is_mapmode_report(event):
-
             var userid = PTS.get_input_userid(input.first())
             if (userid) {
                 PTS.set_feedback(PTS.contacting_server_msg);
@@ -1213,7 +1214,6 @@ PTS.do_user_click = function(event, input) {
                     report.dialog("open");
                 });
             }
-
             break;
     }
 }
