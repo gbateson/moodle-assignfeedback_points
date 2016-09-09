@@ -134,10 +134,10 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'showusername'     => 0,
                      'showpointstoday'  => 1,
                      'showpointstotal'  => 1,
-                     'showpointsrubric' => 0,
-                     'showpointsguide'  => 0,
-                     'showgradesassign' => 0,
-                     'showgradescourse' => 0,
+                     'showscorerubric'  => 0,
+                     'showscoreguide'   => 0,
+                     'showgradeassign' => 0,
+                     'showgradecourse' => 0,
                      'showcomments'     => 1,
                      'showfeedback'     => 0,
                      'showlink'         => 1,
@@ -1053,10 +1053,10 @@ class assign_feedback_points extends assign_feedback_plugin {
                 // get associated assign_grades record id
                 $params = array('assignment' => $instance->id,
                                 'userid'     => $userid);
-                if ($assigngrade = $DB->get_records('assign_grades', $params, 'attemptnumber DESC')) {
-                    $assigngrade = reset($assigngrade); // most recent assignment grade
+                if ($gradeassign = $DB->get_records('assign_grades', $params, 'attemptnumber DESC')) {
+                    $gradeassign = reset($gradeassign); // most recent assignment grade
                 } else {
-                    $assigngrade = (object)array(
+                    $gradeassign = (object)array(
                         'assignment'    => $instance->id,
                         'userid'        => $userid,
                         'timecreated'   => $time,
@@ -1065,13 +1065,13 @@ class assign_feedback_points extends assign_feedback_plugin {
                         'grade'         => 0.00,
                         'attemptnumber' => 0
                     );
-                    $assigngrade->id = $DB->insert_record('assign_grades', $assigngrade);
+                    $gradeassign->id = $DB->insert_record('assign_grades', $gradeassign);
                 }
 
                 // add new assignfeedback_points record
                 $assignfeedbackpoints = (object)array(
                     'assignid'      => $instance->id,
-                    'gradeid'       => $assigngrade->id,
+                    'gradeid'       => $gradeassign->id,
                     'awardby'       => $USER->id,
                     'awardto'       => $userid,
                     'points'        => $points,
@@ -1106,7 +1106,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     $grade = $points;
                 }
 
-                $gradedata = $this->get_grade_data($assigngrade, $grade, $sendnotifications, $gradingdata);
+                $gradedata = $this->get_grade_data($gradeassign, $grade, $sendnotifications, $gradingdata);
                 $this->assignment->save_grade($userid, $gradedata);
             }
 
@@ -1175,19 +1175,19 @@ class assign_feedback_points extends assign_feedback_plugin {
     /**
      * get_grade_data
      *
-     * @param  object  $assigngrade
+     * @param  object  $gradeassign
      * @param  decimal $grade
      * @param  boolean $sendnotifications
      * @param  object  $gradingdata required by "rubric" and "guide" grading methods
      * @return object
      */
-    protected function get_grade_data($assigngrade, $grade, $sendnotifications, $gradingdata) {
+    protected function get_grade_data($gradeassign, $grade, $sendnotifications, $gradingdata) {
 
         $gradedata = (object)array(
-            'id'              => $assigngrade->id,
+            'id'              => $gradeassign->id,
             'grade'           => $grade,
             'applytoall'      => 0,
-            'attemptnumber'   => $assigngrade->attemptnumber,
+            'attemptnumber'   => $gradeassign->attemptnumber,
             'sendstudentnotifications' => $sendnotifications
         );
 

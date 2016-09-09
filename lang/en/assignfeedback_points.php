@@ -26,7 +26,6 @@ $string['pluginname'] = 'Feedback points';
 $string['absent'] = 'Absent';
 $string['allowselectable_help'] = 'If this setting is enabled, jQuery\'s selectable functionality can be used to selected multiple students at once.';
 $string['allowselectable'] = 'Allow selectable functionality';
-$string['assigngrade'] = 'Assignment: {$a}';
 $string['automatically'] = 'Automatically';
 $string['averagepoints'] = 'Awards: {$a->count} (Avg: {$a->average} pts)';
 $string['award'] = 'Award';
@@ -45,7 +44,6 @@ $string['cleanup'] = 'Clean up';
 $string['commenttext_help'] = 'A brief decription of why these points are being awarded to the selected user(s)';
 $string['commenttext'] = 'Comment';
 $string['contactingserver'] = 'Contacting server ...';
-$string['coursegrade'] = 'Gradebook: {$a}';
 $string['default_help'] = 'If set, this feedback method will be enabled by default for all new assignments.';
 $string['default'] = 'Enabled by default';
 $string['delete'] = 'Delete';
@@ -55,7 +53,8 @@ $string['feedback_help'] = 'Messages will be displayed here regarding the transf
 
 You can control whether this item is visible or hidden using the the "Show AJAX feedback" item in the "Settings" section at the bottom of this page.';
 $string['feedback'] = 'Feedback';
-$string['guidepoints'] = 'Marking guide: {$a}';
+$string['gradeassign'] = 'Assignment: {$a}';
+$string['gradecourse'] = 'Gradebook: {$a}';
 $string['horizontal'] = 'Horizontal';
 $string['increment_help'] = 'the number of points in each step between the minimum number of points and the maximum number of points';
 $string['increment'] = 'Points increment';
@@ -108,6 +107,8 @@ $string['percent75'] = '¾';
 $string['points_help'] = 'The number of points to be awarded';
 $string['points'] = 'Points';
 $string['pointsreporttitle'] = 'Points report';
+$string['pointstoday'] = 'Points (today): {$a}';
+$string['pointstotal'] = 'Points (total): {$a}';
 $string['pointstype_help'] = 'the type of points you wish to award, either incremental points or a final total';
 $string['pointstype'] = 'Type of points';
 $string['pointstypeincremental'] = 'Incremental points';
@@ -115,8 +116,9 @@ $string['pointstypetotal'] = 'Total points';
 $string['reset'] = 'Reset';
 $string['resize'] = 'Resize';
 $string['rotate'] = 'Rotate';
-$string['rubricpoints'] = 'Rubric: {$a}';
 $string['save'] = 'Save';
+$string['scoreguide'] = 'Guide score: {$a}';
+$string['scorerubric'] = 'Rubric score: {$a}';
 $string['sendimmediately_help'] = 'If this setting is enabled, points will be awarded and sent to Moodle (via AJAX) as soon as the teacher clicks or touches a student\'s name or image. Otherwise, points will be sent to Moodle when the teacher clicks the "Award points" button at the bottom of this page.';
 $string['sendimmediately'] = 'Send points immediately';
 $string['separate'] = 'Separate';
@@ -137,24 +139,32 @@ $string['showfeedback_help'] = 'This setting controls whether feedback about AJA
 **Automatic**
 : Feedback about AJAX operations appears only when an AJAX operation is in progress. Otherwise, it is hidden.';
 $string['showfeedback'] = 'Show AJAX feedback';
-$string['showgradesassign_help'] = 'If this setting is enabled, each student\'s raw grade for this assignment will be displayed.';
-$string['showgradesassign'] = 'Show assignment grades';
-$string['showgradescourse_help'] = 'If this setting is enabled, each student\'s adjusted gradebook grade for this assignment will be displayed.';
-$string['showgradescourse'] = 'Show gradebook grades';
+$string['showgradeassign_help'] = 'If this setting is enabled, each student\'s raw grade for this assignment will be displayed.';
+$string['showgradeassign'] = 'Show assignment grades';
+$string['showgradecourse_help'] = 'If this setting is enabled, each student\'s adjusted gradebook grade for this assignment will be displayed.';
+$string['showgradecourse'] = 'Show gradebook grades';
 $string['showlink_help'] = 'If this setting is enabled, a link that goes directly to the page for awarding points will be added on the teacher\'s main view page for this assignment.';
 $string['showlink'] = 'Show link from view page';
 $string['showpicture_help'] = 'If this setting is enabled, the students\' pictures will be shown in the list of students to whom points are awarded.';
 $string['showpicture'] = 'Show user pictures';
-$string['showpointsguide_help'] = 'If this setting is enabled, the total points that were awarded to each student via the guided marking page will be displayed.';
-$string['showpointsguide'] = 'Show points awarded via guide';
-$string['showpointsrubric_help'] = 'If this setting is enabled, the total points that were awarded to each student via the rubric grading page will be displayed.';
-$string['showpointsrubric'] = 'Show points awarded via rubric';
-$string['showpointstoday_help'] = 'If this setting is enabled, the number incremental points awarded today to each student will be displayed.';
-$string['showpointstoday'] = 'Show points awarded today';
-$string['showpointstotal_help'] = 'If this setting is enabled, the total number of incremental points, or the most recent number of total points awarded to each student will be displayed.';
-$string['showpointstotal'] = 'Show total of points awarded';
+$string['showpointstoday_help'] = 'If this setting is enabled, the number of incremental points awarded today to each student will be displayed.
+
+Usually, this setting is only required when using Simple Direct Grading method with incremental points, but it may also be useful after switching from the using Simple Direct Grading to using another grading method.';
+$string['showpointstoday'] = 'Show points (today)';
+$string['showpointstotal_help'] = 'If this setting is enabled, the total number of points awarded to each student will be displayed.
+
+Usually, this setting is only required when using Simple Direct Grading method, but it may also be useful after switching from the using Simple Direct Grading to using another grading method.';
+$string['showpointstotal'] = 'Show points (total)';
 $string['showrealname_help'] = 'If this setting is enabled, the students\' real names will be shown in the list of students to whom points are awarded.';
 $string['showrealname'] = 'Show real names';
+$string['showscoreguide_help'] = 'If this setting is enabled, the Marking Guide score for each student will be displayed.
+
+Usually, this setting is only required when using the Marking Guide advanced grading method, but it may also be useful after switching from the using a Marking Guide to using another grading method.';
+$string['showscoreguide'] = 'Show guide score';
+$string['showscorerubric_help'] = 'If this setting is enabled, the Rubric score for each student will be displayed.
+
+Usually, this setting is only required when using the Rubric advanced grading method, but it may also be useful after switching from the using a Rubric to using another grading method.';
+$string['showscorerubric'] = 'Show rubric score';
 $string['showusername_help'] = 'If this setting is enabled, the students\' login usernames will be shown in the list of students to whom points are awarded.';
 $string['showusername'] = 'Show usernames';
 $string['shuffle'] = 'Shuffle';
@@ -165,8 +175,6 @@ $string['subtotal'] = 'Sub-total';
 $string['textforgradebook'] = '{$a->timeawarded} ({$a->points} pts) {$a->comment}';
 $string['timeawarded'] = 'Time awarded';
 $string['timecancelled'] = 'Time cancelled';
-$string['todaypoints'] = 'Points today: {$a}';
-$string['totalpoints'] = 'Points total: {$a}';
 $string['undo'] = 'Undo';
 $string['undomanypointsmanyusers'] = 'Cancelled award of {$a->points} points to {$a->usercount} users: {$a->userlist}';
 $string['undomanypointsoneuser'] = 'Cancelled award of {$a->points} points to {$a->usercount} user: {$a->userlist}';

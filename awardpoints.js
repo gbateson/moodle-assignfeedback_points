@@ -660,23 +660,23 @@ PTS.do_map_rotate = function() {
  * update_points_html
  *
  * @param object  input
- * @param string  type ("today" or "total")
+ * @param string  classname
  * @param integer points
  * @return void
  */
-PTS.update_points_html = function(input, type, points) {
+PTS.update_points_html = function(input, classname, points) {
     var regexp = new RegExp("-?[0-9]+$");
     input.each(function(){
-        var selector = "em." + type + "points";
-        var html = $(this).parent().find(selector).html();
+        var em = $(this).parent().find("em." + classname).first();
+        var html = em.html();
         var match = html.match(regexp);
         if (match) {
             var newpoints = parseInt(points);
-            if (type=="today") { // PTS.pointstype==0, incremental
+            if (classname=="pointstoday") { // incremental points
                 newpoints += parseInt(html.substring(match.index));
             }
             html = html.substring(0, match.index) + newpoints;
-            $(this).parent().find(selector).html(html);
+            em.html(html);
         }
     });
 }
@@ -693,15 +693,17 @@ PTS.update_map_via_ajax = function() {
         PTS.update_map = false;
 
         PTS.set_feedback(PTS.contacting_server_msg);
-        var data = {ajax        : 1,
-                    mapid       : $("#id_mapid").val(),
-                    mapwidth    : $("#id_mapwidth").val(),
-                    mapheight   : $("#id_mapheight").val(),
-                    userwidth   : $("#id_userwidth").val(),
-                    userheight  : $("#id_userheight").val(),
-                    group       : PTS.groupid,
-                    groupid     : PTS.groupid,
-                    sesskey     : PTS.sesskey}
+        var data = {
+            ajax        : 1,
+            group       : PTS.groupid,
+            groupid     : PTS.groupid,
+            sesskey     : PTS.sesskey,
+            mapid       : $("#id_mapid").val(),
+            mapwidth    : $("#id_mapwidth").val(),
+            mapheight   : $("#id_mapheight").val(),
+            userwidth   : $("#id_userwidth").val(),
+            userheight  : $("#id_userheight").val()
+        };
         $("input[name^=awardtox]").each(function(){
             data[$(this).prop("name")] = $(this).val();
         });
@@ -798,13 +800,15 @@ PTS.send_points_via_ajax = function(input) {
     }
 
     if (userid) {
-        var data = {ajax        : 1,
-                    points      : points,
-                    awardto     : userid,
-                    commenttext : commenttext,
-                    group       : PTS.groupid,
-                    groupid     : PTS.groupid,
-                    sesskey     : PTS.sesskey}
+        var data = {
+            ajax    : 1,
+            group   : PTS.groupid,
+            groupid : PTS.groupid,
+            sesskey : PTS.sesskey,
+            awardto : userid,
+            points  : points,
+            commenttext: commenttext
+        };
         if (advancedgrading) {
             for (var name in advancedgrading) {
                 data[name] = advancedgrading[name];
@@ -817,18 +821,24 @@ PTS.send_points_via_ajax = function(input) {
         }
         PTS.set_feedback(PTS.contacting_server_msg);
         $.ajax({
-            cache   : false,
-            data    : data,
-            datatype: "html",
-            method  : "post",
-            url     : PTS.awardpoints_ajax_php
+            cache    : false,
+            data     : data,
+            datatype : "html",
+            method   : "post",
+            url      : PTS.awardpoints_ajax_php
         }).done(function(feedback){
             PTS.set_ajax_feedback(feedback);
-            if (PTS.showpointstoday) {
-                PTS.update_points_html(input, "today", points);
+            if (PTS.showpointstoday && PTS.gradingmethod=="") {
+                PTS.update_points_html(input, "pointstoday", points);
             }
-            if (PTS.showpointstotal) {
-                PTS.update_points_html(input, "total", points);
+            if (PTS.showpointstotal && PTS.gradingmethod=="") {
+                PTS.update_points_html(input, "pointstotal", points);
+            }
+            if (PTS.showscorerubric && PTS.gradingmethod=="rubric") {
+                PTS.update_points_html(input, "scorerubric", points);
+            }
+            if (PTS.showscoreguide && PTS.gradingmethod=="guide") {
+                PTS.update_points_html(input, "scoreguide", points);
             }
             input.parent().removeClass("checked");
             input.prop("checked", false);
