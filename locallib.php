@@ -33,6 +33,11 @@ defined('MOODLE_INTERNAL') || die();
  */
 class assign_feedback_points extends assign_feedback_plugin {
 
+    const CASE_ORIGINAL = 0;
+    const CASE_PROPER   = 1;
+    const CASE_LOWER    = 2;
+    const CASE_UPPER    = 3;
+
     /**
      * Get the name of the feedback points plugin.
      * @return string
@@ -77,6 +82,31 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
         }
 
+        $selectfields = self::get_selectfields();
+        $integerfields = self::get_integerfields();
+        $booleanfields = self::get_booleanfields();
+
+        // override with settings from incoming form data
+        foreach ($config as $name => $value) {
+            switch (true) {
+                case array_key_exists($name, $selectfields):
+                    $paramtype = $selectfields[$name];
+                    break;
+                case array_key_exists($name, $integerfields):
+                case array_key_exists($name, $booleanfields):
+                    $paramtype = PARAM_INT;
+                    break;
+                default:
+                    $paramtype = null;
+            }
+            if (isset($paramtype)) {
+                $value = optional_param($name, null, $paramtype);
+                if (isset($value)) {
+                    $config->$name = $value;
+                }
+            }
+        }
+
         unset($config->default);
         unset($config->enabled);
 
@@ -113,10 +143,10 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array(name => default)
      */
     static public function get_integerfields() {
-        return array('pointstype' =>  0,
-                     'minpoints'  => -1,
-                     'increment'  =>  1,
-                     'maxpoints'  =>  2);
+        return array('pointstype'    =>  0,
+                     'minpoints'     => -1,
+                     'increment'     =>  1,
+                     'maxpoints'     =>  2);
     }
 
     /**
@@ -125,46 +155,47 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array(name => default)
      */
     static public function get_booleanfields() {
-        return array('sendimmediately'  => 1,
-                     'multipleusers'    => 0,
-                     'showelement'      => 0,
-                     'showpicture'      => 0,
-                     'showrealname'     => '',
-                     'splitrealname'    => 1,
-                     'showusername'     => 0,
-                     'showpointstoday'  => 1,
-                     'showpointstotal'  => 1,
-                     'showscorerubric'  => 0,
-                     'showscoreguide'   => 0,
+        return array('sendimmediately' => 1,
+                     'multipleusers'   => 0,
+                     'showelement'     => 0,
+                     'showpicture'     => 0,
+                     'showrealname'    => '',
+                     'splitrealname'   => 1,
+                     'romanizenames'   => 0,
+                     'firstnamecase'   => 0,
+                     'lastnamecase'    => 0,
+                     'showusername'    => 0,
+                     'showpointstoday' => 1,
+                     'showpointstotal' => 1,
+                     'showscorerubric' => 0,
+                     'showscoreguide'  => 0,
                      'showgradeassign' => 0,
                      'showgradecourse' => 0,
-                     'showcomments'     => 1,
-                     'showfeedback'     => 0,
-                     'showlink'         => 1,
-                     'showfeedback'     => 0,
-                     'allowselectable'  => 1);
+                     'showcomments'    => 1,
+                     'showfeedback'    => 0,
+                     'showlink'        => 1,
+                     'showfeedback'    => 0,
+                     'allowselectable' => 1);
     }
 
     /**
      * get_selectfields
      *
-     * @return array(name => default)
+     * @return array(name => PARAM_xxx)
      */
     static public function get_selectfields() {
-       return array('pointstype'   => PARAM_INT,
-                    'showrealname' => PARAM_ALPHA,
-                    'showfeedback' => PARAM_INT);
+       return array('pointstype'    => PARAM_INT,
+                    'showrealname'  => PARAM_ALPHA,
+                    'firstnamecase' => PARAM_INT,
+                    'lastnamecase'  => PARAM_INT,
+                    'showfeedback'  => PARAM_INT);
     }
 
     /**
-     * add_config_settings
+     * add_settings
      *
      * @param $mform
      * @param $config
-     * @param $plugin
-     * @param $integerfields
-     * @param $booleanfields
-     * @param $selectfields
      * @todo Finish documenting this function
      */
     static public function add_settings($mform, $config) {
@@ -183,8 +214,31 @@ class assign_feedback_points extends assign_feedback_plugin {
         // disable "showpointstoday" if we are not using incremental points
         $mform->disabledIf('showpointstoday', 'pointstype', 'ne', '0');
 
-        // disable "splitrealname" if we are not using incremental points
+        // disable "splitrealname" if we are not using default names
         $mform->disabledIf('splitrealname', 'showrealname', 'ne', 'default');
+
+        // disable "romanizenames" if we are not using first or last names
+        $mform->disabledIf('romanizenames', 'showrealname', 'eq', '');
+        $mform->disabledIf('romanizenames', 'showrealname', 'eq', 'firstnamephonetic');
+        $mform->disabledIf('romanizenames', 'showrealname', 'eq', 'lastnamephonetic');
+        $mform->disabledIf('romanizenames', 'showrealname', 'eq', 'middlename');
+        $mform->disabledIf('romanizenames', 'showrealname', 'eq', 'alternatename');
+
+        // disable "firstnamecase" if we are not using first names
+        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', '');
+        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'lastname');
+        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'firstnamephonetic');
+        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'lastnamephonetic');
+        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'middlename');
+        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'alternatename');
+
+        // disable "lastnamecase" if we are not using last names
+        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', '');
+        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'firstname');
+        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'firstnamephonetic');
+        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'lastnamephonetic');
+        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'middlename');
+        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'alternatename');
     }
 
     /**
@@ -434,6 +488,11 @@ class assign_feedback_points extends assign_feedback_plugin {
         $ajax = optional_param('ajax', 0, PARAM_INT);
         $undo = optional_param('undo', 0, PARAM_INT);
 
+        $config = $this->get_all_config($plugin);
+        $romanizenames = $config->romanizenames;
+        $firstnamecase = $config->firstnamecase;
+        $lastnamecase  = $config->lastnamecase;
+
         // cache the current time
         $time = time();
 
@@ -459,6 +518,11 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // get userlist for original $groupid
         $userlist = $this->assignment->list_participants($groupid, false);
+
+        foreach ($userlist as $id => $user) {
+            $userlist[$id]->firstname = self::fix_name_case($user->firstname, $firstnamecase, $romanizenames);
+            $userlist[$id]->lastname  = self::fix_name_case($user->lastname,  $lastnamecase,  $romanizenames);
+        }
 
         if ($undo) {
 
@@ -1539,6 +1603,52 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * fix_name_case
+     *
+     * @return string
+     */
+    static public function fix_name_case($name, $case, $romanizenames) {
+        if ($romanizenames) {
+            $name = self::fix_romanization($name);
+        }
+        if ($case==self::CASE_PROPER) {
+            return self::textlib('strtotitle', $name);
+        }
+        if ($case==self::CASE_LOWER) {
+            return self::textlib('strtolower', $name);
+        }
+        if ($case==self::CASE_UPPER) {
+            return self::textlib('strtoupper', $name);
+        }
+        return $name; // self::CASE_ORIGINAL
+    }
+
+    /**
+     * fix_romanization
+     *
+     * @return string
+     */
+    static public function fix_romanization($str, $use_macrons=true) {
+        // what to do with these names:
+        // ooizumi, ooie, ooba, oohama, tooru, iita (井板), fujii (藤井)
+        // takaaki, maako, kousuke, koura, inoue, matsuura, yuuki
+        // nanba, junpei, junichirou, shinya, shinnosuke, gonnokami, shinnou
+        if ($use_macrons) {
+            $replace = array(
+                'noue' => 'noue', 'kaaki' => 'kaaki',
+                'aa' => 'ā', 'ii' => 'ī', 'uu' => 'ū', 'ee' => 'ē', 'oo' => 'ō', 'ou' => 'ō'
+            );
+        } else {
+            $replace = array(
+                'ooa' => "oh'a", 'ooi' => "oh'i", 'oou' => "oh'u", 'ooe' => "oh'e", 'ooo' => "oh'o",
+                'too' => 'to', 'oo' => 'oh', 'ou' => 'o', 'uu' => 'u'
+            );
+        }
+        $str= self::textlib('strtolower', $str);
+        return strtr($str, $replace);
+    }
+
+    /**
      * get_pointstype_options
      *
      * return an array of formatted pointstype options
@@ -1572,6 +1682,40 @@ class assign_feedback_points extends assign_feedback_plugin {
         $defaultnames = fullname($defaultnames);
         $fields['default'] .= " ($defaultnames)";
         return $fields;
+    }
+
+    /**
+     * get_firstnamecase_options
+     *
+     * @return array of name case options
+     */
+    static public function get_firstnamecase_options() {
+        return self::get_case_options();
+    }
+
+    /**
+     * get_lasstnamecase_options
+     *
+     * @return array of name case options
+     */
+    static public function get_lastnamecase_options() {
+        return self::get_case_options();
+    }
+
+    /**
+     * get_case_options
+     *
+     * return an array of name case options
+     * suitable for use in a Moodle form
+     *
+     * @return array of name case options
+     */
+    static public function get_case_options() {
+        $plugin = 'assignfeedback_points';
+        return array(self::CASE_ORIGINAL => get_string('originalcase', $plugin),
+                     self::CASE_PROPER   => get_string('propercase',   $plugin),
+                     self::CASE_LOWER    => get_string('lowercase',    $plugin),
+                     self::CASE_UPPER    => get_string('uppercase',    $plugin));
     }
 
     /**

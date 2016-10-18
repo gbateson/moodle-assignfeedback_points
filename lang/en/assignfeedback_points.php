@@ -53,6 +53,20 @@ $string['feedback_help'] = 'Messages will be displayed here regarding the transf
 
 You can control whether this item is visible or hidden using the the "Show AJAX feedback" item in the "Settings" section at the bottom of this page.';
 $string['feedback'] = 'Feedback';
+$string['firstnamecase_help'] = 'This setting allows you to specify the case used when displaying a student\'s first name.
+
+**Original case**
+: The first name will not be modified and will appear exactly as it does in the user profile.
+
+**Lower case**
+: The first name will displayed in lower case, e.g. *john* or *jane*
+
+**Proper case**
+: The first name will be displayed in proper case, in which the first letter of each word is upper case, while other letters are lower case, e.g. *John* or *Jane*
+
+**Upper case**
+: The first name will displayed in upper case. e.g. *JOHN* or *JANE*';
+$string['firstnamecase'] = 'Case of first name';
 $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
 $string['horizontal'] = 'Horizontal';
@@ -60,10 +74,25 @@ $string['increment_help'] = 'the number of points in each step between the minim
 $string['increment'] = 'Points increment';
 $string['incremental'] = 'Incremental';
 $string['islands'] = 'Islands';
+$string['lastnamecase_help'] = 'This setting allows you to specify the case used when displaying a student\'s last name.
+
+**Original case**
+: The last name will not be modified and will appear exactly as it does in the user profile.
+
+**Proper case**
+: The last name will be displayed in proper case, in which the first letter of each word is upper case, while other letters are lower case, e.g. *Smith*
+
+**Lower case**
+: The last name will displayed in lower case, e.g. *smith*
+
+**Upper case**
+: The last name will be displayed in upper case, e.g. *SMITH*';
+$string['lastnamecase'] = 'Case of last name';
 $string['layouts_help'] = 'Use these settings to setup, save, load, and delete layouts for the user-map';
 $string['layouts'] = 'Layouts';
 $string['lines'] = 'Lines';
 $string['load'] = 'Load';
+$string['lowercase'] = 'lower case';
 $string['mapaction_help'] = 'Click these buttons to perform operations on the user-map.
 
 **Reset**
@@ -97,6 +126,7 @@ $string['nousersfound'] = 'Oops, no users found.';
 $string['nopointsyet'] = 'No points have been awarded to this user yet.';
 $string['numberofislands'] = 'Number of islands';
 $string['numberoflines'] = 'Number of lines';
+$string['originalcase'] = 'Original case';
 $string['peopleperisland'] = 'People per island';
 $string['peopleperline'] = 'People per line';
 $string['percent'] = 'percent';
@@ -113,8 +143,11 @@ $string['pointstype_help'] = 'the type of points you wish to award, either incre
 $string['pointstype'] = 'Type of points';
 $string['pointstypeincremental'] = 'Incremental points';
 $string['pointstypetotal'] = 'Total points';
+$string['propercase'] = 'Proper Case';
 $string['reset'] = 'Reset';
 $string['resize'] = 'Resize';
+$string['romanizenames_help'] = 'If this setting is enabled, names will be romanized using modifed Hepburn romanization, in which macrons are used to show long vowel sounds.';
+$string['romanizenames'] = 'Romanize names';
 $string['rotate'] = 'Rotate';
 $string['save'] = 'Save';
 $string['scoreguide'] = 'Guide score: {$a}';
@@ -175,11 +208,10 @@ $string['subtotal'] = 'Sub-total';
 $string['textforgradebook'] = '{$a->timeawarded} ({$a->points} pts) {$a->comment}';
 $string['timeawarded'] = 'Time awarded';
 $string['timecancelled'] = 'Time cancelled';
+$string['uppercase'] = 'UPPER CASE';
 $string['undo'] = 'Undo';
 $string['undomanypointsmanyusers'] = 'Cancelled award of {$a->points} points to {$a->usercount} users: {$a->userlist}';
 $string['undomanypointsoneuser'] = 'Cancelled award of {$a->points} points to {$a->usercount} user: {$a->userlist}';
 $string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a->usercount} users: {$a->userlist}';
 $string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
 $string['vertical'] = 'Vertical';
-
-
