@@ -737,33 +737,36 @@ class assignfeedback_points_award_points_form extends moodleform {
         $mform->addGroup($elements, $name.'elements', $label, '', false);
         $mform->addHelpButton($name.'elements', $name, $plugin);
 
-        $mform->setType($name, PARAM_ALPHA);
-        $mform->setType($name.'loadid', PARAM_INT);
-        $mform->setType($name.'setup', PARAM_ALPHANUM);
-        $mform->setType($name.'squarepercent', PARAM_INT);
-        $mform->setType($name.'circlepercent', PARAM_INT);
-        $mform->setType($name.'linestype', PARAM_INT);
-        $mform->setType($name.'linesnumtype', PARAM_INT);
-        $mform->setType($name.'linesnumvalue', PARAM_INT);
-        $mform->setType($name.'islandstype', PARAM_INT);
-        $mform->setType($name.'islandsnumtype', PARAM_INT);
+        $mform->setType($name,                 PARAM_ALPHA);
+        $mform->setType($name.'loadid',          PARAM_INT);
+        $mform->setType($name.'setup',      PARAM_ALPHANUM);
+        $mform->setType($name.'squarepercent',   PARAM_INT);
+        $mform->setType($name.'circlepercent',   PARAM_INT);
+        $mform->setType($name.'linestype',       PARAM_INT);
+        $mform->setType($name.'linesnumtype',    PARAM_INT);
+        $mform->setType($name.'linesnumvalue',   PARAM_INT);
+        $mform->setType($name.'islandstype',     PARAM_INT);
+        $mform->setType($name.'islandsnumtype',  PARAM_INT);
         $mform->setType($name.'islandsnumvalue', PARAM_INT);
-        $mform->setType($name.'savename', PARAM_TEXT);
-
-        $mform->setDefault($name.'setup', 'square');
-        $mform->setDefault($name.'square', '75');
-        $mform->setDefault($name.'circle', '75');
-        $mform->setDefault($name.'linestype', '0');
-        $mform->setDefault($name.'linesnumtype', '0');
-        $mform->setDefault($name.'islandstype', '0');
-        $mform->setDefault($name.'islandsnumtype', '0');
+        $mform->setType($name.'savename',       PARAM_TEXT);
 
         if ($layouts) {
             $mform->setDefault($name, 'load');
-            $mform->disabledIf($name.'loadid',   $name, 'ne', 'load');
+            $mform->setDefault($name.'loadid', $custom->mapid);
+            $mform->disabledIf($name.'loadid', $name, 'ne', 'load');
         } else {
-            $mform->setDefault($name, 'setup');
+            $mform->setDefault($name, 'save');
+            $mform->setDefault($name.'savename', get_string('default'));
         }
+        $mform->disabledIf($name.'savename', $name, 'ne', 'save');
+
+        $mform->setDefault($name.'setup',     'square');
+        $mform->setDefault($name.'square',        '75');
+        $mform->setDefault($name.'circle',        '75');
+        $mform->setDefault($name.'linestype',      '0');
+        $mform->setDefault($name.'linesnumtype',   '0');
+        $mform->setDefault($name.'islandstype',    '0');
+        $mform->setDefault($name.'islandsnumtype', '0');
 
         $mform->disabledIf($name.'setup',           $name, 'ne', 'setup');
         $mform->disabledIf($name.'square',          $name, 'ne', 'setup');
@@ -797,9 +800,8 @@ class assignfeedback_points_award_points_form extends moodleform {
         $mform->disabledIf($name.'islandsnumtype',  $name.'setup',  'ne', 'islands');
         $mform->disabledIf($name.'islandsnumvalue', $name.'setup',  'ne', 'islands');
 
-        $mform->disabledIf($name.'savename', $name, 'ne', 'save');
-
         if ($layouts) {
+            $mform->setDefault($name.'deleteid', $custom->mapid);
             $mform->disabledIf($name.'deleteid', $name, 'ne', 'delete');
         }
     }

@@ -588,11 +588,15 @@ class assign_feedback_points extends assign_feedback_plugin {
             $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id, true);
             $mapid = $map->id;
 
+            // get (x, y) coordinates
+            $x = optional_param_array('awardtox', array(), PARAM_INT);
+            $y = optional_param_array('awardtoy', array(), PARAM_INT);
+
             // register incoming points in assignfeedback_points table
-            $points        = optional_param('points',          0,  PARAM_INT);
-            $commenttext   = optional_param('commenttextmenu', '', PARAM_TEXT);
-            $commentformat = optional_param('commentformat',   0,  PARAM_INT);
-            $action        = optional_param('action',          '', PARAM_ALPHA);
+            $mapaction     = optional_param('mapaction',       '', PARAM_ALPHA);
+            $points        = optional_param('points',           0,   PARAM_INT);
+            $commenttext   = optional_param('commenttextmenu', '',  PARAM_TEXT);
+            $commentformat = optional_param('commentformat',    0,   PARAM_INT);
 
             // if commenttext was not selected from the drop down menu
             // try to get it from the text input element
@@ -602,27 +606,31 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             // set up layouts, if required
             $name = 'layouts';
-            $update = false;
+            $update_form_values = false;
+            $update_dimensions  = false;
+            $update_coordinates = false;
             switch (optional_param($name, '', PARAM_ALPHA)) {
 
                 case 'load':
+                    $this->update_coordinates($plugin, $map, $x, $y);
                     $table = $plugin.'_maps';
-                    if ($id = optional_param($name.'loadid', 0, PARAM_INT)) {
-                        if ($id==$mapid) {
+                    if ($loadid = optional_param($name.'loadid', 0, PARAM_INT)) {
+                        if ($loadid==$mapid) {
                             // do nothing - this is the current map
                         } else {
-                            $params = array('id' => $id, 'assignid' => $instance->id, 'userid' => $USER->id);
+                            $params = array('id' => $loadid, 'assignid' => $instance->id, 'userid' => $USER->id);
                             if ($DB->record_exists($table, $params)) {
                                 $map = $DB->get_record($table, $params);
                                 $mapid = $map->id;
-                                $update = true;
+                                $update_form_values = true;
                             }
                         }
                     }
                     break;
 
                 case 'setup':
-                    $update = true;
+                    $update_form_values = true;
+                    $update_dimensions  = true;
 
                     $mapwidth = 0;
                     $mapheight = 0;
@@ -950,26 +958,16 @@ class assign_feedback_points extends assign_feedback_plugin {
                                 break;
                         }
                     }
-
-                    if ($update) {
-                        // update mapwidth/height
-                        $map->mapwidth = $mapwidth;
-                        $map->mapheight = $mapheight;
-                        $DB->update_record($plugin.'_maps', $map);
-
-                        // prevent calculated values being
-                        // overwritten by values from browser
-                        unset($_POST['awardtox']);
-                        unset($_POST['awardtoy']);
-                        unset($_POST['mapwidth']);
-                        unset($_POST['mapheight']);
-                    }
-
                     break;
 
                 case 'save' :
                     $table = $plugin.'_maps';
                     if ($name = optional_param($name.'savename', '', PARAM_TEXT)) {
+                        if ($name==$map->name) {
+                            $name = ''; // same name as current map
+                        }
+                    }
+                    if ($name) {
                         $i = 1;
                         while ($DB->record_exists($table, array('assignid' => $instance->id, 'userid' => $USER->id, 'name' => $name))) {
                             $i++;
@@ -983,60 +981,57 @@ class assign_feedback_points extends assign_feedback_plugin {
                         $map->name = $name;
                         $map->id = $DB->insert_record($table, $map);
                         $mapid = $map->id;
-                        $update = true;
+                        $update_form_values = true;
+                        $update_dimensions  = true;
+                        $update_coordinates = true;
                     }
                     break;
 
                 case 'delete':
                     $table = $plugin.'_maps';
-                    if ($id = optional_param($name.'deleteid', 0, PARAM_INT)) {
-                        $params = array('id' => $id, 'assignid' => $instance->id, 'userid' => $USER->id);
+                    if ($deleteid = optional_param($name.'deleteid', 0, PARAM_INT)) {
+                        $params = array('id' => $deleteid, 'assignid' => $instance->id, 'userid' => $USER->id);
                         if ($DB->record_exists($table, $params)) {
                             $DB->delete_records($table, $params);
                             $DB->delete_records($plugin.'_coords', array('mapid' => $id));
-                            if ($id==$mapid) {
+                            // if current map was deleted, get a new current map
+                            if ($deleteid==$mapid) {
                                 $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
                                 $mapid = $map->id;
+                                $update_form_values = true;
                             }
                         }
                     }
                     break;
+
+                default:
+                    if ($ajax) {
+                        $update_coordinates = true;
+                    }
+
             } // end switch "layouts"
+
+            // prevent calculated values being
+            // overwritten by values from browser
+            if ($update_form_values) {
+                $_POST['mapid'] = $mapid;
+                unset($_POST['awardtox']);
+                unset($_POST['awardtoy']);
+                unset($_POST['mapwidth']);
+                unset($_POST['mapheight']);
+            }
+            if ($update_coordinates) {
+                $this->update_coordinates($plugin, $map, $x, $y);
+            }
+            if ($update_dimensions) {
+                $this->update_dimensions($plugin, $map, $mapwidth, $mapheight);
+            }
 
             // remove all layout settings because
             // we do not want them in the outgoing form
             $names = preg_grep('/^layout/', array_keys($_POST));
             foreach ($names as $name) {
-                unset($_POST[$name]);
-            }
-
-            $name = 'awardto';
-            $userids = $this->optional_param_array($name, array(), PARAM_INT);
-            if (is_scalar($userids)) {
-                $userids = array($userids => 1);
-            }
-
-            $x = optional_param_array('awardtox', array(), PARAM_INT);
-            $y = optional_param_array('awardtoy', array(), PARAM_INT);
-
-            // store current coordinates for each user
-            $table = 'assignfeedback_points_coords';
-            foreach (array_keys($x) as $userid) {
-                if (isset($y[$userid])) {
-                    $params = array('mapid' => $map->id, 'userid' => $userid);
-                    if ($coords = $DB->get_records($table, $params)) {
-                        $coords = reset($coords);
-                    } else {
-                        $coords = (object)$params;
-                    }
-                    $coords->x = $x[$userid];
-                    $coords->y = $y[$userid];
-                    if (isset($coords->id)) {
-                        $coords->id = $DB->update_record($table, $coords);
-                    } else {
-                        $coords->id = $DB->insert_record($table, $coords);
-                    }
-                }
+            //    unset($_POST[$name]);
             }
 
             // initialize "feedback" details
@@ -1105,6 +1100,12 @@ class assign_feedback_points extends assign_feedback_plugin {
                     $gradingdata->$name = optional_param($name, true, PARAM_BOOL);
                 }
                 $pointstype = 1; // total points
+            }
+
+            $name = 'awardto';
+            $userids = $this->optional_param_array($name, array(), PARAM_INT);
+            if (is_scalar($userids)) {
+                $userids = array($userids => 1);
             }
 
             // add points for each user
@@ -1600,6 +1601,54 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         return $map;
+    }
+
+    /**
+     * update_dimensions
+     *
+     * @param object  $map
+     * @param array   $x coordinates
+     * @param array   $y coordinates
+     * @param integer $mapwidth
+     * @param integer $mapheight
+     * @return void but may update DB table: assignfeedback_points_coords
+     */
+    protected function update_dimensions($plugin, $map, $mapwidth, $mapheight) {
+        global $DB;
+        $table = $plugin.'_maps';
+        $map->mapwidth = $mapwidth;
+        $map->mapheight = $mapheight;
+        $DB->update_record($table, $map);
+    }
+
+    /**
+     * update_coordinates
+     *
+     * @param object  $map
+     * @param array   $x coordinates
+     * @param array   $y coordinates
+     * @return void but may update DB table: assignfeedback_points_coords
+     */
+    protected function update_coordinates($plugin, $map, $x, $y) {
+        global $DB;
+        $table = $plugin.'_coords';
+        foreach (array_keys($x) as $userid) {
+            if (isset($y[$userid])) {
+                $params = array('mapid' => $map->id, 'userid' => $userid);
+                if ($coords = $DB->get_records($table, $params)) {
+                    $coords = reset($coords);
+                } else {
+                    $coords = (object)$params;
+                }
+                $coords->x = $x[$userid];
+                $coords->y = $y[$userid];
+                if (isset($coords->id)) {
+                    $coords->id = $DB->update_record($table, $coords);
+                } else {
+                    $coords->id = $DB->insert_record($table, $coords);
+                }
+            }
+        }
     }
 
     /**
