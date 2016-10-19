@@ -520,8 +520,8 @@ class assign_feedback_points extends assign_feedback_plugin {
         $userlist = $this->assignment->list_participants($groupid, false);
 
         foreach ($userlist as $id => $user) {
-            $userlist[$id]->firstname = self::fix_name_case($user->firstname, $firstnamecase, $romanizenames);
-            $userlist[$id]->lastname  = self::fix_name_case($user->lastname,  $lastnamecase,  $romanizenames);
+            $userlist[$id]->firstname = self::fix_name_case($user->firstname, $firstnamecase, $romanizenames, true);
+            $userlist[$id]->lastname  = self::fix_name_case($user->lastname,  $lastnamecase, $romanizenames, false);
         }
 
         if ($undo) {
@@ -1607,9 +1607,9 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return string
      */
-    static public function fix_name_case($name, $case, $romanizenames) {
+    static public function fix_name_case($name, $case, $romanizenames, $is_firstname) {
         if ($romanizenames) {
-            $name = self::fix_romanization($name);
+            $name = self::fix_romanization($name, $is_firstname);
         }
         if ($case==self::CASE_PROPER) {
             return self::textlib('strtotitle', $name);
@@ -1628,11 +1628,37 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return string
      */
-    static public function fix_romanization($str, $use_macrons=true) {
-        // what to do with these names:
-        // ooizumi, ooie, ooba, oohama, tooru, iita (井板), fujii (藤井)
-        // takaaki, maako, kousuke, koura, inoue, matsuura, yuuki
-        // nanba, junpei, junichirou, shinya, shinnosuke, gonnokami, shinnou
+    static public function fix_romanization($name, $is_firstname, $use_macrons=true) {
+        $name= self::textlib('strtolower', $name);
+
+        // fix "si", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
+        $replace = array(
+            'si' => 'shi', 'tu' => 'tsu', 'sy' => 'sh', 'jy' =>'j', 'nb' => 'mb'
+        );
+        $name = strtr($name, $replace);
+
+        if ($is_firstname) {
+            // kiyou(hei)
+            // shiyou(go|hei|ta|tarou)
+            // shiyun(suke|ya), shiyuu(ji|ta|tarou|ya)
+            // riyou(ga|ki|suke|ta|tarou|ya)
+            // riyuu(ichi|ki|ta|ma|saku|sei|shi|zou)
+            $replace = array(
+                'kiyou'  => 'kyou',
+                'shiyou' => 'shou',
+                'shiyun' => 'shun', 'shiyuu' => 'shuu',
+                'jiyun'  => 'jun',  'jiyuu'  => 'juu',
+                'riyou'  => 'ryou', 'riyuu'  => 'ryuu',
+            );
+        } else {
+            // chiya(da|ta)ani (not UCHIYAMA or TSUCHIYA)
+            $replace = array(
+                'chiyatani' => 'chatani',
+                'chiyadani' => 'chadani'
+            );
+        }
+        $name = strtr($name, $replace);
+
         if ($use_macrons) {
             $replace = array(
                 'noue' => 'noue', 'kaaki' => 'kaaki',
@@ -1644,8 +1670,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 'too' => 'to', 'oo' => 'oh', 'ou' => 'o', 'uu' => 'u'
             );
         }
-        $str= self::textlib('strtolower', $str);
-        return strtr($str, $replace);
+        return strtr($name, $replace);
     }
 
     /**
