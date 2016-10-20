@@ -38,6 +38,8 @@ class assign_feedback_points extends assign_feedback_plugin {
     const CASE_LOWER    = 2;
     const CASE_UPPER    = 3;
 
+    const JAPANESE_NAME_STRING = '/^((s?shi|t?tsu)|((by|t?ch|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
+
     /**
      * Get the name of the feedback points plugin.
      * @return string
@@ -1680,46 +1682,54 @@ class assign_feedback_points extends assign_feedback_plugin {
     static public function fix_romanization($name, $is_firstname, $use_macrons=true) {
         $name= self::textlib('strtolower', $name);
 
-        // fix "si", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
-        $replace = array(
-            'si' => 'shi', 'tu' => 'tsu', 'sy' => 'sh', 'jy' =>'j', 'nb' => 'mb'
-        );
-        $name = strtr($name, $replace);
+         // check that this looks like a romanized Japanese name
+        if (preg_match(self::JAPANESE_NAME_STRING, $name)) {
 
-        if ($is_firstname) {
-            // kiyou(hei)
-            // shiyou(go|hei|ta|tarou)
-            // shiyun(suke|ya), shiyuu(ji|ta|tarou|ya)
-            // riyou(ga|ki|suke|ta|tarou|ya)
-            // riyuu(ichi|ki|ta|ma|saku|sei|shi|zou)
+            // fix "si", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
             $replace = array(
-                'kiyou'  => 'kyou',
-                'shiyou' => 'shou',
-                'shiyun' => 'shun', 'shiyuu' => 'shuu',
-                'jiyun'  => 'jun',  'jiyuu'  => 'juu',
-                'riyou'  => 'ryou', 'riyuu'  => 'ryuu',
+                'si' => 'shi', 'tu' => 'tsu', 'sy' => 'sh', 'jy' =>'j', 'nb' => 'mb'
             );
-        } else {
-            // chiya(da|ta)ani (not UCHIYAMA or TSUCHIYA)
-            $replace = array(
-                'chiyatani' => 'chatani',
-                'chiyadani' => 'chadani'
-            );
-        }
-        $name = strtr($name, $replace);
+            $name = strtr($name, $replace);
 
-        if ($use_macrons) {
-            $replace = array(
-                'noue' => 'noue', 'kaaki' => 'kaaki',
-                'aa' => 'ā', 'ii' => 'ī', 'uu' => 'ū', 'ee' => 'ē', 'oo' => 'ō', 'ou' => 'ō'
-            );
-        } else {
-            $replace = array(
-                'ooa' => "oh'a", 'ooi' => "oh'i", 'oou' => "oh'u", 'ooe' => "oh'e", 'ooo' => "oh'o",
-                'too' => 'to', 'oo' => 'oh', 'ou' => 'o', 'uu' => 'u'
-            );
+            if ($is_firstname) {
+                // kiyou(hei)
+                // shiyou(go|hei|ta|tarou)
+                // shiyun(suke|ya), shiyuu(ji|ta|tarou|ya)
+                // riyou(ga|ki|suke|ta|tarou|ya)
+                // riyuu(ichi|ki|ta|ma|saku|sei|shi|zou)
+                $replace = array(
+                    'kiyou'  => 'kyou',
+                    'shiyou' => 'shou',
+                    'shiyun' => 'shun', 'shiyuu' => 'shuu',
+                    'jiyun'  => 'jun',  'jiyuu'  => 'juu',
+                    'riyou'  => 'ryou', 'riyuu'  => 'ryuu',
+                );
+            } else {
+                // gasshiyou (GASSHŌ)
+                // chiya(da|ta)ani (not UCHIYAMA or TSUCHIYA)
+                $replace = array(
+                    'shiyou'    => 'shou',
+                    'chiyatani' => 'chatani',
+                    'chiyadani' => 'chadani'
+                );
+            }
+            $name = strtr($name, $replace);
+
+            if ($use_macrons) {
+                $replace = array(
+                    'noue' => 'noue', 'kaaki' => 'kaaki',
+                    'aa' => 'ā', 'ii' => 'ī', 'uu' => 'ū', 'ee' => 'ē', 'oo' => 'ō', 'ou' => 'ō'
+                );
+            } else {
+                $replace = array(
+                    'ooa' => "oh'a", 'ooi' => "oh'i", 'oou' => "oh'u", 'ooe' => "oh'e", 'ooo' => "oh'o",
+                    'too' => 'to', 'oo' => 'oh', 'ou' => 'o', 'uu' => 'u'
+                );
+            }
+            $name = strtr($name, $replace);
         }
-        return strtr($name, $replace);
+        return $name;
+
     }
 
     /**
