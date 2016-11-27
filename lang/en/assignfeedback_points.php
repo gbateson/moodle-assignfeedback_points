@@ -24,6 +24,7 @@
 $string['pluginname'] = 'Feedback points';
 
 $string['absent'] = 'Absent';
+$string['addmorenames'] = 'Add more names';
 $string['allowselectable_help'] = 'If this setting is enabled, jQuery\'s selectable functionality can be used to selected multiple students at once.';
 $string['allowselectable'] = 'Allow selectable functionality';
 $string['automatically'] = 'Automatically';
@@ -67,6 +68,7 @@ $string['firstnamecase_help'] = 'This setting allows you to specify the case use
 **Upper case**
 : The first name will displayed in upper case. e.g. *JOHN* or *JANE*';
 $string['firstnamecase'] = 'Case of first name';
+$string['fix'] = 'Fix';
 $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
 $string['horizontal'] = 'Horizontal';
@@ -121,6 +123,8 @@ $string['minpoints_help'] = 'the minimum number of points for any single award o
 $string['minpoints'] = 'Minimum points';
 $string['multipleusers_help'] = 'If this setting is enabled, more than one student can be selected when points are awarded. Otherwise, only a single student can be awarded points at one time.';
 $string['multipleusers'] = 'Select multiple users';
+$string['nameformat_help'] = 'Enter the name fields as you wish them displayed. The names are entered here as *name1* *name2* ... and are defined below.';
+$string['nameformat'] = 'Name format';
 $string['newcomment'] = 'New comment ...';
 $string['nousersfound'] = 'Oops, no users found.';
 $string['nopointsyet'] = 'No points have been awarded to this user yet.';
@@ -215,3 +219,22 @@ $string['undomanypointsoneuser'] = 'Cancelled award of {$a->points} points to {$
 $string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a->usercount} users: {$a->userlist}';
 $string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
 $string['vertical'] = 'Vertical';
+
+$string['case_help'] = 'Specificy the case to be used when this name is displayed.';
+$string['case'] = 'Case';
+$string['field_help'] = 'Select a name field form the user profile';
+$string['field'] = 'Field';
+$string['head_help'] = 'Specify the number of characters from the start of the name that will be displayed if the name exceeds the maximum allowde length.';
+$string['head'] = 'Head';
+$string['length_help'] = 'The maximum allowed length of this name field.';
+$string['length'] = 'Length';
+$string['prefix_help'] = 'Specify the prefix to be added at the start of this name field.';
+$string['prefix'] = 'Prefix';
+$string['romanize_help'] = 'Specify whether this name field should be romainzed.';
+$string['romanize'] = 'Romanize';
+$string['style_help'] = 'Specify the HTML tag to be used to style this name field.';
+$string['style'] = 'Style';
+$string['suffix_help'] = 'Specify the suffix to be added at the end of this name field.';
+$string['suffix'] = 'Suffix';
+$string['tail_help'] = 'Specify the number of characters from the end of the name that will be displayed if the name exceeds the maximum allowde length.';
+$string['tail'] = 'Tail';

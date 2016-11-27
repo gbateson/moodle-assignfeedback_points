@@ -51,6 +51,12 @@ class assignfeedback_points_award_points_form extends moodleform {
         $mform = $this->_form;
         $custom = $this->_customdata;
         $plugin = 'assignfeedback_points';
+    
+        // we don't the need form change checker (Moodle >=2.3)
+        // if we're using AJAX to send results
+        if ($custom->config->sendimmediately==0) {
+            $mform->disable_form_change_checker();
+        }
 
         $gradingmanager = get_grading_manager($custom->context, 'mod_assign', 'submissions');
         if ($custom->gradingmethod = $gradingmanager->get_active_method()) {
@@ -98,7 +104,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         // settings section
         // ========================
         //
-        $this->add_heading($mform, 'settings', 'moodle', false);
+        $this->add_heading($mform, 'settings', 'moodle', true);
         assign_feedback_points::add_settings($mform, $custom->config);
 
         // ========================
@@ -859,6 +865,8 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
         $js .= '    PTS.showpointstoday       = '.intval($custom->config->showpointstoday).";\n";
         $js .= '    PTS.showpointstotal       = '.intval($custom->config->showpointstotal).";\n";
+        $js .= '    PTS.showscorerubric       = '.intval($custom->config->showscorerubric).";\n";
+        $js .= '    PTS.showscoreguide        = '.intval($custom->config->showscoreguide).";\n";
         $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
 
         $js .= '    PTS.layouts_container     = "#fgroup_id_layoutselements"'.";\n";

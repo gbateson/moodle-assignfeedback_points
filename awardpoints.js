@@ -768,6 +768,9 @@ PTS.send_points_via_ajax = function(input) {
                     // e.g. <span id="advancedgrading-criteria-2-levels-7-score" ...>
                     var selector = "#advancedgrading-" + m[1] + "-" + m[2] + "-levels-" + value + "-score";
                     points += parseInt($(selector).html());
+                    if (isNaN(points)) {
+                        points = 0;
+                    }
                 }
                 if (PTS.gradingmethod=="guide" && type=="text" && m[3]=="score") {
                     points += parseInt(value);
@@ -1373,7 +1376,6 @@ $(document).ready(function() {
             PTS.update_map_via_ajax();
         }
     });
-
 
     // adjust CSS for input elements in layouts_container
     var input = $(PTS.layouts_container + " input[class=indent]");

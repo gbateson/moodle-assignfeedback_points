@@ -9,7 +9,7 @@
 ** feedback: undo link
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div.fitem div.felement a#undolink {
+body.path-mod-assign #assignfeedback_points_award_points_form div.fitem div.felement a#undolink {
     background-color : #005aa8;
     background-image : linear-gradient(to bottom,#0070a8,#0038a8);
     background-repeat: repeat-x;
@@ -34,7 +34,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.fitem div.
 ** user container
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup {
     border    : solid 2px #ff9999;
     max-width :               95%;
     min-width :                5%;
@@ -49,10 +49,10 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 ** individual actions, users and points
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span,
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span,
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span,
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span,
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span,
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span,
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span {
     border-style    :   solid;
     border-width    :     1px;
     border-color    : #999999;
@@ -71,8 +71,8 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 ** actions, modes: labels
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span label,
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span label {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span label,
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span label {
     font-size   : 12px;
     padding     :  0px;
 }
@@ -81,18 +81,18 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 ** users: labels
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label {
     font-size   : 11px;
     line-height : 14px;
     padding     :  0px;
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.name {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.name {
     font-style: normal;
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.pointstoday,
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.pointstotal {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.pointstoday,
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span label em.pointstotal {
     font-style  : italic;
     white-space : nowrap;
 }
@@ -102,16 +102,16 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 ** mapaction: normal, hover, checked
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span {
     background-color : #ebccff; /* gentle purple */
     border-color     : #9900ff; /* dark purple */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span:hover {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span:hover {
     background-color : #daa3ff; /* pale purple */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span.checked {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapactionelements fieldset.fgroup span.checked {
     background-color : #c266ff; /* dark purple */
 }
 
@@ -119,16 +119,16 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 ** mapmode: normal, hover, checked
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span {
     background-color : #ffcce6; /* gentle pink */
     border-color     : #ff0080; /* dark pink */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span:hover {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span:hover {
     background-color : #ff99cc; /* pale pink */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span.checked {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_mapmodeelements fieldset.fgroup span.checked {
     background-color : #ff66b3; /* dark pink */
 }
 
@@ -138,33 +138,33 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 ** NOTE: order is important :-)
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span {
     background-color : #ddffdd; /* gentle green */
     border-color     : #37ff37; /* dark green */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span:hover {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span:hover {
     background-color : #a5ffa5; /* pale green */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.absent {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.absent {
     background-color : #eeeeee; /* light grey */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.ui-selecting {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.ui-selecting {
     background-color : #ffdaa3; /* pale orange */
     border-color     : #ff9900; /* dark orange */
 }
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.ui-selected {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.ui-selected {
     background-color : #ffc266; /* dark orange */
     border-color     : #ff9900; /* dark orange */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.checked {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.checked {
     background-color : #00cc00; /* dark green */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.nousersfound {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_awardtoelements fieldset.fgroup span.nousersfound {
     font-size: 1.5em;
 }
 
@@ -172,16 +172,16 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 ** points: normal, hover, checked
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span {
     background-color : #ffebcc; /* gentle orange */
     border-color     : #ff9900; /* dark orange */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span:hover {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span:hover {
     background-color : #ffdaa3; /* pale orange */
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span.checked {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_pointselements fieldset.fgroup span.checked {
     background-color : #ffc266; /* dark orange */
 }
 
@@ -189,12 +189,12 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_
 ** handles to resize user container
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-handle {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-handle {
     position : absolute;
 }
 
 /** north handle **/
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-n {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-n {
     top    : 0px;
     left   : 50%;
     height : 0px;
@@ -207,7 +207,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizab
 }
 
 /** east handle **/
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-e {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-e {
     right  : 0px;
     top    : 50%;
     height : 0px;
@@ -220,7 +220,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizab
 }
 
 /** south handle **/
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-s {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s {
     bottom : 0px;
     left   : 50%;
     height : 0px;
@@ -233,7 +233,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizab
 }
 
 /** west handle **/
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-w {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-w {
     left   : 0px;
     top    : 50%;
     height : 0px;
@@ -246,7 +246,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizab
 }
 
 /** north-west handle **/
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-nw {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-nw {
     left   : 0px;
     top    : 0px;
     height : 10px;
@@ -260,7 +260,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizab
 }
 
 /** north-east handle **/
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-ne {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-ne {
     top    : 0px;
     right  : 0px;
     height : 10px;
@@ -274,7 +274,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizab
 }
 
 /** south-west handle **/
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-sw {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-sw {
     bottom : 0px;
     left   : 0px;
     height : 10px;
@@ -288,7 +288,7 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizab
 }
 
 /** south-east handle **/
-body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizable-se {
+body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-se {
     bottom : 0px;
     right  : 0px;
     height : 10px;
@@ -305,24 +305,48 @@ body.path-mod-assign form#assignfeedback_points_award_points_form div.ui-resizab
 ** layouts
 **********************************/
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements input[type="radio"] {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_layoutselements input[type="radio"] {
     margin-right :  2px;
     margin-left  : 16px;
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements input[type="text"] {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_layoutselements input[type="text"] {
     margin-right : 4px;
     margin-left  : 4px;
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements select {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_layoutselements select {
     margin-right : 4px;
     margin-left  : 4px;
 }
 
-body.path-mod-assign form#assignfeedback_points_award_points_form div#fgroup_id_layoutselements input.indent {
+body.path-mod-assign #assignfeedback_points_award_points_form div#fgroup_id_layoutselements input.indent {
     margin-left : 72px;
 }
+
+/**********************************
+** settings
+**********************************/
+
+body.path-mod-assign .mform #id_settings .namesettingtitle,
+body.path-mod-assign #assignfeedback_points_award_points_form #id_settings_hdr .namesettingtitle {
+    display     : inline-block;
+    font-weight : bold;
+    margin-left : 0px;
+    margin-right: 6px;
+    min-width   : $minwidth;
+    text-align  : right;
+}
+
+body.path-mod-assign .mform #id_settings .namesettingtitle.wide,
+body.path-mod-assign #assignfeedback_points_award_points_form #id_settings_hdr .namesettingtitle.wide {
+    width       : 96px;
+}
+body.path-mod-assign .mform #id_settings .namesettingtitle.narrow,
+body.path-mod-assign #assignfeedback_points_award_points_form #id_settings_hdr .namesettingtitle.narrow {
+    width       : 72px;
+}
+
 
 /**********************************
 ** Points report dialog box
