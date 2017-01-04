@@ -51,7 +51,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         $mform = $this->_form;
         $custom = $this->_customdata;
         $plugin = 'assignfeedback_points';
-    
+
         // we don't the need form change checker (Moodle >=2.3)
         // if we're using AJAX to send results
         if ($custom->config->sendimmediately==0) {
@@ -195,7 +195,11 @@ class assignfeedback_points_award_points_form extends moodleform {
                      'pluginaction'  => 'awardpoints');
         $url = new moodle_url('/mod/assign/view.php', $url);
         $groups = groups_print_activity_menu($custom->cm, $url->out(), true);
-        if (preg_match('/(<label[^>]*>.*<\/label>).*?(<select[^>]*name="([^"]*)"[^>]*>.*<\/select>)/', $groups, $groups)) {
+        $search = '/(<label[^>]*>.*<\/label>).*?(<select[^>]*name="([^"]*)"[^>]*>.*<\/select>)/s';
+        // $1 : <label ...> ... </label>
+        // $2 : <select ...> ... </select>
+        // $3 : element name (usually "group"
+        if (preg_match($search, $groups, $groups)) {
             $name = $groups[3]; // "group"
             $groups = $groups[1].' '.$groups[2];
             $mform->addElement('static', $name, '', $groups);
