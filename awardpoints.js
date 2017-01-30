@@ -101,25 +101,25 @@ PTS.get_input_userid = function(input) {
 /**
  * set_awardto_xy
  *
- * @param span a DOM element
+ * @param elm a DOM element
  * @return void
  */
-PTS.set_awardto_xy = function(span, x, y) {
+PTS.set_awardto_xy = function(elm, x, y) {
     if (typeof(x)=="undefined" || typeof(y)=="undefined") {
-        var p = $(span).position();
+        var p = $(elm).position();
         x = p.left;
         y = p.top;
     }
-    $(span).find("input[type=checkbox],input[type=radio]").each(function(){
+    $(elm).find("input[type=checkbox],input[type=radio]").each(function(){
         var userid = PTS.get_input_userid($(this));
         if (userid) {
             if (x != $("#id_awardtox_" + userid).val()) {
                 $("#id_awardtox_" + userid).val(x);
-                PTS.update_map = true;
+                PTS.update_usermap = true;
             }
             if (y != $("#id_awardtoy_" + userid).val()) {
                 $("#id_awardtoy_" + userid).val(y);
-                PTS.update_map = true;
+                PTS.update_usermap = true;
             }
         }
     });
@@ -160,8 +160,8 @@ PTS.do_map_action = function(event, input) {
  */
 PTS.do_map_reset = function() {
 
-    // convert spans to relative position
-    $(PTS.user_container + " > span").each(function(){
+    // convert elms to relative position
+    $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
         $(this).find("input[type=checkbox],input[type=radio]").each(function(){
             var userid = PTS.get_input_userid($(this));
             if (userid) {
@@ -174,8 +174,8 @@ PTS.do_map_reset = function() {
         });
     });
 
-    // convert spans to absolute position
-    PTS.set_span_position($(PTS.user_container + " > span"));
+    // convert elms to absolute position
+    PTS.set_elm_position($(PTS.user_container + " > " + PTS.group_element_tag));
 
     // resize the user-map
     PTS.do_map_resize();
@@ -190,7 +190,7 @@ PTS.do_map_cleanup = function() {
     var separate = false;
     var grid = {x : $("#id_userwidth").val(),
                 y : $("#id_userheight").val()}
-    $(PTS.user_container + " > span").each(function(){
+    $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var css = {};
             var p = $(this).position();
@@ -200,7 +200,7 @@ PTS.do_map_cleanup = function() {
                 if (x < 0) {
                     css.left = "+=" + x;
                 } else if (x <= (grid.x / 2)) {
-                    css.left = "-=" + x; // i.e. shift this span left
+                    css.left = "-=" + x; // i.e. shift this elm left
                 } else {
                     css.left = "+=" + (grid.x - x); // right
                 }
@@ -209,7 +209,7 @@ PTS.do_map_cleanup = function() {
                 if (y < 0) {
                     css.top = "+=" + y;
                 } else if (y <= (grid.y / 2)) {
-                    css.top = "-=" + y; // i.e. shift this span up
+                    css.top = "-=" + y; // i.e. shift this elm up
                 } else {
                     css.top = "+=" + (grid.y - y); // down
                 }
@@ -217,7 +217,7 @@ PTS.do_map_cleanup = function() {
             if (x || y) {
                 PTS.set_awardto_xy(this, p.left + x, p.top + y);
                 $(this).animate(css, PTS.cleanup.duration);
-                PTS.update_map = true;
+                PTS.update_usermap = true;
                 separate = true;
             }
         }
@@ -268,8 +268,8 @@ PTS.do_map_separate = function(resize) {
     //   [z] : z-index (CSS layer)
     //   [y] : y-coordinate
     //   [x] : x-coordinate
-    var spans = [];
-    $(PTS.user_container + " > span").each(function(){
+    var elms = [];
+    $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var p = $(this).position();
             var x = parseInt(p.left);
@@ -288,52 +288,52 @@ PTS.do_map_separate = function(resize) {
                     }
                 }
             });
-            if (! spans.hasOwnProperty(o)) {
-                spans[o] = [];
+            if (! elms.hasOwnProperty(o)) {
+                elms[o] = [];
             }
-            if (! spans[o].hasOwnProperty(z)) {
-                spans[o][z] = [];
+            if (! elms[o].hasOwnProperty(z)) {
+                elms[o][z] = [];
             }
-            if (! spans[o][z].hasOwnProperty(y)) {
-                spans[o][z][y] = [];
+            if (! elms[o][z].hasOwnProperty(y)) {
+                elms[o][z][y] = [];
             }
-            if (! spans[o][z][y].hasOwnProperty(x)) {
-                spans[o][z][y][x] = [];
+            if (! elms[o][z][y].hasOwnProperty(x)) {
+                elms[o][z][y][x] = [];
             }
-            // usually there will only be one span
+            // usually there will only be one elm
             // at any given (x, y) coordinate, but
-            // to be robust we allow for multiple spans
-            spans[o][z][y][x].push(this);
+            // to be robust we allow for multiple elms
+            elms[o][z][y][x].push(this);
         }
     });
 
     // setup the available positions
     PTS.positions.setup();
 
-    var o_values = PTS.get_sorted_keys(spans);
+    var o_values = PTS.get_sorted_keys(elms);
     for (var o_index in o_values) {
         var o = o_values[o_index];
 
-        var z_values = PTS.get_sorted_keys(spans[o]);
+        var z_values = PTS.get_sorted_keys(elms[o]);
         for (var z_index in z_values) {
             var z = z_values[z_index];
 
-            var y_values = PTS.get_sorted_keys(spans[o][z]);
+            var y_values = PTS.get_sorted_keys(elms[o][z]);
             for (var y_index in y_values) {
                 var y = y_values[y_index];
 
-                var x_values = PTS.get_sorted_keys(spans[o][z][y]);
+                var x_values = PTS.get_sorted_keys(elms[o][z][y]);
                 for (var x_index in x_values) {
                     var x = x_values[x_index];
 
-                    // a shortcut to the current span
-                    var span = spans[o][z][y][x];
+                    // a shortcut to the current elm
+                    var elm = elms[o][z][y][x];
 
-                    // fix/add this span to an available position
+                    // fix/add this elm to an available position
                     if (o==0) {
-                        PTS.positions.fix(span);
+                        PTS.positions.fix(elm);
                     } else {
-                        PTS.positions.add(span);
+                        PTS.positions.add(elm);
                         resize = true;
                     }
                 }
@@ -356,7 +356,7 @@ PTS.positions = {
 
     grid : {}, // the x, y spacing of the position grid
 
-    setup : function(span) {
+    setup : function(elm) {
         // mark all positions as available (=TRUE)
         this.p = [];
         this.grid = {x : parseInt($("#id_userwidth").val()),
@@ -371,18 +371,18 @@ PTS.positions = {
         }
     },
 
-    fix : function(span, x, y) {
+    fix : function(elm, x, y) {
         // mark any positions that are covered
-        // by this span as NOT available (=FALSE)
+        // by this elm as NOT available (=FALSE)
         if (typeof(x)=="undefined" || typeof(y)=="undefined") {
-            var p = $(span).position();
+            var p = $(elm).position();
         } else {
             var p = {"left" : x, "top" : y};
         }
         var x_min = (p.left);
-        var x_max = (x_min + $(span).outerWidth(true));
+        var x_max = (x_min + $(elm).outerWidth(true));
         var y_min = (p.top);
-        var y_max = (y_min + $(span).outerHeight(true));
+        var y_max = (y_min + $(elm).outerHeight(true));
         for (var x in this.p) {
             if (x < x_min || x >= x_max) {
                 continue;
@@ -397,7 +397,7 @@ PTS.positions = {
     },
 
     check : function(x, y, w, h) {
-        // if a span of width "w" and height "h"
+        // if a elm of width "w" and height "h"
         // can be be positioned at coordinate (x, y)
         // then return TRUE; otherwise return FALSE
         var x_min = x;
@@ -420,11 +420,11 @@ PTS.positions = {
         return true; // all required positions were available - YAY
     },
 
-    add : function(span) {
-        // add this span at the nearest available position
-        var w = $(span).outerWidth(true);
-        var h = $(span).outerHeight(true);
-        var p = $(span).position();
+    add : function(elm) {
+        // add this elm at the nearest available position
+        var w = $(elm).outerWidth(true);
+        var h = $(elm).outerHeight(true);
+        var p = $(elm).position();
         var best = null;
 
         for (var x in this.p) {
@@ -446,13 +446,13 @@ PTS.positions = {
             }
         }
         if (best) {
-            this.fix(span, best.x, best.y);
+            this.fix(elm, best.x, best.y);
             var css = {"left" : best.x, "top" : best.y};
-            $(span).animate(css, PTS.separate.duration);
-            PTS.set_awardto_xy(span, best.x, best.y);
+            $(elm).animate(css, PTS.separate.duration);
+            PTS.set_awardto_xy(elm, best.x, best.y);
         } else {
             // no positions were available,
-            // so add a new row for this span
+            // so add a new row for this elm
             // and then try the add again
             var y_max = 0;
             for (var x in this.p) {
@@ -464,7 +464,7 @@ PTS.positions = {
                 }
                 this.p[x][y_max] = true;
             }
-            this.add(span);
+            this.add(elm);
         }
     },
 
@@ -501,13 +501,13 @@ PTS.positions = {
  */
 PTS.do_map_shuffle = function() {
 
-    // create array of spans and their indexes
+    // create array of elms and their indexes
     var i = 0;
-    var spans = [];
+    var elms = [];
     var indexes = [];
-    $(PTS.user_container + " > span").each(function(){
+    $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
         if ($(this).hasClass("ui-draggable")) {
-            spans[i] = this;
+            elms[i] = this;
             indexes[i] = i++;
         }
     });
@@ -525,29 +525,29 @@ PTS.do_map_shuffle = function() {
     // this flag will be set to true
     // if the user map changes size
     // or the users change position
-    PTS.update_map = false;
+    PTS.update_usermap = false;
 
     // switch the positions all SPANs
     for (var i=0; i<indexes.length; i++) {
         if (indexes[i]===null) {
             continue;
         }
-        var h = spans[i].innerHTML;
+        var h = elms[i].innerHTML;
         var x = i;
         var xx = indexes[x];
         while (xx != i) {
             indexes[x] = null;
-            PTS.shuffle_user(spans[x], spans[xx]);
+            PTS.shuffle_user(elms[x], elms[xx]);
             x = xx;
             xx = indexes[x];
         }
         indexes[x] = null;
-        PTS.shuffle_user(spans[x], spans[i]);
+        PTS.shuffle_user(elms[x], elms[i]);
     }
 
     // send new map settings to server
     // if any of the SPANs were moved
-    setTimeout(PTS.update_map_via_ajax, PTS.shuffle.duration);
+    setTimeout(PTS.update_usermap_via_ajax, PTS.shuffle.duration);
 
     // clear the mapaction
     PTS.clear_map_action();
@@ -583,7 +583,7 @@ PTS.do_map_resize = function() {
 
     // get minimum (x,y) coordinates
     // and maximum w(idth) and h(eight)
-    $(PTS.user_container + " > span").each(function(){
+    $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var p = $(this).position();
             x = (x===null ? p.left : Math.min(x, p.left));
@@ -593,11 +593,11 @@ PTS.do_map_resize = function() {
         }
     });
 
-    // adjust position of spans
+    // adjust position of elms
     if (x || y) {
         css = {"left" : (x > 0  ? "-=" + x : "+=" + Math.abs(x)),
                "top"  : (y > 0  ? "-=" + y : "+=" + Math.abs(y))}
-        $(PTS.user_container + " > span").each(function(){
+        $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
             if ($(this).hasClass("ui-draggable")) {
                 var complete = function() {
                     PTS.set_awardto_xy(this);
@@ -612,17 +612,17 @@ PTS.do_map_resize = function() {
     // store new width/height
     if (w != $("#id_mapwidth").val()) {
         $("#id_mapwidth").val(w);
-        PTS.update_map = true;
+        PTS.update_usermap = true;
     }
     if (h != $("#id_mapheight").val()) {
         $("#id_mapheight").val(h);
-        PTS.update_map = true;
+        PTS.update_usermap = true;
     }
 
     // do (animated) map resize
     // and then update map via ajax
     var css = {"width" : w, "height" : h};
-    $(PTS.user_container).animate(css, PTS.resize.duration, "swing", PTS.update_map_via_ajax);
+    $(PTS.user_container).animate(css, PTS.resize.duration, "swing", PTS.update_usermap_via_ajax);
 
     // clear the mapaction
     PTS.clear_map_action();
@@ -636,7 +636,7 @@ PTS.do_map_resize = function() {
 PTS.do_map_rotate = function() {
     var resize = false;
     var x_max = $(PTS.user_container).width();
-    $(PTS.user_container + " > span").each(function(){
+    $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var p = $(this).position();
             var w = $(this).outerWidth();
@@ -682,15 +682,15 @@ PTS.update_points_html = function(input, classname, points) {
 }
 
 /**
- * update_map_via_ajax
+ * update_usermap_via_ajax
  *
  * @param object input
  * @return void
  */
-PTS.update_map_via_ajax = function() {
+PTS.update_usermap_via_ajax = function() {
 
-    if (PTS.update_map) {
-        PTS.update_map = false;
+    if (PTS.update_usermap) {
+        PTS.update_usermap = false;
 
         PTS.set_feedback(PTS.contacting_server_msg);
         var data = {
@@ -733,7 +733,7 @@ PTS.send_points_via_ajax = function(input) {
     if (PTS.gradingmethod=="") {
         // simple direct grading
 
-        var points = $(PTS.points_container + " > span > input[name=points]:checked").val();
+        var points = $(PTS.points_container + " > " + PTS.group_element_tag + " > input[name=points]:checked").val();
         var advancedgrading = false;
 
     } else {
@@ -850,31 +850,31 @@ PTS.send_points_via_ajax = function(input) {
 }
 
 /**
- * set_span_size_color
+ * set_elm_size_color
  *
- * @param object  spans
+ * @param object  elms
  * @param integer w
  * @param integer h
  * @param string display (optional)
  * @return void
  */
-PTS.set_span_size_color = function(spans, w, h, display) {
-    spans.each(function(){
+PTS.set_elm_size_color = function(elms, w, h, display) {
+    elms.each(function(){
         $(this).find("input").css("display", display);
     });
-    spans.each(function(){
+    elms.each(function(){
         w = Math.max($(this).width(), w);
     });
-    spans.each(function(){
+    elms.each(function(){
         $(this).css("min-width", w);
     });
-    spans.each(function(){
+    elms.each(function(){
         h = Math.max($(this).height(), h);
     });
-    spans.each(function(){
+    elms.each(function(){
         $(this).css("min-height", h);
     });
-    spans.each(function(){
+    elms.each(function(){
         $(this).find("input").each(function(){
             if ($(this).prop("checked")) {
                 $(this).parent().addClass("checked");
@@ -886,38 +886,56 @@ PTS.set_span_size_color = function(spans, w, h, display) {
 /**
  * set_usermap_size
  *
- * @param object map
+ * @param object usermap
  * @return void
  */
-PTS.set_usermap_size = function(map) {
-    map.css("position", "relative");
+PTS.set_usermap_size = function(usermap) {
+    usermap.css("position", "relative");
     var w = $("#id_mapwidth").val();
     var h = $("#id_mapheight").val();
     if (parseInt(w)==0) {
-        w = map.width();
+        w = usermap.width();
         if (w > 640) {
             w = 640;
-            map.css("width", w);
+            usermap.css("width", w);
         }
         $("#id_mapwidth").val(w);
-        PTS.update_map = true;
+        PTS.update_usermap = true;
     }
     if (parseInt(h)==0) {
-        h = map.height();
+        h = usermap.height();
         $("#id_mapheight").val(h);
-        PTS.update_map = true;
+        PTS.update_usermap = true;
     }
 }
 
 /**
- * set_span_position
+ * set_points_size
  *
- * @param object spans
+ * @param object points_container
+ * @param object action_elements
  * @return void
  */
-PTS.set_span_position = function(spans) {
+PTS.set_points_size = function(points_container, action_elements) {
+    var w = $("#id_mapwidth").val();
+    action_elements.each(function(){
+        var p = $(this).position();
+        w = Math.max(w, p.left + $(this).width());
+    });
+    if (w) {
+        points_container.css("max-width", w + "px");
+    }
+}
+
+/**
+ * set_elm_position
+ *
+ * @param object elms
+ * @return void
+ */
+PTS.set_elm_position = function(elms) {
     var update = false;
-    $(spans.get().reverse()).each(function(){
+    $(elms.get().reverse()).each(function(){
         var p = $(this).position();
         var x = p.left;
         var y = p.top;
@@ -932,7 +950,7 @@ PTS.set_span_position = function(spans) {
                     $(this).parent().css({"position" : "absolute",
                                           "left" : x + "px",
                                           "top" : y + "px"});
-                    PTS.update_map = true;
+                    PTS.update_usermap = true;
                 } else {
                     $(this).parent().css({"position" : "absolute",
                                           "left" : awardtox + "px",
@@ -946,13 +964,13 @@ PTS.set_span_position = function(spans) {
 /**
  * set_user_size
  *
- * @param object spans
+ * @param object elms
  * @return void
  */
-PTS.set_user_size = function(spans) {
+PTS.set_user_size = function(elms) {
     var widths  = []; // width => frequency
     var heights = []; // height => frequency
-    spans.each(function(){
+    elms.each(function(){
         // width           : content width
         // outerWidth      : width + padding + border
         // outerWidth(true): outerWidth + margin
@@ -983,16 +1001,16 @@ PTS.set_user_size = function(spans) {
     }
     if (userwidth != $("#id_userwidth").val()) {
         $("#id_userwidth").val(userwidth);
-        PTS.update_map = true;
+        PTS.update_usermap = true;
     }
     if (userheight != $("#id_userheight").val()) {
         $("#id_userheight").val(userheight);
-        PTS.update_map = true;
+        PTS.update_usermap = true;
     }
 }
 
 PTS.get_mapmode_elements = function() {
-    return PTS.mapmode_container + " > span > input[name=mapmode]";
+    return PTS.mapmode_container + " > " + PTS.group_element_tag + " > input[name=mapmode]";
 }
 
 PTS.get_mapmode_value = function() {
@@ -1057,14 +1075,14 @@ PTS.is_not_mapmode_award = function(event) {
 }
 
 /**
- * set_span_event_handlers
+ * set_elm_event_handlers
  *
- * @param object   spans
+ * @param object   elms
  * @param function onclick, additional onclick function, or FALSE
  * @return void
  */
-PTS.set_span_event_handlers = function(spans, onclick, ondblclick) {
-    spans.each(function(){
+PTS.set_elm_event_handlers = function(elms, onclick, ondblclick) {
+    elms.each(function(){
 
         $(this).find("input").click(function(event, ui){
             if ($(this).parent().hasClass("ui-selectee") && PTS.is_not_mapmode_award(event)) {
@@ -1084,38 +1102,83 @@ PTS.set_span_event_handlers = function(spans, onclick, ondblclick) {
 
         $(this).click(function(event, ui){
 
-            if ($(event.target).closest("label").length) {
-                nodeName = "LABEL";
-            } else if (event.target.nodeName=="INPUT") {
-                nodeName = "INPUT";
-            } else {
-                nodeName = "SPAN";
-            }
+            var toggle_checked = false;
+            var toggle_selected = false;
+            var trigger_onclick = false;
 
-            if ($(this).hasClass("ui-selectee")) {
-                var toggle_checked = (nodeName=="SPAN" && PTS.is_mapmode_award(event));
-                var toggle_selected = PTS.is_mapmode_select(event);
-                var trigger_onclick = (! toggle_selected);
-            } else {
-                var toggle_checked = (nodeName=="SPAN");
-                var trigger_onclick = true;
-                var toggle_selected = false;
-            }
+            if (PTS.theme_type==PTS.THEME_TYPE_SPAN) {
 
-            if (nodeName=="LABEL") {
-                trigger_onclick = false;
-                toggle_selected = false;
-            } else {
-                if ($(this).hasClass("ui-dragging")) {
-                    $(this).removeClass("ui-dragging");
-                    toggle_checked = false;
-                    toggle_selected = false;
-                    trigger_onclick = false;
+                // Moodle <= 3.1 theme
+                // <span>
+                //   <input ... >
+                //   <label ... >
+                //     <img ... >
+                //     <em.name ... >
+                //     <em.pointstotal ... >
+
+                if (event.target.nodeName=="INPUT") {
+                    var nodeName = "INPUT";
+                } else if ($(event.target).closest("label").length) {
+                    var nodeName = "LABEL"; // contains IMG and EM
+                } else {
+                    var nodeName = "SPAN"; // contains INPUT and LABEL
                 }
-            }
 
-            if (toggle_selected) {
-                $(this).toggleClass("ui-selected");
+                if ($(this).hasClass("ui-selectee")) {
+                    toggle_checked = (nodeName=="SPAN" && PTS.is_mapmode_award(event));
+                    toggle_selected = PTS.is_mapmode_select(event);
+                    trigger_onclick = (! toggle_selected);
+                } else {
+                    toggle_checked = (nodeName=="SPAN");
+                    trigger_onclick = true;
+                    toggle_selected = false;
+                }
+
+                if (nodeName=="LABEL") {
+                    trigger_onclick = false;
+                    toggle_selected = false;
+                } else {
+                    if ($(this).hasClass("ui-dragging")) {
+                        $(this).removeClass("ui-dragging");
+                        toggle_checked = false;
+                        toggle_selected = false;
+                        trigger_onclick = false;
+                    }
+                }
+
+                if (toggle_selected) {
+                    $(this).toggleClass("ui-selected");
+                }
+
+            } else {
+
+                // template theme in Moodle >= 3.2 e.g. "Boost"
+                // <label>
+                //   <input ... >
+                //   <img ... >
+                //   <em.name ... >
+                //   <em.pointstotal ... >
+
+                if (event.target.nodeName=="INPUT") {
+                    var nodeName = "INPUT";
+                } else {
+                    var nodeName = "LABEL"; // contains INPUT, IMG and EM
+                }
+
+                if (nodeName=="INPUT" ) {
+                    if ($(this).closest("label").hasClass("ui-selectee")) {
+                        toggle_checked = PTS.is_mapmode_award(event);
+                        toggle_selected = PTS.is_mapmode_select(event);
+                    } else {
+                        toggle_checked = true;
+                        toggle_selected = false;
+                    }
+                    trigger_onclick = true;
+                }
+
+                if (toggle_selected) {
+                    $(this).closest("label").toggleClass("ui-selected");
+                }
             }
 
             var input = $(this).find("input").first();
@@ -1148,27 +1211,32 @@ PTS.set_span_event_handlers = function(spans, onclick, ondblclick) {
  */
 PTS.do_user_click = function(event, input) {
 
-    var span = input.parent();
+    var elm = input.parent();
     switch (true) {
 
         case PTS.is_mapmode_award(event):
             if (input.prop("checked")) {
-                if (span.hasClass("ui-selected")) {
+                if (elm.hasClass("ui-selected")) {
                     // do onclick for ALL selected users
-                    var selected = span.siblings(".ui-selected");
+                    var selected = elm.siblings(".ui-selected");
+
                     var checked = (input.prop("type")=="checkbox");
                     selected.addClass("checked");
                     selected.find("input").prop("checked", checked);
 
-                    var notselected = span.siblings(":not(.ui-selected)");
+                    var notselected = elm.siblings(":not(.ui-selected)");
                     notselected.removeClass("checked");
                     notselected.find("input").prop("checked", false);
 
-                    input = selected.andSelf().find("input");
+                    if (selected.addBack) { // jQuery >= 1.8
+                        input = selected.addBack().find("input");
+                    } else {
+                        input = selected.andSelf().find("input");
+                    }
                 } else {
                     // do onclick for ONE single item
                     // that is not currently selected
-                    var selected = span.siblings(".ui-selected");
+                    var selected = elm.siblings(".ui-selected");
                     selected.removeClass("ui-selected");
                 }
                 if (PTS.sendimmediately) {
@@ -1178,7 +1246,7 @@ PTS.do_user_click = function(event, input) {
             break;
 
         case PTS.is_mapmode_absent(event):
-            span.toggleClass("absent");
+            elm.toggleClass("absent");
             break;
 
         case PTS.is_mapmode_report(event):
@@ -1210,10 +1278,10 @@ PTS.do_user_click = function(event, input) {
                     // position the report at top left of user tile
                     report.dialog("option", "position", {my: "left top",
                                                          at: "left top",
-                                                         of: span});
+                                                         of: elm});
 
                     // get clean user's name
-                    var name = span.find("em.name").html();
+                    var name = elm.find("em.name").html();
                     name = name.replace(new RegExp("<[^>]*>", "g"), " ");
 
                     // get clean report title
@@ -1238,36 +1306,43 @@ PTS.do_user_click = function(event, input) {
  */
 $(document).ready(function() {
 
-    var user_container = $(PTS.user_container);
-    var action_spans   = $(PTS.mapaction_container + " > span");
-    var mode_spans     = $(PTS.mapmode_container   + " > span");
-    var user_spans     = $(PTS.user_container      + " > span");
-    var points_spans   = $(PTS.points_container    + " > span");
+    var mapaction_container = $(PTS.mapaction_container);
+    var mapmode_container = $(PTS.mapmode_container);
+    var user_container   = $(PTS.user_container);
+    var points_container = $(PTS.points_container);
+
+    var action_elements  = $(PTS.mapaction_container + " > " + PTS.group_element_tag);
+    var mode_elements    = $(PTS.mapmode_container   + " > " + PTS.group_element_tag);
+    var user_elements    = $(PTS.user_container      + " > " + PTS.group_element_tag);
+    var points_elements  = $(PTS.points_container    + " > " + PTS.group_element_tag);
 
     // this flag will be set to true
     // if the user map changes size
     // or the users change position
-    PTS.update_map = false;
+    PTS.update_usermap = false;
 
     PTS.set_feedback_visibility();
     PTS.set_usermap_size(user_container);
 
-    PTS.set_span_size_color(action_spans, PTS.mapaction_min_width, PTS.mapaction_min_height, "none");
-    PTS.set_span_size_color(mode_spans,   PTS.mapmode_min_width,   PTS.mapmode_min_height,   "none");
-    PTS.set_span_size_color(user_spans,   PTS.user_min_width,      PTS.user_min_height,      PTS.elementdisplay);
-    PTS.set_span_size_color(points_spans, PTS.points_min_width,    PTS.points_min_height,    "none");
+    // restrict width of points container
+    PTS.set_points_size(points_container, action_elements);
 
-    PTS.set_user_size(user_spans);
-    PTS.set_span_position(user_spans);
+    PTS.set_elm_size_color(action_elements, PTS.mapaction_min_width, PTS.mapaction_min_height, "none");
+    PTS.set_elm_size_color(mode_elements,   PTS.mapmode_min_width,   PTS.mapmode_min_height,   "none");
+    PTS.set_elm_size_color(user_elements,   PTS.user_min_width,      PTS.user_min_height,      PTS.elementdisplay);
+    PTS.set_elm_size_color(points_elements, PTS.points_min_width,    PTS.points_min_height,    "none");
 
-    PTS.set_span_event_handlers(action_spans, PTS.do_map_action);
-    PTS.set_span_event_handlers(mode_spans,   false);
-    PTS.set_span_event_handlers(user_spans,   PTS.do_user_click);
-    PTS.set_span_event_handlers(points_spans, false);
+    PTS.set_user_size(user_elements);
+    PTS.set_elm_position(user_elements);
+
+    PTS.set_elm_event_handlers(action_elements, PTS.do_map_action);
+    PTS.set_elm_event_handlers(mode_elements,   false);
+    PTS.set_elm_event_handlers(user_elements,   PTS.do_user_click);
+    PTS.set_elm_event_handlers(points_elements, false);
 
     // send new map settings to server
-    // if PTS.update_map was set to TRUE
-    PTS.update_map_via_ajax();
+    // if PTS.update_usermap was set to TRUE
+    PTS.update_usermap_via_ajax();
 
     // the keydown event will detect Apple/Win key
     // and set the mapmode to "select"
@@ -1288,14 +1363,14 @@ $(document).ready(function() {
         }
     });
 
-    user_spans.draggable({
+    user_elements.draggable({
         containment: PTS.user_container,
         scroll: true,
-        stack: "span",
+        stack: PTS.group_element_tag,
         start: function(event, ui) {
             $(this).addClass("ui-dragging");
             if ($(this).hasClass("ui-selected")){
-                PTS.selected = $("span.ui-selected").each(function(){
+                PTS.selected = $(PTS.group_element_tag + ".ui-selected").each(function(){
                     $(this).data("offset", $(this).offset());
                 });
             } else {
@@ -1320,7 +1395,7 @@ $(document).ready(function() {
                 PTS.set_awardto_xy(this);
             });
             PTS.set_awardto_xy(this);
-            PTS.update_map_via_ajax();
+            PTS.update_usermap_via_ajax();
         }
     });
 
@@ -1328,7 +1403,7 @@ $(document).ready(function() {
     user_container.selectable({
         cancel: "div.ui-resizable-handle,input",
         disabled: (PTS.allowselectable ? false : true),
-        filter: "span"
+        filter: PTS.group_element_tag
     });
 
     var handles = {"e":"egrip", "se":"segrip", "s":"sgrip"};
@@ -1354,7 +1429,7 @@ $(document).ready(function() {
         //start: function(event, ui) {
         //    var w = 0;
         //    var h = 0;
-        //    $(this).find("span").each(function(){
+        //    $(this).find(PTS.group_element_tag).each(function(){
         //        var p = $(this).position();
         //        w = Math.max(w, p.left + $(this).width());
         //        h = Math.max(h, p.top + $(this).height());
@@ -1366,14 +1441,14 @@ $(document).ready(function() {
             var w = parseInt(user_container.css("width"));
             if (w != $("#id_mapwidth").val()) {
                 $("#id_mapwidth").val(w);
-                PTS.update_map = true;
+                PTS.update_usermap = true;
             }
             var h = parseInt(user_container.css("height"));
             if (h != $("#id_mapheight").val()) {
                 $("#id_mapheight").val(h);
-                PTS.update_map = true;
+                PTS.update_usermap = true;
             }
-            PTS.update_map_via_ajax();
+            PTS.update_usermap_via_ajax();
         }
     });
 
@@ -1393,4 +1468,3 @@ $(document).ready(function() {
     // and remove the "report" section header
     $("#id_report_hdr").remove();
 });
-

@@ -43,16 +43,29 @@ class assignfeedback_points_award_points_form extends moodleform {
                                             "\r\n" => '\\n',   "\r" =>'\\n', "\n"=>'\\n', // newlines (win, mac, nix)
                                             "\0"   => '\\0',   '</' =>'<\\/');            // other replacements
 
+    protected $theme_type  = 0;
+    const THEME_TYPE_LABEL = 1;
+    const THEME_TYPE_SPAN  = 2;
+
     /**
      * Define this form - called by the parent constructor
      */
     public function definition() {
+        global $CFG, $THEME;
 
         $mform = $this->_form;
         $custom = $this->_customdata;
         $plugin = 'assignfeedback_points';
 
-        // we don't the need form change checker (Moodle >=2.3)
+        if (empty($CFG->branch) || $CFG->branch <= 31) {
+            // Moodle <= 3.1
+            $this->theme_type = self::THEME_TYPE_SPAN;
+        } else {
+            // Moodle >= 3.2
+            $this->theme_type = self::THEME_TYPE_LABEL;
+        }
+
+        // we don't the need form change checker (Moodle >= 2.3)
         // if we're using AJAX to send results
         if ($custom->config->sendimmediately==0) {
             $mform->disable_form_change_checker();
@@ -224,6 +237,57 @@ class assignfeedback_points_award_points_form extends moodleform {
     }
 
     /**
+     * add_field_mapaction
+     *
+     * @param object  $mform
+     * @param object  $custom
+     * @param string  $plugin
+     */
+    private function add_field_mapaction($mform, $custom, $plugin) {
+        $name = 'mapaction';
+        $label = get_string($name, $plugin);
+        $mapactions = array('none'     => get_string('none'),
+                            'reset'    => get_string('reset',    $plugin),
+                            'cleanup'  => get_string('cleanup',  $plugin),
+                            'separate' => get_string('separate', $plugin),
+                            'shuffle'  => get_string('shuffle',  $plugin),
+                            'resize'   => get_string('resize',   $plugin),
+                            'rotate'   => get_string('rotate',   $plugin));
+        $elements = array();
+        foreach ($mapactions as $value => $text) {
+            $elements[] = $mform->createElement('radio', $name, '', $text, $value);
+        }
+        $mform->addGroup($elements, $name.'elements', $label, '', false);
+        $mform->addHelpButton($name.'elements', $name, $plugin);
+        $mform->setType($name, PARAM_ALPHA);
+        $mform->setDefault($name, "none");
+    }
+
+    /**
+     * add_field_mapmode
+     *
+     * @param object  $mform
+     * @param object  $custom
+     * @param string  $plugin
+     */
+    private function add_field_mapmode($mform, $custom, $plugin) {
+        $name = 'mapmode';
+        $label = get_string($name, $plugin);
+        $mapmodes = array('award'  => get_string('award',  $plugin),
+                          'select' => get_string('select'),
+                          'absent' => get_string('absent', $plugin),
+                          'report' => get_string('report'));
+        $elements = array();
+        foreach ($mapmodes as $value => $text) {
+            $elements[] = $mform->createElement('radio', $name, '', $text, $value);
+        }
+        $mform->addGroup($elements, $name.'elements', $label, '', false);
+        $mform->addHelpButton($name.'elements', $name, $plugin);
+        $mform->setType($name, PARAM_ALPHA);
+        $mform->setDefault($name, "award");
+    }
+
+    /**
      * add_field_awardto
      *
      * @param object  $mform
@@ -294,14 +358,24 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $select .= ', SUM(p.points) AS pointstotal';
                 $where  .= " GROUP BY p.$name";
             } else {
-                // total points
-                $select .= ', p.points AS pointstotal';
-                $where  .= ' AND p.timeawarded = (SELECT MAX(t.timeawarded) '.
-                                                 'FROM {assignfeedback_points} t '.
-                                                 'WHERE p.assignid = t.assignid '.
-                                                   'AND p.pointstype = t.pointstype '.
-                                                   'AND p.timecancelled = t.timecancelled '.
-                                                   "AND p.$name = t.$name)";
+                // total points (select only most recent award)
+                $select .= ', p.points AS pointstotal, p.id';
+                $where  .= ' AND p.id = ('.
+                                'SELECT MAX(pp.id) '.
+                                  'FROM {assignfeedback_points} pp '.
+                                 'WHERE p.assignid = pp.assignid '.
+                                   'AND p.pointstype = pp.pointstype '.
+                                   'AND p.timecancelled = pp.timecancelled '.
+                                   "AND p.$name = pp.$name ".
+                                   'AND pp.timeawarded = ('.
+                                       'SELECT MAX(ppp.timeawarded) '.
+                                         'FROM {assignfeedback_points} ppp '.
+                                        'WHERE pp.assignid = ppp.assignid '.
+                                          'AND pp.pointstype = ppp.pointstype '.
+                                          'AND pp.timecancelled = ppp.timecancelled '.
+                                          "AND pp.$name = ppp.$name".
+                                        ')'.
+                                ')';
             }
             $pointstotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where", $params);
         } else {
@@ -460,7 +534,7 @@ class assignfeedback_points_award_points_form extends moodleform {
             if ($custom->config->multipleusers) {
                 $elements[] = $mform->createElement('checkbox', $name.'['.$userid.']', $userid, $text);
             } else {
-                $elements[] = $mform->createElement('radio', $name, $userid, $text, $userid);
+                $elements[] = $mform->createElement('radio', $name, '', $text, $userid);
             }
             if (empty($coords[$userid])) {
                 $x = '';
@@ -469,8 +543,8 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $x = $coords[$userid]->x;
                 $y = $coords[$userid]->y;
             }
-            $elements[] = $mform->createElement('hidden', $name.'x['.$userid.']', $x, array('id' => 'id_awardtox_'.$userid));
-            $elements[] = $mform->createElement('hidden', $name.'y['.$userid.']', $y, array('id' => 'id_awardtoy_'.$userid));
+            $elements[] = $mform->createElement('hidden', $name.'x['.$userid.']', $x, array('id' => 'id_'.$name.'x_'.$userid));
+            $elements[] = $mform->createElement('hidden', $name.'y['.$userid.']', $y, array('id' => 'id_'.$name.'y_'.$userid));
         }
 
         if (empty($elements)) {
@@ -499,57 +573,6 @@ class assignfeedback_points_award_points_form extends moodleform {
     }
 
     /**
-     * add_field_mapaction
-     *
-     * @param object  $mform
-     * @param object  $custom
-     * @param string  $plugin
-     */
-    private function add_field_mapaction($mform, $custom, $plugin) {
-        $name = 'mapaction';
-        $label = get_string($name, $plugin);
-        $mapactions = array('none'     => get_string('none'),
-                            'reset'    => get_string('reset',    $plugin),
-                            'cleanup'  => get_string('cleanup',  $plugin),
-                            'separate' => get_string('separate', $plugin),
-                            'shuffle'  => get_string('shuffle',  $plugin),
-                            'resize'   => get_string('resize',   $plugin),
-                            'rotate'   => get_string('rotate',   $plugin));
-        $elements = array();
-        foreach ($mapactions as $value => $text) {
-            $elements[] = $mform->createElement('radio', $name, '', $text, $value);
-        }
-        $mform->addGroup($elements, $name.'elements', $label, '', false);
-        $mform->addHelpButton($name.'elements', $name, $plugin);
-        $mform->setType($name, PARAM_ALPHA);
-        $mform->setDefault($name, "none");
-    }
-
-    /**
-     * add_field_mapmode
-     *
-     * @param object  $mform
-     * @param object  $custom
-     * @param string  $plugin
-     */
-    private function add_field_mapmode($mform, $custom, $plugin) {
-        $name = 'mapmode';
-        $label = get_string($name, $plugin);
-        $mapmodes = array('award'  => get_string('award',  $plugin),
-                          'select' => get_string('select'),
-                          'absent' => get_string('absent', $plugin),
-                          'report' => get_string('report'));
-        $elements = array();
-        foreach ($mapmodes as $value => $text) {
-            $elements[] = $mform->createElement('radio', $name, '', $text, $value);
-        }
-        $mform->addGroup($elements, $name.'elements', $label, '', false);
-        $mform->addHelpButton($name.'elements', $name, $plugin);
-        $mform->setType($name, PARAM_ALPHA);
-        $mform->setDefault($name, "award");
-    }
-
-    /**
      * add_field_points
      *
      * @param object  $mform
@@ -570,52 +593,19 @@ class assignfeedback_points_award_points_form extends moodleform {
         $elements = array();
         // add a reset element if necessary
         if (($min<0 && $max<0) || ($min>0 && $max>0)) {
-            $elements[] = $mform->createElement('radio', $name, 0, get_string('reset'), 0);
+            $elements[] = $mform->createElement('radio', $name, '', get_string('reset'), 0);
         }
         // add one element for each point value
         for ($i=$min; $i<($max + $inc); $i+=$inc) {
             if ($i > $max) {
                 $i = $max;
             }
-            $elements[] = $mform->createElement('radio', $name, $i, $i, $i);
+            $elements[] = $mform->createElement('radio', $name, '', $i, $i);
         }
         $mform->addGroup($elements, $name.'elements', $label, '', false);
         $mform->addHelpButton($name.'elements', $name, $plugin);
         $mform->setType($name, PARAM_INT);
         $mform->setDefault($name, 0);
-    }
-
-    /**
-     * add_field_points
-     *
-     * @param object  $mform
-     * @param object  $custom
-     * @param string  $plugin
-     * @param object  $gradingmanager
-     */
-    private function add_field_advancedgrading($mform, $custom, $plugin, $gradingmanager) {
-        global $USER;
-
-        // the following code mimics $custom->assignment->get_grading_instance()
-        // which is a protected method (for details, see: mod/assign/locallib.php)
-
-        // form elements are produced by the "display_xxx()" method
-        // in the "grade/grading/form/xxx/renderer.php" script file
-        $name = 'advancedgrading';
-        $label = get_string('gradingmanagement', 'grading');
-
-        $controller = $gradingmanager->get_controller($custom->gradingmethod);
-        if ($controller->is_form_available()) {
-            $label = $controller->get_definition()->name;
-            $gradinginstanceid = optional_param($name.'instanceid', 0, PARAM_INT);
-            $gradinginstance = $controller->get_or_create_instance($gradinginstanceid, $USER->id, null);
-            $mform->addElement('grading', $name, $label, array('gradinginstance' => $gradinginstance));
-            $mform->addElement('hidden', $name.'instanceid', $gradinginstance->get_id());
-            $mform->setType($name.'instanceid', PARAM_INT);
-        } else {
-            // shoudln't happen !!
-            $mform->addElement('static', $name, $label, $controller->form_unavailable_notification());
-        }
     }
 
     /**
@@ -669,6 +659,39 @@ class assignfeedback_points_award_points_form extends moodleform {
     }
 
     /**
+     * add_field_advancedgrading
+     *
+     * @param object  $mform
+     * @param object  $custom
+     * @param string  $plugin
+     * @param object  $gradingmanager
+     */
+    private function add_field_advancedgrading($mform, $custom, $plugin, $gradingmanager) {
+        global $USER;
+
+        // the following code mimics $custom->assignment->get_grading_instance()
+        // which is a protected method (for details, see: mod/assign/locallib.php)
+
+        // form elements are produced by the "display_xxx()" method
+        // in the "grade/grading/form/xxx/renderer.php" script file
+        $name = 'advancedgrading';
+        $label = get_string('gradingmanagement', 'grading');
+
+        $controller = $gradingmanager->get_controller($custom->gradingmethod);
+        if ($controller->is_form_available()) {
+            $label = $controller->get_definition()->name;
+            $gradinginstanceid = optional_param($name.'instanceid', 0, PARAM_INT);
+            $gradinginstance = $controller->get_or_create_instance($gradinginstanceid, $USER->id, null);
+            $mform->addElement('grading', $name, $label, array('gradinginstance' => $gradinginstance));
+            $mform->addElement('hidden', $name.'instanceid', $gradinginstance->get_id());
+            $mform->setType($name.'instanceid', PARAM_INT);
+        } else {
+            // shouldn't happen !!
+            $mform->addElement('static', $name, $label, $controller->form_unavailable_notification());
+        }
+    }
+
+    /**
      * add_field_layouts
      *
      * @param object  $mform
@@ -699,23 +722,23 @@ class assignfeedback_points_award_points_form extends moodleform {
         $layouts = $DB->get_records_menu($table, $params, 'name', 'id,name');
 
         if ($layouts) {
-            $elements[] = $mform->createElement('radio', $name, 'load', get_string('load', $plugin), 'load');
+            $elements[] = $mform->createElement('radio', $name, '', get_string('load', $plugin), 'load');
             $elements[] = $mform->createElement('select', $name.'loadid', '', $layouts);
             $elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
         }
 
-        $elements[] = $mform->createElement('radio', $name, 'setup', get_string('setup',  $plugin), 'setup');
+        $elements[] = $mform->createElement('radio', $name, '', get_string('setup',  $plugin), 'setup');
         $elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
 
         $types = array('square', 'circle');
         foreach ($types as $type) {
-            $elements[] = $mform->createElement('radio', $name.'setup', $type, get_string($type, $plugin), $type, array('class' => 'indent'));
-            $elements[] = $mform->createElement('radio', $name.$type, '100',     get_string('percent100', $plugin), 100);
-            $elements[] = $mform->createElement('radio', $name.$type, '75',      get_string('percent75',  $plugin), 75);
-            $elements[] = $mform->createElement('radio', $name.$type, '50',      get_string('percent50',  $plugin), 50);
-            $elements[] = $mform->createElement('radio', $name.$type, '25',      get_string('percent25',  $plugin), 25);
-            $elements[] = $mform->createElement('radio', $name.$type, 'percent', get_string('percent',    $plugin), 'percent');
-            $elements[] = $mform->createElement('text',  $name.$type.'percent',  get_string('percent',    $plugin), array('size' => 3));
+            $elements[] = $mform->createElement('radio', $name.'setup', '', get_string($type, $plugin), $type, array('class' => 'indent'));
+            $elements[] = $mform->createElement('radio', $name.$type,   '', get_string('percent100', $plugin), 100);
+            $elements[] = $mform->createElement('radio', $name.$type,   '', get_string('percent75',  $plugin),  75);
+            $elements[] = $mform->createElement('radio', $name.$type,   '', get_string('percent50',  $plugin),  50);
+            $elements[] = $mform->createElement('radio', $name.$type,   '', get_string('percent25',  $plugin),  25);
+            $elements[] = $mform->createElement('radio', $name.$type,   '', get_string('percent',    $plugin), 'percent');
+            $elements[] = $mform->createElement('text',  $name.$type.'percent', get_string('percent', $plugin), array('size' => 3));
             $elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
         }
 
@@ -728,19 +751,19 @@ class assignfeedback_points_award_points_form extends moodleform {
                                           1 => array(0 => get_string('numberofislands', $plugin),
                                                      1 => get_string('peopleperisland', $plugin))));
         foreach ($types as $type => $options) {
-            $elements[] = $mform->createElement('radio', $name.'setup', $type, get_string($type, $plugin), $type, array('class' => 'indent'));
+            $elements[] = $mform->createElement('radio',  $name.'setup', '', get_string($type, $plugin), $type, array('class' => 'indent'));
             $elements[] = $mform->createElement('select', $name.$type.'type',     '', $options[0]);
             $elements[] = $mform->createElement('select', $name.$type.'numtype',  '', $options[1]);
             $elements[] = $mform->createElement('text',   $name.$type.'numvalue', '', array('size' => 3));
             $elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
         }
 
-        $elements[] = $mform->createElement('radio', $name, 'save',   get_string('save',   $plugin), 'save');
-        $elements[] = $mform->createElement('text',  $name.'savename', get_string('save',  $plugin), array('size' => 24));
+        $elements[] = $mform->createElement('radio', $name, '', get_string('save', $plugin), 'save');
+        $elements[] = $mform->createElement('text',  $name.'savename', get_string('save', $plugin), array('size' => 24));
 
         if ($layouts) {
             $elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
-            $elements[] = $mform->createElement('radio', $name, 'delete', get_string('delete', $plugin), 'delete');
+            $elements[] = $mform->createElement('radio', $name, '', get_string('delete', $plugin), 'delete');
             $elements[] = $mform->createElement('select', $name.'deleteid', '', $layouts);
         }
 
@@ -843,6 +866,24 @@ class assignfeedback_points_award_points_form extends moodleform {
      */
     private function add_field_jquery($mform, $custom, $plugin) {
 
+        if ($this->theme_type==self::THEME_TYPE_SPAN) {
+            // Moodle <= 3.1
+            $group_element_tag   = 'span';
+            $mapaction_container = '#fgroup_id_mapactionelements fieldset.fgroup';
+            $mapmode_container   = '#fgroup_id_mapmodeelements fieldset.fgroup';
+            $user_container      = '#fgroup_id_awardtoelements fieldset.fgroup';
+            $points_container    = '#fgroup_id_pointselements fieldset.fgroup';
+            $layouts_container   = '#fgroup_id_layoutselements';
+        } else {
+            // Moodle >= 3.2
+            $group_element_tag   = 'label';
+            $mapaction_container = '#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement';
+            $mapmode_container   = '#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement';
+            $user_container      = '#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement';
+            $points_container    = '#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement';
+            $layouts_container   = '#id_layouts_hdr div.form-group.row:nth-child(1) div.felement';
+        }
+
         $contacting_server_msg = get_string('contactingserver',  $plugin);
 
         $awardpoints_ajax_php  = '/mod/assign/feedback/points/awardpoints.ajax.php';
@@ -873,23 +914,29 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.showscoreguide        = '.intval($custom->config->showscoreguide).";\n";
         $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
 
-        $js .= '    PTS.layouts_container     = "#fgroup_id_layoutselements"'.";\n";
+        $js .= '    PTS.theme_type            = "'.$this->theme_type.'";'."\n";
+        $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
+        $js .= '    PTS.THEME_TYPE_LABEL      = '.self::THEME_TYPE_LABEL."\n";
+        $js .= '    PTS.group_element_tag     = "'.$group_element_tag.'";'."\n";
+        $js .= '    PTS.GROUP_ELEMENT_TAG     = PTS.group_element_tag.toUpperCase();'."\n";
 
-        $js .= '    PTS.mapaction_container   = "#fgroup_id_mapactionelements fieldset.fgroup";'."\n";
+        $js .= '    PTS.mapaction_container   = "'.$mapaction_container.'";'."\n";
         $js .= '    PTS.mapaction_min_width   = 48;'."\n";
         $js .= '    PTS.mapaction_min_height  = 18;'."\n";
 
-        $js .= '    PTS.mapmode_container     = "#fgroup_id_mapmodeelements fieldset.fgroup";'."\n";
+        $js .= '    PTS.mapmode_container     = "'.$mapmode_container.'";'."\n";
         $js .= '    PTS.mapmode_min_width     = 48;'."\n";
         $js .= '    PTS.mapmode_min_height    = 18;'."\n";
 
-        $js .= '    PTS.user_container        = "#fgroup_id_awardtoelements fieldset.fgroup";'."\n";
+        $js .= '    PTS.user_container        = "'.$user_container.'";'."\n";
         $js .= '    PTS.user_min_width        = 60;'."\n";
         $js .= '    PTS.user_min_height       = 18;'."\n";
 
-        $js .= '    PTS.points_container      = "#fgroup_id_pointselements fieldset.fgroup";'."\n";
-        $js .= '    PTS.points_min_width      = 48;'."\n";
+        $js .= '    PTS.points_container      = "'.$points_container.'";'."\n";
+        $js .= '    PTS.points_min_width      = (PTS.theme_type==PTS.THEME_TYPE_LABEL ? 48 : 36);'."\n";
         $js .= '    PTS.points_min_height     = 24;'."\n";
+
+        $js .= '    PTS.layouts_container     = "'.$layouts_container.'"'.";\n";
 
         $js .= '    PTS.report_container_id   = "id_report_container";'."\n";
         $js .= '    PTS.report_container      = "#" + PTS.report_container_id;'."\n";
