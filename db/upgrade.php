@@ -216,38 +216,43 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                 $newconfigs[$assignid]->$name = $value;
             }
 
+            $defaulttoken = get_string('namefieldtokendefault', $plugin);
+            $defaultjoin = get_string('namefieldjoindefault', $plugin);
+            $defaultcase = 0; // original case
+
             foreach ($newconfigs as $assignid => $config) {
                 $nameformat = array();
-                $namechar = ' ';
+                $namenewline = ' ';
                 $namefields = array();
                 if ($config->showrealname) {
                     if ($config->showrealname=='default') {
-                        $realnames = $defaultnames;
+                        $fields = $defaultnames;
                     } else {
-                        $realnames = array($config->showrealname);
+                        $fields = array($config->showrealname);
                     }
-                    foreach ($realnames as $realname) {
+                    foreach ($fields as $field) {
                         switch (true) {
-                            case is_numeric(strpos($realname, 'firstname')): $case = $config->firstnamecase; break;
-                            case is_numeric(strpos($realname, 'lastname')) : $case = $config->lastnamecase;  break;
-                            default: $case = 0;
+                            case is_numeric(strpos($field, 'firstname')): $case = $config->firstnamecase; break;
+                            case is_numeric(strpos($field, 'lastname')) : $case = $config->lastnamecase;  break;
+                            default: $case = $defaultcase;
                         }
-                        $namefields[] = array('token'  => get_string('namefieldtokendefault', $plugin),
-                                              'field'  => $realname,
+                        $token = $defaulttoken.(count($namefields) + 1);
+                        $nameformat[] = $token;
+                        $namefields[] = array('token'  => $token,
+                                              'field'  => $field,
                                               'length' => 0,
                                               'head'   => 0,
-                                              'join'   => get_string('namefieldjoindefault', $plugin),
+                                              'join'   => $defaultjoin,
                                               'tail'   => 0,
                                               'style'  => '',
                                               'case'   => $case,
                                               'romanize' => $config->romanizenames);
-                        $nameformat[] = 'name'.(count($namefields));
                     }
                 }
-                if ($nameformat = implode($namechar, $nameformat)) {
+                if ($nameformat = implode($namenewline, $nameformat)) {
                     $namefields = base64_encode(serialize($namefields));
                     xmldb_assignfeedback_points_config($configids, $table, $assignid, 'nameformat', $nameformat);
-                    xmldb_assignfeedback_points_config($configids, $table, $assignid, 'namechar',   $namechar);
+                    xmldb_assignfeedback_points_config($configids, $table, $assignid, 'namechar',   $namenewline);
                     xmldb_assignfeedback_points_config($configids, $table, $assignid, 'namefields', $namefields);
                 }
             }
@@ -291,7 +296,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                         'increment',       'maxpoints',
                         'sendimmediately', 'multipleusers',
                         'showelement',     'showpicture',   'showusername',
-                        'nameformat',      'namechar',      'namefields',
+                        'nameformat',      'namenewline',   'namefields',
                         'showpointstoday', 'showpointstotal',
                         'showscorerubric', 'showscoreguide',
                         'showgradeassign', 'showgradecourse',

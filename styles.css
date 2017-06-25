@@ -395,7 +395,7 @@ body.path-mod-assign #fgroup_id_layoutselements input.indent,
 ** settings
 **********************************/
 
-body.path-mod-assign .mform #id_settings .namesettingtitle,
+body.path-mod-assign #id_settings .namesettingtitle,
 body.path-mod-assign #id_settings_hdr .namesettingtitle,
 #assignfeedback_points_award_points_form #id_settings_hdr .namesettingtitle {
     display     : inline-block;
@@ -406,13 +406,13 @@ body.path-mod-assign #id_settings_hdr .namesettingtitle,
     text-align  : right;
 }
 
-body.path-mod-assign .mform #id_settings .namesettingtitle.wide,
+body.path-mod-assign #id_settings .namesettingtitle.wide,
 body.path-mod-assign #id_settings_hdr .namesettingtitle.wide,
 #assignfeedback_points_award_points_form #id_settings_hdr .namesettingtitle.wide {
     width       : 96px;
 }
 
-body.path-mod-assign .mform #id_settings .namesettingtitle.thin,
+body.path-mod-assign #id_settings .namesettingtitle.thin,
 body.path-mod-assign #id_settings_hdr .namesettingtitle.thin,
 #assignfeedback_points_award_points_form #id_settings_hdr .namesettingtitle.thin {
     width       : 48px;

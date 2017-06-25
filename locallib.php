@@ -221,7 +221,19 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
                 $mform->setType($name."[$i][$setting]", $type);
                 $mform->setDefault($name."[$i][$setting]", $default);
+
+                // if "field" is not set, disable this $setting
+                if ($setting=='token' || $setting=='field') {
+                    // do nothing
+                } else {
+                    $mform->disabledIf("namefields[$i][$setting]", "namefields[$i][field]", 'eq', '');
+                }
             }
+
+            // if "length" is zero, disable "head", "tail" and "join"
+            $mform->disabledIf("namefields[$i][head]", "namefields[$i][length]", 'eq', '0');
+            $mform->disabledIf("namefields[$i][tail]", "namefields[$i][length]", 'eq', '0');
+            $mform->disabledIf("namefields[$i][join]", "namefields[$i][length]", 'eq', '0');
         }
 
         // button to add more "namefields"
@@ -293,12 +305,12 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param array   $elements (baed by reference)
      * @param object  $strman
      * @param string  name of $plugin
-     * @param string  $name of form element
+     * @param string  $name of form element (should be "namefields")
      * @param integer $i(ndex) of form element
      * @param string  name of $setting
      * @param string  $elementtype
-     * @param $paramtype (optional, default=0)
-     * @param $spacetype (optional, default=0)
+     * @param $labeltype (optional, default=0) 0=none, 1=thin, 2=wide
+     * @param $spacetype (optional, default=0) 0=none, 1=space, 2=newline, 3=get_string("nameseparator", $plugin)
      * @todo Finish documenting this function
      */
     static public function add_namefields_setting($mform, &$elements, $strman, $plugin, $name, $i, $setting, $elementtype, $labeltype=0, $spacetype=0) {
@@ -360,9 +372,9 @@ class assign_feedback_points extends assign_feedback_plugin {
     public function save_settings_allowmissing(stdClass $data, $allowmissing=false) {
         $plugin = 'assignfeedback_points';
         foreach (self::get_defaultvalues($plugin) as $name => $default) {
-
             $this->save_setting_allowmissing($data, $name, $default, $allowmissing);
         }
+        return true;
     }
 
     /**
@@ -1858,8 +1870,8 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'field'    => PARAM_ALPHANUM,
                      'length'   => PARAM_INT,
                      'head'     => PARAM_INT,
-                     'tail'     => PARAM_INT,
                      'join'     => PARAM_TEXT,
+                     'tail'     => PARAM_INT,
                      'style'    => PARAM_ALPHA,
                      'case'     => PARAM_INT,
                      'romanize' => PARAM_INT);
