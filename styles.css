@@ -377,20 +377,17 @@ body.path-mod-assign #fgroup_id_layoutselements input[type="radio"],
     margin-left  : 16px;
 }
 
-body.path-mod-assign #fgroup_id_layoutselements input[type="text"],
-#id_layouts_hdr div.form-group.row:nth-child(1) div.felement input[type="text"] {
-    margin-right : 4px;
-    margin-left  : 4px;
-}
-
 body.path-mod-assign #fgroup_id_layoutselements select,
-#id_layouts_hdr div.form-group.row:nth-child(1) div.felement select {
-    margin-right : 4px;
-    margin-left  : 4px;
+body.path-mod-assign #fgroup_id_layoutselements input[type="text"],
+#id_layouts_hdr div.form-group.row:nth-child(1) div.felement select,
+#id_layouts_hdr div.form-group.row:nth-child(1) div.felement input[type="text"] {
+    margin-right  :  4px;
+    margin-left   :  4px;
+    margin-bottom : 10px;
 }
 
 body.path-mod-assign #fgroup_id_layoutselements input.indent,
-#id_layouts_hdr div.form-group.row:nth-child(1) div.felement input.indent {
+#id_layouts_hdr div.form-group.row:nth-child(1) div.felement label.indent {
     margin-left : 72px;
 }
 
@@ -415,10 +412,10 @@ body.path-mod-assign #id_settings_hdr .namesettingtitle.wide,
     width       : 96px;
 }
 
-body.path-mod-assign .mform #id_settings .namesettingtitle.narrow,
-body.path-mod-assign #id_settings_hdr .namesettingtitle.narrow,
-#assignfeedback_points_award_points_form #id_settings_hdr .namesettingtitle.narrow {
-    width       : 72px;
+body.path-mod-assign .mform #id_settings .namesettingtitle.thin,
+body.path-mod-assign #id_settings_hdr .namesettingtitle.thin,
+#assignfeedback_points_award_points_form #id_settings_hdr .namesettingtitle.thin {
+    width       : 48px;
 }
 
 

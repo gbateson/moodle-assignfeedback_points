@@ -40,6 +40,7 @@ $string['awardpoints'] = 'Award points';
 $string['awardto_help'] = 'The user(s) to whom the points will be awarded';
 $string['awardto'] = 'Recipient user(s)';
 $string['cancelby'] = 'Cancelled by';
+$string['case'] = 'Case';
 $string['circle'] = 'Circle';
 $string['cleanup'] = 'Clean up';
 $string['commenttext_help'] = 'A brief decription of why these points are being awarded to the selected user(s)';
@@ -71,11 +72,13 @@ $string['firstnamecase'] = 'Case of first name';
 $string['fix'] = 'Fix';
 $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
+$string['head'] = 'Head';
 $string['horizontal'] = 'Horizontal';
 $string['increment_help'] = 'the number of points in each step between the minimum number of points and the maximum number of points';
 $string['increment'] = 'Points increment';
 $string['incremental'] = 'Incremental';
 $string['islands'] = 'Islands';
+$string['join'] = 'Join';
 $string['lastnamecase_help'] = 'This setting allows you to specify the case used when displaying a student\'s last name.
 
 **Original case**
@@ -92,6 +95,10 @@ $string['lastnamecase_help'] = 'This setting allows you to specify the case used
 $string['lastnamecase'] = 'Case of last name';
 $string['layouts_help'] = 'Use these settings to setup, save, load, and delete layouts for the user-map';
 $string['layouts'] = 'Layouts';
+$string['length_help'] = 'These values specify how to format long names.
+
+If the number of characters in this name field exceeds the "Length" value here, then the name will be reformatted as HEAD ... TAIL, where HEAD is the "Head" number of characters from the beginning of the name, and TAIL is the "Tail" number of characters from the end of the name.';
+$string['length'] = 'Length';
 $string['lines'] = 'Lines';
 $string['load'] = 'Load';
 $string['lowercase'] = 'lower case';
@@ -115,19 +122,48 @@ $string['mapaction_help'] = 'Click these buttons to perform operations on the us
 **Rotate**
 : The entire user-map will be rotated by ¼, ½, ¾ or a full turn.';
 $string['mapaction'] = 'User-map action';
-$string['maxpoints_help'] = 'the maximum number of points for any single award of points';
-$string['mapmode'] = 'User-map mode';
 $string['mapmode_help'] = 'the action that will be taken when you click on a user in the user-map';
+$string['mapmode'] = 'User-map mode';
+$string['maxpoints_help'] = 'the maximum number of points for any single award of points';
 $string['maxpoints'] = 'Maximum points';
 $string['minpoints_help'] = 'the minimum number of points for any single award of points - this can be a negative number';
 $string['minpoints'] = 'Minimum points';
 $string['multipleusers_help'] = 'If this setting is enabled, more than one student can be selected when points are awarded. Otherwise, only a single student can be awarded points at one time.';
 $string['multipleusers'] = 'Select multiple users';
+$string['namefield_help'] = 'Specify the token that represents this name in the name format string, and then select a name field to be displayed from the user profile.
+
+In addition, the following formatting options are available:
+
+**Length, Head, Tail**
+: Specify the maximum number of characters to be displayed for this name. Names that are longer than this number of characters will be truncated using the number of "Head" and "Tail" characters.
+
+**Style**
+: Specify the HTML style tag that is to be used when displaying this name.
+
+**Case**
+: Specify the case that is to be used when displaying this name.
+
+**Romanize**
+: If this setting is enabled, then where possible, Japanese, Korean and Chinese names will be converted to their English equivalents.';
+$string['namefield'] = 'Name field [{$a}]';
+$string['namefieldjoindefault'] = ' ... ';
+$string['namefieldtokendefault'] = 'name';
+$string['namefieldsadd'] = 'Add a name field';
 $string['nameformat_help'] = 'Enter the name fields as you wish them displayed. The names are entered here as *name1* *name2* ... and are defined below.';
 $string['nameformat'] = 'Name format';
+$string['namenewline_help'] = 'Any characters supplied here will be replaced by newlines in the "Name format" string.
+
+If no characters are specified, then no newlines will be inserted into the name string.
+
+Commonly used newline characters are a single space (" "); a symbol, such as a vertical bar ("|") or slash ("/"); or a punctuation mark, such as a period (".") or exclamation mark ("!").';
+$string['namenewline'] = 'Newline character';
+$string['namenewlinedefault'] = ' ';
+$string['nameseparator'] = ' = ';
 $string['newcomment'] = 'New comment ...';
-$string['nousersfound'] = 'Oops, no users found.';
+$string['newlineempty'] = '(this text box is currently empty)';
+$string['newlinespace'] = '(this text box currently contains a space)';
 $string['nopointsyet'] = 'No points have been awarded to this user yet.';
+$string['nousersfound'] = 'Oops, no users found.';
 $string['numberofislands'] = 'Number of islands';
 $string['numberoflines'] = 'Number of lines';
 $string['originalcase'] = 'Original case';
@@ -150,6 +186,17 @@ $string['pointstypetotal'] = 'Total points';
 $string['propercase'] = 'Proper Case';
 $string['reset'] = 'Reset';
 $string['resize'] = 'Resize';
+$string['romanize_help'] = 'Specify whether this name field should be romainzed.
+
+**No**
+: The name will not be romanized.
+
+**Yes**
+: The name will be romanized.
+
+**Fix**
+: The name will be romanized and furthermore will be converted to Hepburn romanization in which long vowels are displayed using macrons, i.e. āēīōū';
+$string['romanize'] = 'Romanize';
 $string['romanizenames_help'] = 'If this setting is enabled, names will be romanized using modifed Hepburn romanization, in which macrons are used to show long vowel sounds.';
 $string['romanizenames'] = 'Romanize names';
 $string['rotate'] = 'Rotate';
@@ -205,36 +252,21 @@ $string['showscorerubric'] = 'Show rubric score';
 $string['showusername_help'] = 'If this setting is enabled, the students\' login usernames will be shown in the list of students to whom points are awarded.';
 $string['showusername'] = 'Show usernames';
 $string['shuffle'] = 'Shuffle';
+$string['singlespace'] = '(single white space)';
 $string['splitrealname_help'] = 'If this setting is enabled, the students\' default real name, if used, will be split into two lines, in order to minimize the width of the student tiles.';
 $string['splitrealname'] = 'Split real names';
 $string['square'] = 'Square';
+$string['style_help'] = 'Specify the HTML tag and text case to be used when this name is displayed.';
+$string['style'] = 'Style';
 $string['subtotal'] = 'Sub-total';
+$string['tail'] = 'Tail';
 $string['textforgradebook'] = '{$a->timeawarded} ({$a->points} pts) {$a->comment}';
 $string['timeawarded'] = 'Time awarded';
 $string['timecancelled'] = 'Time cancelled';
-$string['uppercase'] = 'UPPER CASE';
 $string['undo'] = 'Undo';
 $string['undomanypointsmanyusers'] = 'Cancelled award of {$a->points} points to {$a->usercount} users: {$a->userlist}';
 $string['undomanypointsoneuser'] = 'Cancelled award of {$a->points} points to {$a->usercount} user: {$a->userlist}';
 $string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a->usercount} users: {$a->userlist}';
 $string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
+$string['uppercase'] = 'UPPER CASE';
 $string['vertical'] = 'Vertical';
-
-$string['case_help'] = 'Specificy the case to be used when this name is displayed.';
-$string['case'] = 'Case';
-$string['field_help'] = 'Select a name field form the user profile';
-$string['field'] = 'Field';
-$string['head_help'] = 'Specify the number of characters from the start of the name that will be displayed if the name exceeds the maximum allowde length.';
-$string['head'] = 'Head';
-$string['length_help'] = 'The maximum allowed length of this name field.';
-$string['length'] = 'Length';
-$string['prefix_help'] = 'Specify the prefix to be added at the start of this name field.';
-$string['prefix'] = 'Prefix';
-$string['romanize_help'] = 'Specify whether this name field should be romainzed.';
-$string['romanize'] = 'Romanize';
-$string['style_help'] = 'Specify the HTML tag to be used to style this name field.';
-$string['style'] = 'Style';
-$string['suffix_help'] = 'Specify the suffix to be added at the end of this name field.';
-$string['suffix'] = 'Suffix';
-$string['tail_help'] = 'Specify the number of characters from the end of the name that will be displayed if the name exceeds the maximum allowde length.';
-$string['tail'] = 'Tail';

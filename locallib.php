@@ -38,10 +38,14 @@ class assign_feedback_points extends assign_feedback_plugin {
     const CASE_LOWER    = 2;
     const CASE_UPPER    = 3;
 
-    const NAME_COUNT_MAX = 2;
-    const NAME_INCREMENT = 1;
+    const NAME_COUNT_MAX = 4;
+    const NAME_COUNT_ADD = 1;
 
     const JAPANESE_NAME_STRING = '/^((t?chi|s?shi|t?tsu)|((by|t?ch|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
+
+    const ROMANIZE_NO  = 0;
+    const ROMANIZE_YES = 1;
+    const ROMANIZE_FIX = 2;
 
     /**
      * Get the name of the feedback points plugin.
@@ -61,18 +65,13 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     public function get_all_config($plugin) {
 
+        $defaults = self::get_defaultvalues($plugin);
+
         // get the site wide defaults for this $plugin
         $config = get_config($plugin);
 
         // add defaults for integer fields
-        foreach (self::get_integerfields() as $name => $value) {
-            if (! property_exists($config, $name)) {
-                $config->$name = $value;
-            }
-        }
-
-        // add defaults for boolean fields
-        foreach (self::get_booleanfields() as $name => $value) {
+        foreach ($defaults as $name => $value) {
             if (! property_exists($config, $name)) {
                 $config->$name = $value;
             }
@@ -81,49 +80,48 @@ class assign_feedback_points extends assign_feedback_plugin {
         // override with settings for this assign(ment) activity
         if ($this->assignment->has_instance()) {
             foreach ($this->get_config() as $name => $value) {
-                if (! is_numeric($name)) {
+                if (property_exists($config, $name)) {
                     $config->$name = $value;
                 }
             }
         }
 
-        if (empty($config->nameformat)) {
-            $config->nameformat = 'name1 name2';
+        // unpack namefields, if necessary
+        if (is_string($config->namefields)) {
+            if (empty($config->namefields)) {
+                $config->namefields = array();
+            } else {
+                $config->namefields = unserialize(base64_decode($config->namefields));
+            }
         }
-        if (empty($config->namecount)) {
-            $config->namecount = 2;
-        }
-        if (empty($config->name)) {
-            $config->name = array();
-        } else if (is_string($config->name)) {
-            $config->name = unserialize($config->name);
-        }
-
-        $config->nameformat = optional_param('nameformat', $config->nameformat, PARAM_TEXT);
-        $config->namecount = optional_param('namecount', $config->namecount, PARAM_INT);
-        $config->name = self::optional_param_array('name', $config->name, PARAM_TEXT, true);
-
-        $selectfields = self::get_selectfields();
-        $integerfields = self::get_integerfields();
-        $booleanfields = self::get_booleanfields();
 
         // override with settings from incoming form data
-        foreach ($config as $name => $value) {
+        foreach ($defaults as $name => $value) {
             switch (true) {
-                case array_key_exists($name, $selectfields):
-                    $paramtype = $selectfields[$name];
+                case is_array($value):
+                    $value = self::optional_param_array($name, null, PARAM_TEXT);
                     break;
-                case array_key_exists($name, $integerfields):
-                case array_key_exists($name, $booleanfields):
-                    $paramtype = PARAM_INT;
+                case is_string($value):
+                    $value = optional_param($name, null, PARAM_TEXT);
+                    break;
+                case is_integer($value):
+                    $value = optional_param($name, null, PARAM_INT);
                     break;
                 default:
-                    $paramtype = null;
+                    $value = null; // shouldn't happen !!
             }
-            if (isset($paramtype)) {
-                $value = optional_param($name, null, $paramtype);
-                if (isset($value)) {
-                    $config->$name = $value;
+            if (isset($value)) {
+                $config->$name = $value;
+            }
+        }
+
+        // unset namefields if necessary
+        if (isset($config->namefields)) {
+            $i_max = count($config->namefields);
+            for ($i=($i_max - 1); $i>=0; $i--) {
+                if (empty($config->namefields[$i]['field'])) {
+                    array_splice($config->namefields, $i, 1);
+                    array_splice($_POST['namefields'], $i, 1);
                 }
             }
         }
@@ -155,79 +153,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             $mform->setExpanded($name, false);
         }
 
-        self::add_settings($mform, $config);
+        self::add_settings($mform, $config, $plugin);
    }
-
-    /**
-     * get_integerfields
-     *
-     * @return array(name => default)
-     */
-    static public function get_integerfields() {
-        return array('pointstype'    =>  0,
-                     'minpoints'     => -1,
-                     'increment'     =>  1,
-                     'maxpoints'     =>  2);
-    }
-
-    /**
-     * get_booleanfields
-     *
-     * @return array(name => default)
-     */
-    static public function get_booleanfields() {
-        return array('sendimmediately' => 1,
-                     'multipleusers'   => 0,
-                     'showelement'     => 0,
-                     'showpicture'     => 0,
-                     'showrealname'    => '',
-                     'splitrealname'   => 1,
-                     'romanizenames'   => 0,
-                     'firstnamecase'   => 0,
-                     'lastnamecase'    => 0,
-                     'showusername'    => 0,
-                     'showpointstoday' => 1,
-                     'showpointstotal' => 1,
-                     'showscorerubric' => 0,
-                     'showscoreguide'  => 0,
-                     'showgradeassign' => 0,
-                     'showgradecourse' => 0,
-                     'showcomments'    => 1,
-                     'showfeedback'    => 0,
-                     'showlink'        => 1,
-                     'showfeedback'    => 0,
-                     'allowselectable' => 1);
-    }
-
-    /**
-     * get_selectfields
-     *
-     * @return array(name => PARAM_xxx)
-     */
-    static public function get_selectfields() {
-       return array('pointstype'    => PARAM_INT,
-                    'showrealname'  => PARAM_ALPHA,
-                    'firstnamecase' => PARAM_INT,
-                    'lastnamecase'  => PARAM_INT,
-                    'showfeedback'  => PARAM_INT);
-    }
-
-    /**
-     * get_namesettings
-     *
-     * @return array(name => PARAM_xxx)
-     */
-    static public function get_namesettings() {
-        return array('field'    => PARAM_ALPHANUM,
-                     'romanize' => PARAM_INT,
-                     'length'   => PARAM_INT,
-                     'head'     => PARAM_INT,
-                     'tail'     => PARAM_INT,
-                     'case'     => PARAM_INT,
-                     'prefix'   => PARAM_TEXT,
-                     'suffix'   => PARAM_TEXT,
-                     'style'    => PARAM_ALPHA);
-    }
 
     /**
      * add_settings
@@ -236,49 +163,90 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param $config
      * @todo Finish documenting this function
      */
-    static public function add_settings($mform, $config) {
+    static public function add_settings($mform, $config, $plugin) {
 
-        // add the integer fields (min/max number of points)
-        $options = array('size' => 4, 'maxsize' => 4);
-        foreach (self::get_integerfields() as $name => $default) {
-            self::add_setting($mform, $config, $name, 'text', $default, $options);
+        $options = self::get_pointstype_options();
+        self::add_setting($mform, $config, 'pointstype', 'select', 0, $options);
+        self::add_setting($mform, $config, 'minpoints',  'text', 0, self::get_text_options());
+        self::add_setting($mform, $config, 'increment',  'text', 0, self::get_text_options());
+        self::add_setting($mform, $config, 'maxpoints',  'text', 0, self::get_text_options());
+
+        self::add_setting($mform, $config, 'sendimmediately', 'checkbox', 0);
+        self::add_setting($mform, $config, 'multipleusers',   'checkbox', 1);
+        self::add_setting($mform, $config, 'showelement',     'checkbox', 0);
+        self::add_setting($mform, $config, 'showpicture',     'checkbox', 0);
+        self::add_setting($mform, $config, 'showusername',    'checkbox', 0);
+
+        self::add_setting($mform, $config, 'nameformat',  'text', '', self::get_text_options(20), PARAM_TEXT);
+        self::add_setting($mform, $config, 'namenewline', 'text', '', self::get_text_options(),   PARAM_TEXT);
+
+        // namefields
+        $name = 'namefields';
+
+        $strman = get_string_manager();
+        $types = self::get_namefield_types();
+        $defaults = self::get_namefield_defaults($strman, $plugin);
+
+        $count = (empty($config->$name) ? 0 : count($config->$name));
+        if (optional_param($name.'add', '', PARAM_TEXT)){
+            $count += self::NAME_COUNT_ADD;
+        }
+        $count = min(self::NAME_COUNT_MAX, max(0, $count));
+        for ($i=0; $i<$count; $i++) {
+
+            // define elements in this namefield group
+            $elements = array();
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'token',    'text',   0, 3);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'field',    'select', 0, 2);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'length',   'text',   2);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'head',     'text',   1);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'join',     'text',   1);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'tail',     'text',   1, 2);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'style',    'select', 2);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'case',     'select', 1, 2);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'romanize', 'select', 2);
+
+            // add this namefield group
+            $label = get_string('namefield', $plugin, ($i + 1));
+            $mform->addElement('group', $name.$i, $label, $elements, '', false);
+            $mform->addHelpButton($name.$i, 'namefield', $plugin);
+
+            // setType and setDefault
+            $namefield_exists = array_key_exists($i, $config->namefields);
+            foreach ($types as $setting => $type) {
+                if ($namefield_exists && array_key_exists($setting, $config->namefields[$i])) {
+                    $default = $config->namefields[$i][$setting];
+                } else {
+                    $default = $defaults[$setting];
+                }
+                $mform->setType($name."[$i][$setting]", $type);
+                $mform->setDefault($name."[$i][$setting]", $default);
+            }
         }
 
-        // add the boolean fields (show fullname/picture, etc)
-        foreach (self::get_booleanfields() as $name => $default) {
-            self::add_setting($mform, $config, $name, 'checkbox', $default);
+        // button to add more "namefields"
+        $label = get_string($name.'add', $plugin);
+        if (self::NAME_COUNT_ADD > 1) {
+            $label = str_ireplace('{no}', self::NAME_COUNT_ADD, $label);
         }
+        $mform->addElement('submit', $name.'add', $label);
+        $mform->registerNoSubmitButton($name.'add');
 
-        //self::add_name_elements($mform, $config);
+        self::add_setting($mform, $config, 'showpointstoday', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showpointstotal', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showscorerubric', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showscoreguide',  'checkbox', 0);
+        self::add_setting($mform, $config, 'showgradeassign', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showgradecourse', 'checkbox', 0);
+
+        self::add_setting($mform, $config, 'showcomments',    'checkbox', 0);
+        self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options());
+
+        self::add_setting($mform, $config, 'showlink',        'checkbox', 1);
+        self::add_setting($mform, $config, 'allowselectable', 'checkbox', 1);
 
         // disable "showpointstoday" if we are not using incremental points
         $mform->disabledIf('showpointstoday', 'pointstype', 'ne', '0');
-
-        // disable "splitrealname" if we are not using default names
-        $mform->disabledIf('splitrealname', 'showrealname', 'ne', 'default');
-
-        // disable "romanizenames" if we are not using first or last names
-        $mform->disabledIf('romanizenames', 'showrealname', 'eq', '');
-        $mform->disabledIf('romanizenames', 'showrealname', 'eq', 'firstnamephonetic');
-        $mform->disabledIf('romanizenames', 'showrealname', 'eq', 'lastnamephonetic');
-        $mform->disabledIf('romanizenames', 'showrealname', 'eq', 'middlename');
-        $mform->disabledIf('romanizenames', 'showrealname', 'eq', 'alternatename');
-
-        // disable "firstnamecase" if we are not using first names
-        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', '');
-        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'lastname');
-        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'firstnamephonetic');
-        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'lastnamephonetic');
-        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'middlename');
-        $mform->disabledIf('firstnamecase', 'showrealname', 'eq', 'alternatename');
-
-        // disable "lastnamecase" if we are not using last names
-        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', '');
-        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'firstname');
-        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'firstnamephonetic');
-        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'lastnamephonetic');
-        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'middlename');
-        $mform->disabledIf('lastnamecase', 'showrealname', 'eq', 'alternatename');
     }
 
     /**
@@ -295,103 +263,80 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function add_setting($mform, $config, $name, $type, $default=null, $options=null, $paramtype=PARAM_INT) {
 
-        $selectfields = self::get_selectfields();
-        if (array_key_exists($name, $selectfields)) {
-            $type = 'select';
-            $paramtype = $selectfields[$name];
-            $options = call_user_func(array('assign_feedback_points', 'get_'.$name.'_options'));
-        }
-
         $plugin = 'assignfeedback_points';
         $label = get_string($name, $plugin);
         $mform->addElement($type, $name, $label, $options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, $paramtype);
+
         if (isset($config->$name)) {
             $default = $config->$name;
         }
-
         if (isset($default)) {
             $mform->setDefault($name, $default);
         }
+
         $name_adv = $name.'_adv';
         if (isset($config->$name_adv)) {
             $mform->setAdvanced($name, $config->$name_adv);
         }
+
         if ($mform->elementExists('feedbackplugins')) {
             $mform->disabledIf($name, $plugin.'_enabled', 'notchecked');
         }
     }
 
     /**
-     * add repeating name elements to the $mform
+     * add_namefields_setting
      *
-     * @param moodleform $mform
-     * @param stdClass   $config
-     * @return bool
+     * @param object  $mform
+     * @param array   $elements (baed by reference)
+     * @param object  $strman
+     * @param string  name of $plugin
+     * @param string  $name of form element
+     * @param integer $i(ndex) of form element
+     * @param string  name of $setting
+     * @param string  $elementtype
+     * @param $paramtype (optional, default=0)
+     * @param $spacetype (optional, default=0)
+     * @todo Finish documenting this function
      */
-    static public function add_name_elements($mform, $config) {
+    static public function add_namefields_setting($mform, &$elements, $strman, $plugin, $name, $i, $setting, $elementtype, $labeltype=0, $spacetype=0) {
         global $OUTPUT;
 
+        if ($labeltype) {
+            $label = get_string($setting, $plugin);
+            if ($strman->string_exists($setting.'_help', $plugin)) {
+                $label .= $OUTPUT->help_icon($setting, $plugin);
+            }
+            switch ($labeltype) {
+                case 2: $options = array('class' => 'namesettingtitle wide'); break;
+                case 1: $options = array('class' => 'namesettingtitle thin'); break;
+                default: $options = null; // shouldn't happen !!
+            }
+            $label = html_writer::tag('div', $label, $options);
+            $elements[] = $mform->createElement('static', '', '', $label);
+        }
+
         $class = get_class();
-        $plugin = 'assignfeedback_points';
-        $settings = self::get_namesettings();
+        $method = 'get_name'.$setting.'_options';
+        if (method_exists($class, $method)) {
+            $options = call_user_func(array($class, $method));
+        } else if ($elementtype=='text') {
+            $options = self::get_text_options();
+        } else {
+            $options = null;
+        }
+        $elements[] = $mform->createElement($elementtype, $name."[$i][$setting]", '', $options);
 
-        $name = 'nameformat';
-        $mform->addElement('text', $name, get_string($name, $plugin));
-        $mform->setType($name, PARAM_ALPHANUM);
-        $mform->setDefault($name, $config->$name);
-        $mform->addHelpButton($name, $name, $plugin);
-
-        $name = 'namecount';
-        $mform->addElement('hidden', $name, $config->$name);
-        $mform->setType($name, PARAM_INT);
-
-        $name = 'name';
-        for ($i=0; $i<self::NAME_COUNT_MAX; $i++) {
-
-            $elements = array();
-            foreach ($settings as $setting => $paramtype) {
-                $cssclass = 'wide';
-                if (count($elements)) {
-                    if ($setting=='head' || $setting=='tail' || $setting=='suffix') {
-                        $cssclass = 'narrow';
-                        $whitespace = '';
-                    } else {
-                        $whitespace = html_writer::empty_tag('br');
-                    }
-                    $elements[] = $mform->createElement('static', '', '', $whitespace);
-                }
-                $method = 'get_name'.$setting.'_options';
-                if (method_exists($class, $method)) {
-                    $options = call_user_func(array($class, $method));
-                    $type = 'select';
-                } else {
-                    $options = array('size' => 3);
-                    $type = 'text';
-                }
-                $title = get_string($setting, $plugin);
-                $title .= $OUTPUT->help_icon($setting, $plugin);
-                $title = html_writer::tag('div', $title, array('class' => "namesettingtitle $cssclass"));
-                $elements[] = $mform->createElement('static', '',  '', $title);
-                $elements[] = $mform->createElement($type, $name."[$i][$setting]",  '', $options);
-                if ($setting=='field') {
-                    $onclick = 'alert(window.$)';
-                    $img = $OUTPUT->pix_url('t/switch_minus');
-                    $img = html_writer::empty_tag('img', array('src' => $img, 'onclick' => $onclick));
-                    $elements[] = $mform->createElement('static', '',  '', $img);
-                }
+        if ($spacetype) {
+            switch ($spacetype) {
+                case 3: $space = get_string('nameseparator', $plugin); break;
+                case 2: $space = html_writer::empty_tag('br'); break;
+                case 1: $space = ' '; break;
+                default: $space = ''; // shouldn't happen !!
             }
-
-            $mform->addElement('group', $name.$i, get_string('name').' ('.($i+1).')', $elements, '', false);
-
-            $default = $config->$name;
-            $default = $default[$i];
-
-            foreach ($settings as $setting => $paramtype) {
-                $mform->setType($name."[$i][$setting]", $paramtype);
-                $mform->setDefault($name."[$i][$setting]", $default[$setting]);
-            }
+            $elements[] = $mform->createElement('static', '', '', $space);
         }
     }
 
@@ -413,14 +358,11 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return bool
      */
     public function save_settings_allowmissing(stdClass $data, $allowmissing=false) {
-        foreach (self::get_integerfields() as $name => $default) {
-            $this->save_setting_allowmissing($data, $name, PARAM_INT, $allowmissing);
+        $plugin = 'assignfeedback_points';
+        foreach (self::get_defaultvalues($plugin) as $name => $default) {
+
+            $this->save_setting_allowmissing($data, $name, $default, $allowmissing);
         }
-        foreach (self::get_booleanfields() as $name => $default) {
-            $this->save_setting_allowmissing($data, $name, PARAM_BOOL, $allowmissing);
-        }
-        $this->save_namesettings_allowmissing($data, $name, PARAM_BOOL, $allowmissing);
-        return true;
     }
 
     /**
@@ -432,71 +374,28 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param boolean  $allowmissing
      * @return void
      */
-    public function save_setting_allowmissing($data, $name, $paramtype, $allowmissing) {
-        $exists = isset($data->$name);
-        if ($exists || $allowmissing) {
-            $value = null;
-            $selectfields = self::get_selectfields();
-            if (array_key_exists($name, $selectfields)) {
-                $paramtype = $selectfields[$name];
-                if ($exists) {
-                    $options = call_user_func(array('assign_feedback_points', 'get_'.$name.'_options'));
+    public function save_setting_allowmissing($data, $name, $default, $allowmissing) {
+        $isset = isset($data->$name);
+        if ($isset || $allowmissing) {
+            $class = get_class();
+            $value = $default;
+            if ($isset) {
+                $method = 'get_'.$name.'_options';
+                if (method_exists($class, $method)) {
+                    $options = call_user_func(array($class, $method));
                     if (array_key_exists($data->$name, $options)) {
                         $value = $data->$name;
                     }
-                }
-            } else {
-                if ($exists) {
+                } else {
                     $value = $data->$name;
                 }
             }
-            if ($value===null) {
-                $value = '';
+            if (is_array($value)) {
+                $value = base64_encode(serialize($value));
             }
-            if ($paramtype==PARAM_INT) {
-                $value = intval($value);
+            if (isset($value)) {
+                $this->set_config($name, $value);
             }
-            if ($paramtype==PARAM_BOOL) {
-                $value = ($value ? 1 : 0);
-            }
-            $this->set_config($name, $value);
-        }
-    }
-
-    /**
-     * Save a single setting for feedback points plugin
-     *
-     * @param stdClass $data
-     * @param boolean  $allowmissing
-     * @return void
-     */
-    public function save_namesettings_allowmissing($data, $allowmissing) {
-        $exists = isset($data->name);
-        if ($exists || $allowmissing) {
-
-            if (isset($data->name) && is_array($data->name)) {
-                $data->name = array_values($data->name);
-            } else {
-                $data->name = array();
-            }
-
-            $settings = self::get_namesettings();
-            foreach ($data->name as $i => $name) {
-
-                $name = array_intersect_key($name, $settings);
-                foreach ($settings as $setting => $paramtype) {
-
-                    if (array_key_exists($setting, $name)) {
-                        $value = $name[$setting];
-                    } else {
-                        $value = '';
-                    }
-                    $name[$setting] = clean_param($value, $paramtype);
-                }
-                $data->name[$i] = $name;
-            }
-            $data->name = serialize($data->name);
-            $this->set_config('name', $data->name);
         }
     }
 
@@ -639,9 +538,6 @@ class assign_feedback_points extends assign_feedback_plugin {
         $undo = optional_param('undo', 0, PARAM_INT);
 
         $config = $this->get_all_config($plugin);
-        $romanizenames = $config->romanizenames;
-        $firstnamecase = $config->firstnamecase;
-        $lastnamecase  = $config->lastnamecase;
 
         // cache the current time
         $time = time();
@@ -669,9 +565,65 @@ class assign_feedback_points extends assign_feedback_plugin {
         // get userlist for original $groupid
         $userlist = $this->assignment->list_participants($groupid, false);
 
+        // valid name fields in user object
+        $user_name_fields = self::get_all_user_name_fields();
+
+        // format the display names for these users
         foreach ($userlist as $id => $user) {
-            $userlist[$id]->firstname = self::fix_name_case($user->firstname, $firstnamecase, $romanizenames, true);
-            $userlist[$id]->lastname  = self::fix_name_case($user->lastname,  $lastnamecase, $romanizenames, false);
+
+            $displayname = $config->nameformat;
+            foreach ($config->namefields as $i => $namefield) {
+                $namefield = (object)$namefield;
+
+                if (empty($namefield->field)) {
+                    continue;
+                }
+                $field = $namefield->field;
+
+                if (array_key_exists($field, $user_name_fields) && property_exists($user, $field)) {
+                    $text = $user->$field;
+                } else if ($field=='default') {
+                    $text = fullname($user);
+                } else {
+                    continue; // shoudln't happen !!
+                }
+
+                if ($namefield->romanize) {
+                    $is_firstname = is_numeric(strpos($field, 'firstname'));
+                    $force_standard = ($namefield->romanize==self::ROMANIZE_FIX);
+                    $text = self::fix_romanization($text, $is_firstname, $force_standard);
+                }
+
+                if ($namefield->case) {
+                    switch ($namefield->case) {
+                        case self::CASE_UPPER:  $text = self::textlib('strtoupper', $text); break;
+                        case self::CASE_PROPER: $text = self::textlib('strtotitle', $text); break;
+                        case self::CASE_LOWER:  $text = self::textlib('strtolower', $text); break;
+                    }
+                }
+
+                if ($namefield->length) {
+                    $text = self::shorten_text($text, $namefield->length, $namefield->head, $namefield->tail, $namefield->join);
+                }
+
+                if ($namefield->style) {
+                    $text = html_writer::tag($namefield->style, $text);
+                }
+
+                if ($namefield->token) {
+                    $search = '/\\b'.$namefield->token.'\\b/';
+                    $displayname = preg_replace($search, $text, $displayname);
+                }
+            }
+
+            if ($config->namenewline) {
+                // https://pureform.wordpress.com/2008/01/04/matching-a-word-characters-outside-of-html-tags/
+                $search = '/('.preg_quote($config->namenewline, '/').')+(?!([^<]+)?>)/';
+                $displayname = preg_replace($search, html_writer::empty_tag('br'), $displayname);
+            }
+
+            $userlist[$id]->fullname = fullname($user);
+            $userlist[$id]->displayname = $displayname;
         }
 
         if ($undo) {
@@ -1802,71 +1754,52 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * fix_name_case
-     *
-     * @return string
-     */
-    static public function fix_name_case($name, $case, $romanizenames, $is_firstname) {
-        if ($romanizenames) {
-            $name = self::fix_romanization($name, $is_firstname);
-        }
-        if ($case==self::CASE_PROPER) {
-            return self::textlib('strtotitle', $name);
-        }
-        if ($case==self::CASE_LOWER) {
-            return self::textlib('strtolower', $name);
-        }
-        if ($case==self::CASE_UPPER) {
-            return self::textlib('strtoupper', $name);
-        }
-        return $name; // self::CASE_ORIGINAL
-    }
-
-    /**
      * fix_romanization
      *
      * @return string
      */
-    static public function fix_romanization($name, $is_firstname, $use_macrons=true) {
+    static public function fix_romanization($name, $is_firstname, $force_standard=true, $use_macrons=true) {
         $name= self::textlib('strtolower', $name);
 
          // check that this looks like a romanized Japanese name
         if (preg_match(self::JAPANESE_NAME_STRING, $name)) {
 
-            // fix "si", "ti", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
-            $replace = array(
-                'si' => 'shi', 'ti' => 'chi', 'tu' => 'tsu', 'sy' => 'sh', 'jy' =>'j', 'nb' => 'mb'
-            );
-            $name = strtr($name, $replace);
-
-            // fix "hu" (but not "chu" or "shu") e.g. hujimura
-            $name = preg_replace('/(?<![cs])hu/', 'fu', $name);
-
-            if ($is_firstname) {
-                // kiyou(hei)
-                // shiyou(go|hei|ta|tarou)
-                // shiyun(suke|ya), shiyuu(ji|ta|tarou|ya)
-                // riyou(ga|ki|suke|ta|tarou|ya)
-                // riyuu(ichi|ki|ta|ma|saku|sei|shi|zou)
+            if ($force_standard) {
+                // fix "si", "ti", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
                 $replace = array(
-                    'kiyou'  => 'kyou',
-                    'shiyou' => 'shou', 'jiyou' => 'jou',
-                    'shiyuu' => 'shuu', 'jiyuu' => 'juu',
-                    'shiyun' => 'shun', 'jiyun' => 'jun',
-                    'riyou'  => 'ryou', 'riyuu' => 'ryuu',
+                    'si' => 'shi', 'ti' => 'chi', 'tu' => 'tsu', 'sy' => 'sh', 'jy' =>'j', 'nb' => 'mb'
                 );
-            } else {
-                // gasshiyou (GASSHŌ)
-                // mukaijiyou (MUKAIJŌ)
-                // chiya(da|ta)ani (not UCHIYAMA or TSUCHIYA)
-                $replace = array(
-                    'shiyou'    => 'shou',
-                    'jiyou'     => 'jou',
-                    'chiyatani' => 'chatani',
-                    'chiyadani' => 'chadani'
-                );
+                $name = strtr($name, $replace);
+
+                // fix "hu" (but not "chu" or "shu") e.g. hujimura
+                $name = preg_replace('/(?<![cs])hu/', 'fu', $name);
+
+                if ($is_firstname) {
+                    // kiyou(hei)
+                    // shiyou(go|hei|ta|tarou)
+                    // shiyun(suke|ya), shiyuu(ji|ta|tarou|ya)
+                    // riyou(ga|ki|suke|ta|tarou|ya)
+                    // riyuu(ichi|ki|ta|ma|saku|sei|shi|zou)
+                    $replace = array(
+                        'kiyou'  => 'kyou',
+                        'shiyou' => 'shou', 'jiyou' => 'jou',
+                        'shiyuu' => 'shuu', 'jiyuu' => 'juu',
+                        'shiyun' => 'shun', 'jiyun' => 'jun',
+                        'riyou'  => 'ryou', 'riyuu' => 'ryuu',
+                    );
+                } else {
+                    // gasshiyou (GASSHŌ)
+                    // mukaijiyou (MUKAIJŌ)
+                    // chiya(da|ta)ani (not UCHIYAMA or TSUCHIYA)
+                    $replace = array(
+                        'shiyou'    => 'shou',
+                        'jiyou'     => 'jou',
+                        'chiyatani' => 'chatani',
+                        'chiyadani' => 'chadani'
+                    );
+                }
+                $name = strtr($name, $replace);
             }
-            $name = strtr($name, $replace);
 
             if ($use_macrons) {
                 $replace = array(
@@ -1886,6 +1819,100 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * get_defaultvalues
+     *
+     * @return array(name => default)
+     */
+    static public function get_defaultvalues($plugin) {
+        return array('pointstype'      => 0,
+                     'minpoints'       => 1,
+                     'increment'       => 1,
+                     'maxpoints'       => 2,
+                     'sendimmediately' => 1,
+                     'multipleusers'   => 0,
+                     'showelement'     => 0,
+                     'showpicture'     => 0,
+                     'showusername'    => 0,
+                     'nameformat'      => '',
+                     'namenewline'     => get_string('namenewlinedefault', $plugin),
+                     'namefields'      => array(), // base64_encode(serialize(array()))
+                     'showpointstoday' => 1,
+                     'showpointstotal' => 1,
+                     'showscorerubric' => 0,
+                     'showscoreguide'  => 0,
+                     'showgradeassign' => 0,
+                     'showgradecourse' => 0,
+                     'showcomments'    => 1,
+                     'showfeedback'    => 0,
+                     'showlink'        => 1,
+                     'allowselectable' => 1);
+    }
+
+    /**
+     * get_namefield_types
+     *
+     * @return array($name => $paramtype)
+     */
+    static function get_namefield_types() {
+        return array('token'    => PARAM_TEXT,
+                     'field'    => PARAM_ALPHANUM,
+                     'length'   => PARAM_INT,
+                     'head'     => PARAM_INT,
+                     'tail'     => PARAM_INT,
+                     'join'     => PARAM_TEXT,
+                     'style'    => PARAM_ALPHA,
+                     'case'     => PARAM_INT,
+                     'romanize' => PARAM_INT);
+    }
+
+    /**
+     * get_namefield_types
+     *
+     * @return array($name => $paramtype)
+     */
+    static function get_namefield_defaults($strman, $plugin) {
+        $defaults = self::get_namefield_types();
+        foreach ($defaults as $name => $type) {
+            $defaults[$name] = self::get_formfield_default($strman, $plugin, 'namefield'.$name, $type);
+        }
+        return $defaults;
+    }
+
+    /**
+     * get_formfield_default
+     *
+     * @param object  $strman
+     * @param string  $plugin
+     * @param string  $name
+     * @param integer $type PARAM_xxx
+     * @return mixed the default value for a form field
+     */
+    static function get_formfield_default($strman, $plugin, $name, $type) {
+        if ($type==PARAM_ALPHA || $type==PARAM_ALPHANUM || $type==PARAM_TEXT) {
+            if ($strman->string_exists($name.'default', $plugin)) {
+                return get_string($name.'default', $plugin);
+            }
+            return '';
+        }
+        if ($type==PARAM_INT || $type==PARAM_BOOL) {
+            return 0;
+        }
+        return null; // shouldn't happen !!
+    }
+
+    /**
+     * get_text_options
+     *
+     * return an array of options for string text boxes
+     * suitable for use in a Moodle form
+     *
+     * @return array of form element options
+     */
+    static public function get_text_options($size=4) {
+        return array('size' => $size, 'maxsize' => $size);
+    }
+
+    /**
      * get_pointstype_options
      *
      * return an array of formatted pointstype options
@@ -1897,46 +1924,6 @@ class assign_feedback_points extends assign_feedback_plugin {
         $plugin = 'assignfeedback_points';
         return array(0 => get_string('pointstypeincremental', $plugin),
                      1 => get_string('pointstypetotal',       $plugin));
-    }
-
-    /**
-     * get_showrealname_options
-     *
-     * return an array of formatted user name options
-     * suitable for use in a Moodle form
-     *
-     * @return array of field names
-     */
-    static public function get_showrealname_options() {
-        $fields = array('' => '', 'default' => '');
-        $fields += self::get_all_user_name_fields();
-        foreach (array_keys($fields) as $field) {
-            if ($field) {
-                $fields[$field] = get_string($field);
-            }
-        }
-        $defaultnames = (object)$fields;
-        $defaultnames = fullname($defaultnames);
-        $fields['default'] .= " ($defaultnames)";
-        return $fields;
-    }
-
-    /**
-     * get_firstnamecase_options
-     *
-     * @return array of name case options
-     */
-    static public function get_firstnamecase_options() {
-        return self::get_namecase_options();
-    }
-
-    /**
-     * get_lasstnamecase_options
-     *
-     * @return array of name case options
-     */
-    static public function get_lastnamecase_options() {
-        return self::get_namecase_options();
     }
 
     /**
@@ -1987,9 +1974,9 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_nameromanize_options() {
         $plugin = 'assignfeedback_points';
-        return array(0 => get_string('no'),
-                     1 => get_string('yes'),
-                     2 => get_string('fix', $plugin));
+        return array(self::ROMANIZE_NO  => get_string('no'),
+                     self::ROMANIZE_YES => get_string('yes'),
+                     self::ROMANIZE_FIX => get_string('fix', $plugin));
     }
 
     /**
@@ -2080,6 +2067,25 @@ class assign_feedback_points extends assign_feedback_plugin {
            $fields += get_all_user_name_fields();
        }
        return $fields;
+    }
+
+    /**
+     * trim_text
+     *
+     * @param   string   $text
+     * @param   integer  $textlength (optional, default=28)
+     * @param   integer  $headlength (optional, default=10)
+     * @param   integer  $taillength (optional, default=10)
+     * @return  string
+     */
+    static public function shorten_text($text, $textlength=28, $headlength=10, $taillength=10, $join=' ... ') {
+        $strlen = self::textlib('strlen', $text);
+        if ($strlen > $textlength) {
+            $head = self::textlib('substr', $text, 0, $headlength);
+            $tail = self::textlib('substr', $text, $strlen - $taillength, $taillength);
+            $text = $head.$join.$tail;
+        }
+        return $text;
     }
 
     /**

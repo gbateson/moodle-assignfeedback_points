@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool
  */
 function xmldb_assignfeedback_points_upgrade($oldversion) {
-    global $DB;
+    global $CFG, $DB;
     $result = true;
 
     $plugintype = 'assignfeedback';
@@ -178,5 +178,154 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2017062082;
+    if ($result && $oldversion < $newversion) {
+        require_once($CFG->dirroot.'/mod/assign/feedbackplugin.php');
+        require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
+
+        // get name fields used in default name format for this Moodle site
+        $defaultnames = assign_feedback_points::get_all_user_name_fields();
+        $defaultnames = fullname((object)$defaultnames);
+        $defaultnames = explode(' ', $defaultnames);
+
+        // initialize arrays for config settings
+        $configids = array();
+        $newconfigs = array();
+
+        // default values for the old config fields
+        $oldconfigs = array('showrealname'  => '',
+                            'splitrealname' => 0,
+                            'romanizenames' => 0,
+                            'firstnamecase' => 0,
+                            'lastnamecase'  => 0);
+
+        // fetch values of all old config fields
+        $table = 'assign_plugin_config';
+        $select = 'subtype = ? AND plugin = ? AND name IN (?, ?, ?, ?, ?)';
+        $params = array('assignfeedback', 'points');
+        $params = array_merge($params, array_keys($oldconfigs));
+        if ($configs = $DB->get_records_select($table, $select, $params, 'id')) {
+            foreach ($configs as $configid => $config) {
+                $name = $config->name;
+                $value = $config->value;
+                $assignid = $config->assignment;
+                if (empty($newconfigs[$assignid])) {
+                    $newconfigs[$assignid] = (object)$oldconfigs;
+                }
+                $configids[] = $configid;
+                $newconfigs[$assignid]->$name = $value;
+            }
+
+            foreach ($newconfigs as $assignid => $config) {
+                $nameformat = array();
+                $namechar = ' ';
+                $namefields = array();
+                if ($config->showrealname) {
+                    if ($config->showrealname=='default') {
+                        $realnames = $defaultnames;
+                    } else {
+                        $realnames = array($config->showrealname);
+                    }
+                    foreach ($realnames as $realname) {
+                        switch (true) {
+                            case is_numeric(strpos($realname, 'firstname')): $case = $config->firstnamecase; break;
+                            case is_numeric(strpos($realname, 'lastname')) : $case = $config->lastnamecase;  break;
+                            default: $case = 0;
+                        }
+                        $namefields[] = array('token'  => get_string('namefieldtokendefault', $plugin),
+                                              'field'  => $realname,
+                                              'length' => 0,
+                                              'head'   => 0,
+                                              'join'   => get_string('namefieldjoindefault', $plugin),
+                                              'tail'   => 0,
+                                              'style'  => '',
+                                              'case'   => $case,
+                                              'romanize' => $config->romanizenames);
+                        $nameformat[] = 'name'.(count($namefields));
+                    }
+                }
+                if ($nameformat = implode($namechar, $nameformat)) {
+                    $namefields = base64_encode(serialize($namefields));
+                    xmldb_assignfeedback_points_config($configids, $table, $assignid, 'nameformat', $nameformat);
+                    xmldb_assignfeedback_points_config($configids, $table, $assignid, 'namechar',   $namechar);
+                    xmldb_assignfeedback_points_config($configids, $table, $assignid, 'namefields', $namefields);
+                }
+            }
+        }
+        if (count($configids)) {
+            $DB->delete_records_list($table, 'id', $configids);
+        }
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
+    $newversion = 2017062284;
+    if ($result && $oldversion < $newversion) {
+        $table = 'assign_plugin_config';
+
+        // rename config setting: "names" => "namefields"
+        $params = array('subtype' => 'assignfeedback',
+                        'plugin'  => 'points',
+                        'name'    => 'names');
+        $DB->set_field($table, 'name', 'namefields', $params);
+
+        // rename config setting: "newlinechar" => "namechar"
+        $params = array('subtype' => 'assignfeedback',
+                        'plugin'  => 'points',
+                        'name'    => 'newlinechar');
+        $DB->set_field($table, 'name', 'namechar', $params);
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
+    $newversion = 2017062586;
+    if ($result && $oldversion < $newversion) {
+        $table = 'assign_plugin_config';
+
+        // rename config setting: "namechar" => "namenewline"
+        $params = array('subtype' => 'assignfeedback',
+                        'plugin'  => 'points',
+                        'name'    => 'namechar');
+        $DB->set_field($table, 'name', 'namenewline', $params);
+
+        // delete all unrecognized config settings for this plugin
+        $params = array('pointstype',      'minpoints',
+                        'increment',       'maxpoints',
+                        'sendimmediately', 'multipleusers',
+                        'showelement',     'showpicture',   'showusername',
+                        'nameformat',      'namechar',      'namefields',
+                        'showpointstoday', 'showpointstotal',
+                        'showscorerubric', 'showscoreguide',
+                        'showgradeassign', 'showgradecourse',
+                        'showcomments',    'showfeedback',
+                        'showlink',        'allowselectable',
+                        'enabled'); // used by the "assign" mod
+        list($select, $params) = $DB->get_in_or_equal($params, SQL_PARAMS_QM, '', false); // NOT IN
+        $select = "subtype = ? AND plugin = ? AND name $select";
+        array_unshift($params, 'assignfeedback', 'points');
+        $DB->delete_records_select($table, $select, $params);
+
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
     return $result;
+}
+
+/**
+ * xmldb_assignfeedback_points_upgrade
+ *
+ * @param int $oldversion
+ * @return bool
+ */
+function xmldb_assignfeedback_points_config(&$configids, $table, $assignid, $name, $value) {
+    global $DB;
+    if ($configid = array_pop($configids)) {
+        $DB->set_field($table, 'name',  $name,  array('id' => $configid));
+        $DB->set_field($table, 'value', $value, array('id' => $configid));
+    } else {
+        $config = (object)array('assignment' => $assignid,
+                                'plugin'     => 'points',
+                                'subtype'    => 'assignfeedback',
+                                'name'       => $name,
+                                'value'      => $value);
+        $config->id = $DB->insert_record($table, $config);
+    }
 }

@@ -43,31 +43,21 @@ class assignfeedback_points_award_points_form extends moodleform {
                                             "\r\n" => '\\n',   "\r" =>'\\n', "\n"=>'\\n', // newlines (win, mac, nix)
                                             "\0"   => '\\0',   '</' =>'<\\/');            // other replacements
 
-    protected $theme_type  = 0;
-    const THEME_TYPE_LABEL = 1;
-    const THEME_TYPE_SPAN  = 2;
+    const THEME_TYPE_LABEL = 1; // templateable theme
+    const THEME_TYPE_SPAN  = 2; // non-templateable theme
 
     /**
      * Define this form - called by the parent constructor
      */
     public function definition() {
-        global $CFG, $THEME;
 
         $mform = $this->_form;
         $custom = $this->_customdata;
         $plugin = 'assignfeedback_points';
 
-        if (empty($CFG->branch) || $CFG->branch <= 31) {
-            // Moodle <= 3.1
-            $this->theme_type = self::THEME_TYPE_SPAN;
-        } else {
-            // Moodle >= 3.2
-            $this->theme_type = self::THEME_TYPE_LABEL;
-        }
-
         // we don't the need form change checker (Moodle >= 2.3)
         // if we're using AJAX to send results
-        if ($custom->config->sendimmediately==0) {
+        if ($custom->config->sendimmediately==1) {
             $mform->disable_form_change_checker();
         }
 
@@ -118,7 +108,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         // ========================
         //
         $this->add_heading($mform, 'settings', 'moodle', true);
-        assign_feedback_points::add_settings($mform, $custom->config);
+        assign_feedback_points::add_settings($mform, $custom->config, $plugin);
 
         // ========================
         // report section
@@ -211,7 +201,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         $search = '/(<label[^>]*>.*<\/label>).*?(<select[^>]*name="([^"]*)"[^>]*>.*<\/select>)/s';
         // $1 : <label ...> ... </label>
         // $2 : <select ...> ... </select>
-        // $3 : element name (usually "group"
+        // $3 : element name (usually "group")
         if (preg_match($search, $groups, $groups)) {
             $name = $groups[3]; // "group"
             $groups = $groups[1].' '.$groups[2];
@@ -260,7 +250,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         $mform->addGroup($elements, $name.'elements', $label, '', false);
         $mform->addHelpButton($name.'elements', $name, $plugin);
         $mform->setType($name, PARAM_ALPHA);
-        $mform->setDefault($name, "none");
+        $mform->setDefault($name, 'none');
     }
 
     /**
@@ -284,7 +274,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         $mform->addGroup($elements, $name.'elements', $label, '', false);
         $mform->addHelpButton($name.'elements', $name, $plugin);
         $mform->setType($name, PARAM_ALPHA);
-        $mform->setDefault($name, "award");
+        $mform->setDefault($name, 'award');
     }
 
     /**
@@ -453,17 +443,6 @@ class assignfeedback_points_award_points_form extends moodleform {
             $gradecourse = array();
         }
 
-        if ($custom->config->splitrealname) {
-            $namefields = assign_feedback_points::get_all_user_name_fields();
-            $fullname = fullname((object)$namefields);
-            $fullname = explode(' ', $fullname);
-            $fullname = array_flip($fullname);
-            $namefields = array_intersect_key($fullname, $namefields);
-            $namefields = array_keys($namefields);
-        } else {
-            $namefields = array();
-        }
-
         $linebreak = html_writer::empty_tag('br');
         $increment = strlen($linebreak) + 1;
 
@@ -474,27 +453,8 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $params = array('courseid' => $custom->courseid, 'link' => false);
                 $text[] = $OUTPUT->user_picture($user, $params);
             }
-            if ($field = $custom->config->showrealname) {
-                $fields = assign_feedback_points::get_all_user_name_fields();
-                if (in_array($field, $fields) && property_exists($user, $field) && $user->$field) {
-                    $fullname = $user->$field;
-                } else {
-                    $offset = 0;
-                    $fullname = fullname($user);
-                    foreach($namefields as $field) {
-                        if (assign_feedback_points::textlib('strlen', $user->$field)==0) {
-                            continue; // name field is empty
-                        }
-                        $pos = assign_feedback_points::textlib('strpos', $fullname, ' '.$user->$field, $offset);
-                        if ($pos===false) {
-                            continue; // name field is not used in fullname
-                        }
-                        $fullname = assign_feedback_points::textlib('substr', $fullname, 0, $pos).$linebreak.
-                                    assign_feedback_points::textlib('substr', $fullname, $pos + 1);
-                        $offset = ($pos + $increment);
-                    }
-                }
-                $text[] = html_writer::tag('em', $fullname, array('class' => 'name'));
+            if ($custom->config->nameformat) {
+                $text[] = html_writer::tag('em', $user->displayname, array('class' => 'name'));
             }
             if ($custom->config->showusername || count($text)==0) {
                 $text[] = html_writer::tag('em', $user->username, array('class' => 'name'));
@@ -620,7 +580,7 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         $name = 'commenttext';
         $label = get_string($name, $plugin);
-        $options = array('size' => '40', 'maxsize' => 255);
+        $options = array('size' => '40', 'maxsize' => 255, 'style' => 'width: auto;');
 
         if ($custom->config->showcomments) {
             $commenttext_NOT_LIKE = $DB->sql_like('commenttext', '?', false, false, true);
@@ -717,6 +677,11 @@ class assignfeedback_points_award_points_form extends moodleform {
         $label = get_string($name, $plugin);
         $elements = array();
 
+        $short_text_options = array('size'  => 3,
+                                    'style' => 'width: auto;');
+        $long_text_options  = array('size'  => 24,
+                                    'style' => 'width: auto;');
+
         $table = 'assignfeedback_points_maps';
         $params = array('userid' => $USER->id, 'assignid' => $custom->assignid);
         $layouts = $DB->get_records_menu($table, $params, 'name', 'id,name');
@@ -738,7 +703,7 @@ class assignfeedback_points_award_points_form extends moodleform {
             $elements[] = $mform->createElement('radio', $name.$type,   '', get_string('percent50',  $plugin),  50);
             $elements[] = $mform->createElement('radio', $name.$type,   '', get_string('percent25',  $plugin),  25);
             $elements[] = $mform->createElement('radio', $name.$type,   '', get_string('percent',    $plugin), 'percent');
-            $elements[] = $mform->createElement('text',  $name.$type.'percent', get_string('percent', $plugin), array('size' => 3));
+            $elements[] = $mform->createElement('text',  $name.$type.'percent', get_string('percent', $plugin), $short_text_options);
             $elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
         }
 
@@ -754,12 +719,12 @@ class assignfeedback_points_award_points_form extends moodleform {
             $elements[] = $mform->createElement('radio',  $name.'setup', '', get_string($type, $plugin), $type, array('class' => 'indent'));
             $elements[] = $mform->createElement('select', $name.$type.'type',     '', $options[0]);
             $elements[] = $mform->createElement('select', $name.$type.'numtype',  '', $options[1]);
-            $elements[] = $mform->createElement('text',   $name.$type.'numvalue', '', array('size' => 3));
+            $elements[] = $mform->createElement('text',   $name.$type.'numvalue', '', $short_text_options);
             $elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
         }
 
         $elements[] = $mform->createElement('radio', $name, '', get_string('save', $plugin), 'save');
-        $elements[] = $mform->createElement('text',  $name.'savename', get_string('save', $plugin), array('size' => 24));
+        $elements[] = $mform->createElement('text',  $name.'savename', get_string('save', $plugin), $long_text_options);
 
         if ($layouts) {
             $elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
@@ -865,26 +830,41 @@ class assignfeedback_points_award_points_form extends moodleform {
      * @param string  $plugin
      */
     private function add_field_jquery($mform, $custom, $plugin) {
+        global $CFG, $OUTPUT;
 
-        if ($this->theme_type==self::THEME_TYPE_SPAN) {
-            // Moodle <= 3.1
-            $group_element_tag   = 'span';
-            $mapaction_container = '#fgroup_id_mapactionelements fieldset.fgroup';
-            $mapmode_container   = '#fgroup_id_mapmodeelements fieldset.fgroup';
-            $user_container      = '#fgroup_id_awardtoelements fieldset.fgroup';
-            $points_container    = '#fgroup_id_pointselements fieldset.fgroup';
-            $layouts_container   = '#fgroup_id_layoutselements';
+        // determine html tag used to enclose group elements
+        // templatable forms on Moodle >= 2.9 use "LABEL" tags
+        // non-templatable forms use "SPAN" tags
+
+        if (method_exists($OUTPUT, 'mform_element')) {
+            // Moodle >= 2.9
+            $element = $mform->getElement('mapmodeelements'); // group of radio elements
+            $element = $element->getElements();               // array of radio elements
+            $element = $element[0];                           // the first radio element
+            $element = $OUTPUT->mform_element($element, false, false, '', true);
+            $group_element_tag = preg_replace('/^.*?<(\w+)[^>]*>.*$/s', '$1', $element);
         } else {
-            // Moodle >= 3.2
-            $group_element_tag   = 'label';
+            // Moodle <= 2.8
+            $group_element_tag = 'span';
+        }
+
+        if ($group_element_tag=='label') {
+            // templatable theme for Moodle >= 2.9
+            $theme_type          = self::THEME_TYPE_LABEL;
             $mapaction_container = '#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement';
             $mapmode_container   = '#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement';
             $user_container      = '#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement';
             $points_container    = '#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement';
             $layouts_container   = '#id_layouts_hdr div.form-group.row:nth-child(1) div.felement';
+        } else {
+            // non-templatable theme
+            $theme_type          = self::THEME_TYPE_SPAN;
+            $mapaction_container = '#fgroup_id_mapactionelements fieldset.fgroup';
+            $mapmode_container   = '#fgroup_id_mapmodeelements fieldset.fgroup';
+            $user_container      = '#fgroup_id_awardtoelements fieldset.fgroup';
+            $points_container    = '#fgroup_id_pointselements fieldset.fgroup';
+            $layouts_container   = '#fgroup_id_layoutselements';
         }
-
-        $contacting_server_msg = get_string('contactingserver',  $plugin);
 
         $awardpoints_ajax_php  = '/mod/assign/feedback/points/awardpoints.ajax.php';
         $awardpoints_ajax_php  = new moodle_url($awardpoints_ajax_php, array('id' => $custom->cm->id));
@@ -914,7 +894,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.showscoreguide        = '.intval($custom->config->showscoreguide).";\n";
         $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
 
-        $js .= '    PTS.theme_type            = "'.$this->theme_type.'";'."\n";
+        $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
         $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
         $js .= '    PTS.THEME_TYPE_LABEL      = '.self::THEME_TYPE_LABEL."\n";
         $js .= '    PTS.group_element_tag     = "'.$group_element_tag.'";'."\n";
@@ -941,7 +921,6 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.report_container_id   = "id_report_container";'."\n";
         $js .= '    PTS.report_container      = "#" + PTS.report_container_id;'."\n";
 
-        $js .= '    PTS.contacting_server_msg = "'.$this->js_safe($contacting_server_msg).'";'."\n";
         $js .= '    PTS.awardpoints_ajax_php  = "'.$this->js_safe($awardpoints_ajax_php).'";'."\n";
         $js .= '    PTS.reportpoints_ajax_php = "'.$this->js_safe($reportpoints_ajax_php).'";'."\n";
         $js .= '    PTS.groupid               = '.intval($custom->groupid).";\n";
@@ -954,6 +933,13 @@ class assignfeedback_points_award_points_form extends moodleform {
         $js .= '    PTS.shuffle               = {duration : 400};'."\n";
 
         $js .= '    PTS.allowselectable       = '.intval($custom->config->allowselectable).';'."\n";
+
+        $js .= '    PTS.str = {};'."\n";
+        $js .= '    PTS.str.showless          = "'.$this->js_safe(get_string('showless', 'form')).'";'."\n";
+        $js .= '    PTS.str.showmore          = "'.$this->js_safe(get_string('showmore', 'form')).'";'."\n";
+        $js .= '    PTS.str.newlineempty       = "'.$this->js_safe(get_string('newlineempty', $plugin)).'";'."\n";
+        $js .= '    PTS.str.newlinespace       = "'.$this->js_safe(get_string('newlinespace', $plugin)).'";'."\n";
+        $js .= '    PTS.str.contactingserver  = "'.$this->js_safe(get_string('contactingserver', $plugin)).'";'."\n";
 
         $js .= '//]]>'."\n";
         $js .= '</script>'."\n";

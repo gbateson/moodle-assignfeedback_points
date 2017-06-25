@@ -672,7 +672,7 @@ PTS.update_points_html = function(input, classname, points) {
         var match = html.match(regexp);
         if (match) {
             var newpoints = parseInt(points);
-            if (classname=="pointstoday") { // incremental points
+            if (PTS.pointstype==0) { // incremental points
                 newpoints += parseInt(html.substring(match.index));
             }
             html = html.substring(0, match.index) + newpoints;
@@ -692,7 +692,7 @@ PTS.update_usermap_via_ajax = function() {
     if (PTS.update_usermap) {
         PTS.update_usermap = false;
 
-        PTS.set_feedback(PTS.contacting_server_msg);
+        PTS.set_feedback(PTS.str.contactingserver);
         var data = {
             ajax        : 1,
             group       : PTS.groupid,
@@ -1300,11 +1300,79 @@ PTS.do_user_click = function(event, input) {
 }
 
 /**
+ * hide/show name fields
+ *
+ * @return void
+ */
+PTS.hideshow_name_fields = function() {
+
+    $("#id_namenewline").each(function(){
+        $(this).change(function(evt){
+            $(this).nextAll().remove();
+            var txt = '';
+            switch ($(this).val()) {
+                case '': txt = PTS.str.newlineempty; break;
+                case ' ':
+                case '\u3000': txt = PTS.str.newlinespace; break;
+            }
+            if (txt) {
+                var elm = document.createElement('SMALL');
+                txt = document.createTextNode(' ' + txt);
+                elm.appendChild(txt);
+                $(this).after(elm);
+            }
+        });
+        $(this).trigger("change");
+    });
+
+    // set URL of the first available help icon
+    // this will be used to generate URLs for other images
+    var helpiconurl = $("img.iconhelp").first().prop("src");
+    if (helpiconurl=='') {
+        helpiconurl = location.href.replace(new RegExp("^(.*?)/mod/assign.*$"), "$1");
+        helpiconurl = wwwroot + "/pix/help.gif";
+    }
+
+    // add hide/show toggle functionality to "name" settings
+    // e.g. name="namefields[0][field]" id="id_namefields_0_field"
+    $("select[id^=id_namefields_][id$=_field]").each(function(){
+
+        // create new IMG element
+        var img = document.createElement("IMG");
+        img.src = helpiconurl.replace('help', "t/switch_minus");
+        img.title = PTS.str.showless;
+
+        // add IMG click event handler
+        $(img).click(function(evt){
+            var src = $(this).prop("src");
+            if (src.indexOf("minus") >= 0) {
+                $(this).prop("src", src.replace("minus", "plus"));
+                $(this).prop("title", PTS.str.showmore);
+                $(this).nextAll().hide("fast");
+            } else {
+                $(this).prop("src", src.replace("plus", "minus"));
+                $(this).prop("title", PTS.str.showless);
+                $(this).nextAll().show("slow");
+            }
+        });
+
+        // append IMG (and some white space)
+        $(this).after(img);
+        $(this).after(document.createTextNode(" "));
+
+        // initially, we hide the name settings
+        $(img).trigger("click");
+    });
+}
+
+/**
  * document ready
  *
  * @return void
  */
 $(document).ready(function() {
+
+    PTS.hideshow_name_fields();
 
     var mapaction_container = $(PTS.mapaction_container);
     var mapmode_container = $(PTS.mapmode_container);
