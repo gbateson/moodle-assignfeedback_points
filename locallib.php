@@ -637,14 +637,14 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
 
                 if ($namefield->token) {
-                    $search = '/\\b'.preg_quote($namefield->token, '/').'\\b/';
+                    $search = '/\\b'.preg_quote($namefield->token, '/').'\\b/u'; // u(nicode)
                     $displayname = preg_replace($search, $text, $displayname);
                 }
             }
 
             if ($config->namenewline) {
                 // https://pureform.wordpress.com/2008/01/04/matching-a-word-characters-outside-of-html-tags/
-                $search = '/('.preg_quote($config->namenewline, '/').')+(?!([^<]+)?>)/';
+                $search = '/('.preg_quote($config->namenewline, '/').')+(?!([^<]+)?>)/u';
                 $displayname = preg_replace($search, html_writer::empty_tag('br'), $displayname);
             }
 
