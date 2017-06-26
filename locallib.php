@@ -198,6 +198,9 @@ class assign_feedback_points extends assign_feedback_plugin {
             $elements = array();
             self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'token',    'text',   0, 3);
             self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'field',    'select', 0, 2);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'split',    'text',   2);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'start',    'text',   1);
+            self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'count',    'text',   1, 2);
             self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'length',   'text',   2);
             self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'head',     'text',   1);
             self::add_namefields_setting($mform, $elements, $strman, $plugin, $name, $i, 'join',     'text',   1);
@@ -222,13 +225,17 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $mform->setType($name."[$i][$setting]", $type);
                 $mform->setDefault($name."[$i][$setting]", $default);
 
-                // if "field" is not set, disable this $setting
+                // if "field" is not specified, disable this $setting
                 if ($setting=='token' || $setting=='field') {
                     // do nothing
                 } else {
                     $mform->disabledIf("namefields[$i][$setting]", "namefields[$i][field]", 'eq', '');
                 }
             }
+
+            // if the "split" delimiter is not specified, disable "start" and "count"
+            $mform->disabledIf("namefields[$i][start]", "namefields[$i][split]", 'eq', '');
+            $mform->disabledIf("namefields[$i][count]", "namefields[$i][split]", 'eq', '');
 
             // if "length" is zero, disable "head", "tail" and "join"
             $mform->disabledIf("namefields[$i][head]", "namefields[$i][length]", 'eq', '0');
@@ -600,6 +607,13 @@ class assign_feedback_points extends assign_feedback_plugin {
                     continue; // shoudln't happen !!
                 }
 
+                if ($namefield->split) {
+                    $text = explode($namefield->split, $text);
+                    $start = ($namefield->start - ($namefield->start > 0 ? 1 : 0));
+                    $count = ($namefield->count ? $namefield->count : count($text));
+                    $text = implode('', array_splice($text, $start, $count));
+                }
+
                 if ($namefield->romanize) {
                     $is_firstname = is_numeric(strpos($field, 'firstname'));
                     $force_standard = ($namefield->romanize==self::ROMANIZE_FIX);
@@ -623,7 +637,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
 
                 if ($namefield->token) {
-                    $search = '/\\b'.$namefield->token.'\\b/';
+                    $search = '/\\b'.preg_quote($namefield->token, '/').'\\b/';
                     $displayname = preg_replace($search, $text, $displayname);
                 }
             }
@@ -1868,6 +1882,9 @@ class assign_feedback_points extends assign_feedback_plugin {
     static function get_namefield_types() {
         return array('token'    => PARAM_TEXT,
                      'field'    => PARAM_ALPHANUM,
+                     'split'    => PARAM_TEXT,
+                     'start'    => PARAM_INT,
+                     'count'    => PARAM_INT,
                      'length'   => PARAM_INT,
                      'head'     => PARAM_INT,
                      'join'     => PARAM_TEXT,

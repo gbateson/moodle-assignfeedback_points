@@ -37,6 +37,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
 
     $plugintype = 'assignfeedback';
     $pluginname = 'points';
+    $plugin = $plugintype.'_'.$pluginname;
 
     $dbman = $DB->get_manager();
 

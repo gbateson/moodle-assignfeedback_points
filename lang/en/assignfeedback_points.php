@@ -46,6 +46,7 @@ $string['cleanup'] = 'Clean up';
 $string['commenttext_help'] = 'A brief decription of why these points are being awarded to the selected user(s)';
 $string['commenttext'] = 'Comment';
 $string['contactingserver'] = 'Contacting server ...';
+$string['count'] = 'Count';
 $string['default_help'] = 'If set, this feedback method will be enabled by default for all new assignments.';
 $string['default'] = 'Enabled by default';
 $string['delete'] = 'Delete';
@@ -55,20 +56,6 @@ $string['feedback_help'] = 'Messages will be displayed here regarding the transf
 
 You can control whether this item is visible or hidden using the the "Show AJAX feedback" item in the "Settings" section at the bottom of this page.';
 $string['feedback'] = 'Feedback';
-$string['firstnamecase_help'] = 'This setting allows you to specify the case used when displaying a student\'s first name.
-
-**Original case**
-: The first name will not be modified and will appear exactly as it does in the user profile.
-
-**Lower case**
-: The first name will displayed in lower case, e.g. *john* or *jane*
-
-**Proper case**
-: The first name will be displayed in proper case, in which the first letter of each word is upper case, while other letters are lower case, e.g. *John* or *Jane*
-
-**Upper case**
-: The first name will displayed in upper case. e.g. *JOHN* or *JANE*';
-$string['firstnamecase'] = 'Case of first name';
 $string['fix'] = 'Fix';
 $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
@@ -79,25 +66,11 @@ $string['increment'] = 'Points increment';
 $string['incremental'] = 'Incremental';
 $string['islands'] = 'Islands';
 $string['join'] = 'Join';
-$string['lastnamecase_help'] = 'This setting allows you to specify the case used when displaying a student\'s last name.
-
-**Original case**
-: The last name will not be modified and will appear exactly as it does in the user profile.
-
-**Proper case**
-: The last name will be displayed in proper case, in which the first letter of each word is upper case, while other letters are lower case, e.g. *Smith*
-
-**Lower case**
-: The last name will displayed in lower case, e.g. *smith*
-
-**Upper case**
-: The last name will be displayed in upper case, e.g. *SMITH*';
-$string['lastnamecase'] = 'Case of last name';
 $string['layouts_help'] = 'Use these settings to setup, save, load, and delete layouts for the user-map';
 $string['layouts'] = 'Layouts';
-$string['length_help'] = 'These values specify how to format long names.
+$string['length_help'] = 'These settings specify how to format long names.
 
-If the number of characters in this name field exceeds the "Length" value here, then the name will be reformatted as HEAD ... TAIL, where HEAD is the "Head" number of characters from the beginning of the name, and TAIL is the "Tail" number of characters from the end of the name.';
+If the number of characters in this name field exceeds the "Length" value here, then the name will be reformatted as HEAD JOIN TAIL, where HEAD is the "Head" number of characters from the beginning of the name, JOIN is the "join" string, and TAIL is the "Tail" number of characters from the end of the name.';
 $string['length'] = 'Length';
 $string['lines'] = 'Lines';
 $string['load'] = 'Load';
@@ -197,8 +170,6 @@ $string['romanize_help'] = 'Specify whether this name field should be romainzed.
 **Fix**
 : The name will be romanized and furthermore will be converted to Hepburn romanization in which long vowels are displayed using macrons, i.e. āēīōū';
 $string['romanize'] = 'Romanize';
-$string['romanizenames_help'] = 'If this setting is enabled, names will be romanized using modifed Hepburn romanization, in which macrons are used to show long vowel sounds.';
-$string['romanizenames'] = 'Romanize names';
 $string['rotate'] = 'Rotate';
 $string['save'] = 'Save';
 $string['scoreguide'] = 'Guide score: {$a}';
@@ -239,8 +210,6 @@ $string['showpointstotal_help'] = 'If this setting is enabled, the total number 
 
 Usually, this setting is only required when using Simple Direct Grading method, but it may also be useful after switching from the using Simple Direct Grading to using another grading method.';
 $string['showpointstotal'] = 'Show points (total)';
-$string['showrealname_help'] = 'If this setting is enabled, the students\' real names will be shown in the list of students to whom points are awarded.';
-$string['showrealname'] = 'Show real names';
 $string['showscoreguide_help'] = 'If this setting is enabled, the Marking Guide score for each student will be displayed.
 
 Usually, this setting is only required when using the Marking Guide advanced grading method, but it may also be useful after switching from the using a Marking Guide to using another grading method.';
@@ -253,9 +222,23 @@ $string['showusername_help'] = 'If this setting is enabled, the students\' login
 $string['showusername'] = 'Show usernames';
 $string['shuffle'] = 'Shuffle';
 $string['singlespace'] = '(single white space)';
-$string['splitrealname_help'] = 'If this setting is enabled, the students\' default real name, if used, will be split into two lines, in order to minimize the width of the student tiles.';
-$string['splitrealname'] = 'Split real names';
+$string['split_help'] = 'These settings are optional. They specify how to extract a part of this user name field.
+
+If a "Delimiter" character is specified, the name field will be split into parts on this character. The name parts are indexed starting at "1". The START and COUNT settings specify the range of name parts that will be selected.
+
+**Start**
+: If the START setting is zero, it will have the same effect as if it is "1".
+: If the START setting is positive, it specifies the starting part counting forward from the ***beginning*** of this name field.
+: If the START setting is negative, it specifies the starting part counting back from the the ***end*** of this name field.
+
+
+**Count**
+: If the COUNT setting is zero, it will have the same effect as if it is "-1".
+: If the COUNT setting is positive, it specifies the final part counting ***forward*** from the START part.
+: If the COUNT setting is negative, it specifies the final part counting back from the ***end*** of this name field.';
+$string['split'] = 'Delimiter';
 $string['square'] = 'Square';
+$string['start'] = 'Start';
 $string['style_help'] = 'Specify the HTML tag and text case to be used when this name is displayed.';
 $string['style'] = 'Style';
 $string['subtotal'] = 'Sub-total';
@@ -270,3 +253,4 @@ $string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a
 $string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
 $string['uppercase'] = 'UPPER CASE';
 $string['vertical'] = 'Vertical';
+
