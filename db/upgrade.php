@@ -339,7 +339,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                     $namefields = array(); // shouldn't happen !!
                 }
                 $config->value = base64_encode(serialize($namefields));
-                $DB->update_record($table, $config));
+                $DB->update_record($table, $config);
             }
         }
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
