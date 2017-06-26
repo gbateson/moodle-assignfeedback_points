@@ -312,6 +312,39 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2017062692;
+    if ($result && $oldversion < $newversion) {
+        require_once($CFG->dirroot.'/mod/assign/feedbackplugin.php');
+        require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
+
+        $table = 'assign_plugin_config';
+        $params = array('subtype' => 'assignfeedback',
+                        'plugin'  => 'points',
+                        'name'    => 'namefields');
+        if ($configs = $DB->get_records($table, $params)) {
+            $strman = get_string_manager();
+            $defaults = assign_feedback_points::get_namefield_defaults($strman, $plugin);
+            foreach ($configs as $configid => $config) {
+                $namefields = unserialize(base64_decode($config->value));
+                if (isset($namefields) && is_array($namefields)) {
+                    $i_max = count($namefields);
+                    for ($i = ($i_max - 1); $i >= 0; $i--) {
+                        if (empty($namefields[$i]['field'])) {
+                            array_splice($namefields, $i, 1);
+                        } else {
+                            $namefields[$i] = array_merge($defaults, $namefields[$i]);
+                        }
+                    }
+                } else {
+                    $namefields = array(); // shouldn't happen !!
+                }
+                $config->value = base64_encode(serialize($namefields));
+                $DB->update_record($table, $config));
+            }
+        }
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
     return $result;
 }
 
