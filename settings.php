@@ -31,8 +31,9 @@ $help    = new lang_string($settingname.'_help', $pluginname);
 $setting = new admin_setting_configcheckbox("$pluginname/$settingname", $label, $help, $default);
 $settings->add($setting);
 
-// integer fields
-$settingnames = array('minpoints' => -1, 'maxpoints' => 2, 'increment' => 1);
+// integer and text fields
+$settingnames = array('minpoints'  => -1, 'maxpoints'   => 2,  'increment' => 1,
+                      'nameformat' => '', 'namenewline' => ' ');
 foreach ($settingnames as $settingname => $default) {
     $label   = new lang_string($settingname, $pluginname);
     $help    = new lang_string($settingname.'_help', $pluginname);
@@ -46,10 +47,11 @@ foreach ($settingnames as $settingname => $default) {
 }
 
 // boolean fields
-$settingnames = array('sendimmediately' =>  1, 'multipleusers'   => 0, 'showelement'  => 0,
-                      'showpicture'     =>  1, 'showrealname'    => 0, 'showusername' => 0,
-                      'showpointstoday' =>  1, 'showpointstotal' => 1, 'showcomments' => 1,
-                      'showlink'        =>  1);
+$settingnames = array('sendimmediately' => 1, 'multipleusers'   => 0,
+                      'showelement'     => 0, 'showpicture'     => 0, 'showusername' => 0,
+                      'showpointstoday' => 1, 'showpointstotal' => 1,
+                      'showcomments'    => 1, 'showfeedback'    => 1,
+                      'showlink'        => 1, 'allowselectable' => 1);
 foreach ($settingnames as $settingname => $default) {
     $label   = new lang_string($settingname, $pluginname);
     $help    = new lang_string($settingname.'_help', $pluginname);
