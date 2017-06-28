@@ -33,7 +33,7 @@ $settings->add($setting);
 
 // integer and text fields
 $settingnames = array('minpoints'  => -1, 'maxpoints'   => 2,  'increment' => 1,
-                      'nameformat' => '', 'namenewline' => ' ');
+                      'nameformat' => '', 'newlinetoken' => '');
 foreach ($settingnames as $settingname => $default) {
     $label   = new lang_string($settingname, $pluginname);
     $help    = new lang_string($settingname.'_help', $pluginname);

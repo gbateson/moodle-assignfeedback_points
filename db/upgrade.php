@@ -217,8 +217,8 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                 $newconfigs[$assignid]->$name = $value;
             }
 
-            $defaulttoken = get_string('namefieldtokendefault', $plugin);
-            $defaultjoin = get_string('namefieldjoindefault', $plugin);
+            $defaulttoken = get_string('nametokentokendefault', $plugin);
+            $defaultjoin = get_string('nametokenjoindefault', $plugin);
             $defaultcase = 0; // original case
 
             foreach ($newconfigs as $assignid => $config) {
@@ -317,13 +317,14 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         require_once($CFG->dirroot.'/mod/assign/feedbackplugin.php');
         require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
 
+        // ensure all namefields contain at least the default settings
         $table = 'assign_plugin_config';
         $params = array('subtype' => 'assignfeedback',
                         'plugin'  => 'points',
                         'name'    => 'namefields');
         if ($configs = $DB->get_records($table, $params)) {
             $strman = get_string_manager();
-            $defaults = assign_feedback_points::get_namefield_defaults($strman, $plugin);
+            $defaults = assign_feedback_points::get_nametoken_setting_defaults($strman, $plugin);
             foreach ($configs as $configid => $config) {
                 $namefields = unserialize(base64_decode($config->value));
                 if (isset($namefields) && is_array($namefields)) {
@@ -342,6 +343,39 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                 $DB->update_record($table, $config);
             }
         }
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
+    $newversion = 2017062896;
+    if ($result && $oldversion < $newversion) {
+        $table = 'assign_plugin_config';
+
+        // rename config setting: "namefields" => "nametokens"
+        $params = array('subtype' => 'assignfeedback',
+                        'plugin'  => 'points',
+                        'name'    => 'namefields');
+        $DB->set_field($table, 'name', 'nametokens', $params);
+
+        // rename config setting: "namenewline" => "newlinetoken"
+        $params = array('subtype' => 'assignfeedback',
+                        'plugin'  => 'points',
+                        'name'    => 'namenewline');
+        $DB->set_field($table, 'name', 'newlinetoken', $params);
+
+        // reduce the size of the "pointstype" field from "10" to "4"
+        $table = new xmldb_table('assignfeedback_points');
+        $field = new xmldb_field('pointstype', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0');
+        $index = new xmldb_index('assipoin_asspoi_ix', XMLDB_INDEX_NOTUNIQUE, array('assignid', 'pointstype'));
+        if ($dbman->field_exists($table, $field)) {
+            if ($dbman->index_exists($table, $index)) {
+                $dbman->drop_index($table, $index);
+            }
+            $dbman->change_field_type($table, $field);
+            if (! $dbman->index_exists($table, $index)) {
+                $dbman->add_index($table, $index);
+            }
+        }
+
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 

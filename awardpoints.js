@@ -917,14 +917,23 @@ PTS.set_usermap_size = function(usermap) {
  * @return void
  */
 PTS.set_points_size = function(points_container, action_elements) {
-    var w = $("#id_mapwidth").val();
+    var l = null;
+    var r = null;
     action_elements.each(function(){
         var p = $(this).position();
-        w = Math.max(w, p.left + $(this).width());
+        p.right = p.left + $(this).width();
+        if (l===null || l > p.left) {
+            l = p.left;
+        }
+        if (r===null || r < p.right) {
+            r = p.right;
+        }
     });
-    if (w) {
-        points_container.css("max-width", w + "px");
+    var w = $("#id_mapwidth").val();
+    if (l && r && (r > l) && ((r - l) > w)) {
+        w = (r - l);
     }
+    points_container.css("max-width", w + "px");
 }
 
 /**
@@ -1306,7 +1315,7 @@ PTS.do_user_click = function(event, input) {
  */
 PTS.hideshow_name_fields = function() {
 
-    $("#id_namenewline").each(function(){
+    $("#id_newlinetoken").each(function(){
         $(this).change(function(evt){
             $(this).nextAll().remove();
             var txt = '';
@@ -1334,8 +1343,8 @@ PTS.hideshow_name_fields = function() {
     }
 
     // add hide/show toggle functionality to "name" settings
-    // e.g. name="namefields[0][field]" id="id_namefields_0_field"
-    $("select[id^=id_namefields_][id$=_field]").each(function(){
+    // e.g. name="nametokens[0][field]" id="id_nametokens_0_field"
+    $("select[id^=id_nametokens_][id$=_field]").each(function(){
 
         // create new IMG element
         var img = document.createElement("IMG");
