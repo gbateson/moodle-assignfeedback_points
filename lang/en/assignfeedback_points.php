@@ -26,7 +26,7 @@ $string['pluginname'] = 'Feedback points';
 $string['absent'] = 'Absent';
 $string['addmorenames'] = 'Add more names';
 $string['allowselectable_help'] = 'If this setting is enabled, jQuery\'s selectable functionality can be used to selected multiple students at once.';
-$string['allowselectable'] = 'Allow selectable functionality';
+$string['allowselectable'] = 'Enable jQuery selectable';
 $string['automatically'] = 'Automatically';
 $string['averagepoints'] = 'Awards: {$a->count} (Avg: {$a->average} pts)';
 $string['award'] = 'Award';
@@ -190,7 +190,7 @@ $string['pointstype_help'] = 'This setting specifies how point awards are combin
 : The assignment grade will be set to the median value of points awarded. The median value is the midpoint value if the awards are arranged from lowest to highest.
 
 **Mode**
-: The assignment grade will be set to the mode value of points awarded. The mode value is the most frequently occurring value in the awards. 
+: The assignment grade will be set to the mode value of points awarded. The mode value is the most frequently occurring value in the awards.
 
 **Minimum**
 : The assignment grade will be set to the minimum number of points awarded.
@@ -200,14 +200,14 @@ $string['pointstype_help'] = 'This setting specifies how point awards are combin
 
 ***Note:*** Point aggregation is only used for "Simple Direct Grading". It is not used for "Advanced grading" methods, such as a "Rubric" or "Marking guide".';
 $string['pointstype'] = 'Point aggregation';
-$string['pointstypeaverage'] = 'Average';
-$string['pointstypemaximum'] = 'Maximum';
-$string['pointstypemedian'] = 'Median';
-$string['pointstypeminimum'] = 'Minimum';
-$string['pointstypemode'] = 'Mode';
-$string['pointstypenewest'] = 'Newest';
-$string['pointstypeoldest']  = 'Oldest';
-$string['pointstypesum'] = 'Sum';
+$string['pointstypeaverage'] = 'average';
+$string['pointstypemaximum'] = 'maximum';
+$string['pointstypemedian'] = 'median';
+$string['pointstypeminimum'] = 'minimum';
+$string['pointstypemode'] = 'mode';
+$string['pointstypenewest'] = 'newest';
+$string['pointstypeoldest']  = 'oldest';
+$string['pointstypesum'] = 'sum';
 $string['propercase'] = 'Proper Case';
 $string['reset'] = 'Reset';
 $string['resize'] = 'Resize';

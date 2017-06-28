@@ -51,7 +51,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     const POINTSTYPE_NEWEST  = 1; // newest (=most recent) award (i.e. grade)
     const POINTSTYPE_MAXIMUM = 2; // maximum award
     const POINTSTYPE_AVERAGE = 3; // average award
-    const POINTSTYPE_MEDIAN  = 4; // middle award 
+    const POINTSTYPE_MEDIAN  = 4; // middle award
     const POINTSTYPE_MODE    = 5; // most popular award
     const POINTSTYPE_MINIMUM = 6; // minimum award
     const POINTSTYPE_OLDEST  = 7; // oldest (=first) award
@@ -201,9 +201,6 @@ class assign_feedback_points extends assign_feedback_plugin {
         $options = self::get_pointstype_options();
         self::add_setting($mform, $config, 'pointstype', 'select', 0, $options);
 
-        self::add_setting($mform, $config, 'sendimmediately', 'checkbox', 0);
-        self::add_setting($mform, $config, 'multipleusers',   'checkbox', 1);
-        self::add_setting($mform, $config, 'showelement',     'checkbox', 0);
         self::add_setting($mform, $config, 'showpicture',     'checkbox', 0);
         self::add_setting($mform, $config, 'showusername',    'checkbox', 0);
 
@@ -281,18 +278,22 @@ class assign_feedback_points extends assign_feedback_plugin {
         $mform->addElement('submit', $name.'add', $label);
         $mform->registerNoSubmitButton($name.'add');
 
+        // points, scores and grades
         self::add_setting($mform, $config, 'showpointstoday', 'checkbox', 0);
         self::add_setting($mform, $config, 'showpointstotal', 'checkbox', 0);
         self::add_setting($mform, $config, 'showscorerubric', 'checkbox', 0);
         self::add_setting($mform, $config, 'showscoreguide',  'checkbox', 0);
         self::add_setting($mform, $config, 'showgradeassign', 'checkbox', 0);
         self::add_setting($mform, $config, 'showgradecourse', 'checkbox', 0);
-
         self::add_setting($mform, $config, 'showcomments',    'checkbox', 0);
-        self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options());
 
-        self::add_setting($mform, $config, 'showlink',        'checkbox', 1);
+        // development settings (one day, these may be hidden completely)
+        self::add_setting($mform, $config, 'showelement',     'checkbox', 0);
+        self::add_setting($mform, $config, 'multipleusers',   'checkbox', 1);
         self::add_setting($mform, $config, 'allowselectable', 'checkbox', 1);
+        self::add_setting($mform, $config, 'sendimmediately', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options());
+        self::add_setting($mform, $config, 'showlink',        'checkbox', 1);
 
         // disable "showpointstoday" if we are not using incremental points
         $mform->disabledIf('showpointstoday', 'pointstype', 'ne', '0');
