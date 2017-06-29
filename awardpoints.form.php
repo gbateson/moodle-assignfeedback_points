@@ -39,13 +39,6 @@ require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
  */
 class assignfeedback_points_award_points_form extends moodleform {
 
-    protected $js_safe_replacements = array('\\'   => '\\\\',  "'"  =>"\\'", '"'=>'\\"',  // slashes and quotes
-                                            "\r\n" => '\\n',   "\r" =>'\\n', "\n"=>'\\n', // newlines (win, mac, nix)
-                                            "\0"   => '\\0',   '</' =>'<\\/');            // other replacements
-
-    const THEME_TYPE_LABEL = 1; // templateable theme
-    const THEME_TYPE_SPAN  = 2; // non-templateable theme
-
     /**
      * Define this form - called by the parent constructor
      */
@@ -108,7 +101,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         // ========================
         //
         $this->add_heading($mform, 'settings', 'moodle', true);
-        assign_feedback_points::add_settings($mform, $custom->config, $plugin);
+        assign_feedback_points::add_settings($mform, $plugin, $custom->config, $custom);
 
         // ========================
         // report section
@@ -147,12 +140,6 @@ class assignfeedback_points_award_points_form extends moodleform {
         // ========================
         //
         $this->add_action_buttons(true, get_string('savechanges'));
-
-        // ========================
-        // jQuery (javascript)
-        // ========================
-        //
-        $this->add_field_jquery($mform, $custom, $plugin);
     }
 
     /**
@@ -818,141 +805,5 @@ class assignfeedback_points_award_points_form extends moodleform {
                         'title' => get_string('pointsreporttitle', $plugin));
         $report = html_writer::tag('div', '', $params);
         $mform->addElement('html', $report);
-    }
-
-    /**
-     * add_field_jquery
-     *
-     * add jQuery javascript to make users draggable in a resizable container
-     *
-     * @param object  $mform
-     * @param object  $custom
-     * @param string  $plugin
-     */
-    private function add_field_jquery($mform, $custom, $plugin) {
-        global $CFG, $OUTPUT;
-
-        // determine html tag used to enclose group elements
-        // templatable forms on Moodle >= 2.9 use "LABEL" tags
-        // non-templatable forms use "SPAN" tags
-
-        if (method_exists($OUTPUT, 'mform_element')) {
-            // Moodle >= 2.9
-            $element = $mform->getElement('mapmodeelements'); // group of radio elements
-            $element = $element->getElements();               // array of radio elements
-            $element = $element[0];                           // the first radio element
-            $element = $OUTPUT->mform_element($element, false, false, '', true);
-            $group_element_tag = preg_replace('/^.*?<(\w+)[^>]*>.*$/s', '$1', $element);
-        } else {
-            // Moodle <= 2.8
-            $group_element_tag = 'span';
-        }
-
-        if ($group_element_tag=='label') {
-            // templatable theme for Moodle >= 2.9
-            $theme_type          = self::THEME_TYPE_LABEL;
-            $mapaction_container = '#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement';
-            $mapmode_container   = '#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement';
-            $user_container      = '#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement';
-            $points_container    = '#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement';
-            $layouts_container   = '#id_layouts_hdr div.form-group.row:nth-child(1) div.felement';
-        } else {
-            // non-templatable theme
-            $theme_type          = self::THEME_TYPE_SPAN;
-            $mapaction_container = '#fgroup_id_mapactionelements fieldset.fgroup';
-            $mapmode_container   = '#fgroup_id_mapmodeelements fieldset.fgroup';
-            $user_container      = '#fgroup_id_awardtoelements fieldset.fgroup';
-            $points_container    = '#fgroup_id_pointselements fieldset.fgroup';
-            $layouts_container   = '#fgroup_id_layoutselements';
-        }
-
-        $awardpoints_ajax_php  = '/mod/assign/feedback/points/awardpoints.ajax.php';
-        $awardpoints_ajax_php  = new moodle_url($awardpoints_ajax_php, array('id' => $custom->cm->id));
-
-        $reportpoints_ajax_php = '/mod/assign/feedback/points/reportpoints.ajax.php';
-        $reportpoints_ajax_php = new moodle_url($reportpoints_ajax_php, array('id' => $custom->cm->id));
-
-        $js = '';
-        $js .= '<script type="text/javascript">'."\n";
-        $js .= '//<![CDATA['."\n";
-
-        $js .= '    if (typeof(window.PTS)=="undefined") {'."\n";
-        $js .= '        window.PTS = {};'."\n";
-        $js .= '    }'."\n";
-
-        $js .= '    PTS.gradingmethod         = "'.$custom->gradingmethod.'";'."\n";
-        $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
-
-        $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
-        $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
-
-        $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
-        $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
-        $js .= '    PTS.showpointstoday       = '.intval($custom->config->showpointstoday).";\n";
-        $js .= '    PTS.showpointstotal       = '.intval($custom->config->showpointstotal).";\n";
-        $js .= '    PTS.showscorerubric       = '.intval($custom->config->showscorerubric).";\n";
-        $js .= '    PTS.showscoreguide        = '.intval($custom->config->showscoreguide).";\n";
-        $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
-
-        $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
-        $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
-        $js .= '    PTS.THEME_TYPE_LABEL      = '.self::THEME_TYPE_LABEL."\n";
-        $js .= '    PTS.group_element_tag     = "'.$group_element_tag.'";'."\n";
-        $js .= '    PTS.GROUP_ELEMENT_TAG     = PTS.group_element_tag.toUpperCase();'."\n";
-
-        $js .= '    PTS.mapaction_container   = "'.$mapaction_container.'";'."\n";
-        $js .= '    PTS.mapaction_min_width   = 48;'."\n";
-        $js .= '    PTS.mapaction_min_height  = 18;'."\n";
-
-        $js .= '    PTS.mapmode_container     = "'.$mapmode_container.'";'."\n";
-        $js .= '    PTS.mapmode_min_width     = 48;'."\n";
-        $js .= '    PTS.mapmode_min_height    = 18;'."\n";
-
-        $js .= '    PTS.user_container        = "'.$user_container.'";'."\n";
-        $js .= '    PTS.user_min_width        = 60;'."\n";
-        $js .= '    PTS.user_min_height       = 18;'."\n";
-
-        $js .= '    PTS.points_container      = "'.$points_container.'";'."\n";
-        $js .= '    PTS.points_min_width      = (PTS.theme_type==PTS.THEME_TYPE_LABEL ? 48 : 36);'."\n";
-        $js .= '    PTS.points_min_height     = 24;'."\n";
-
-        $js .= '    PTS.layouts_container     = "'.$layouts_container.'"'.";\n";
-
-        $js .= '    PTS.report_container_id   = "id_report_container";'."\n";
-        $js .= '    PTS.report_container      = "#" + PTS.report_container_id;'."\n";
-
-        $js .= '    PTS.awardpoints_ajax_php  = "'.$this->js_safe($awardpoints_ajax_php).'";'."\n";
-        $js .= '    PTS.reportpoints_ajax_php = "'.$this->js_safe($reportpoints_ajax_php).'";'."\n";
-        $js .= '    PTS.groupid               = '.intval($custom->groupid).";\n";
-        $js .= '    PTS.sesskey               = "'.sesskey().'";'."\n";
-
-        $js .= '    PTS.cleanup               = {duration : 400};'."\n";
-        $js .= '    PTS.separate              = {duration : 400, grid : {x : 12, y : 8}};'."\n";
-        $js .= '    PTS.rotate                = {duration : 400};'."\n";
-        $js .= '    PTS.resize                = {duration : 400};'."\n";
-        $js .= '    PTS.shuffle               = {duration : 400};'."\n";
-
-        $js .= '    PTS.allowselectable       = '.intval($custom->config->allowselectable).';'."\n";
-
-        $js .= '    PTS.str = {};'."\n";
-        $js .= '    PTS.str.showless          = "'.$this->js_safe(get_string('showless', 'form')).'";'."\n";
-        $js .= '    PTS.str.showmore          = "'.$this->js_safe(get_string('showmore', 'form')).'";'."\n";
-        $js .= '    PTS.str.newlineempty       = "'.$this->js_safe(get_string('newlineempty', $plugin)).'";'."\n";
-        $js .= '    PTS.str.newlinespace       = "'.$this->js_safe(get_string('newlinespace', $plugin)).'";'."\n";
-        $js .= '    PTS.str.contactingserver  = "'.$this->js_safe(get_string('contactingserver', $plugin)).'";'."\n";
-
-        $js .= '//]]>'."\n";
-        $js .= '</script>'."\n";
-
-        $mform->addElement('html', $js);
-    }
-
-    /**
-     * js_safe
-     *
-     * @param string $str
-     */
-    private function js_safe($str) {
-        return strtr($str, $this->js_safe_replacements);
     }
 }

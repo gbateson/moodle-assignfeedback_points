@@ -56,6 +56,9 @@ class assign_feedback_points extends assign_feedback_plugin {
     const POINTSTYPE_MINIMUM = 6; // minimum award
     const POINTSTYPE_OLDEST  = 7; // oldest (=first) award
 
+    const THEME_TYPE_LABEL = 1; // templateable theme
+    const THEME_TYPE_SPAN  = 2; // non-templateable theme
+
     /**
      * Get the name of the feedback points plugin.
      * @return string
@@ -150,19 +153,17 @@ class assign_feedback_points extends assign_feedback_plugin {
     public function get_settings(MoodleQuickForm $mform) {
         $plugin = 'assignfeedback_points';
 
-        // get config settings
-        $config = $this->get_all_config($plugin);
-
         // add header for new section
         // (because there are quite a few settings)
         $name = 'settings';
         $label = get_string($name, $plugin);
-        $mform->addElement('header', $name, $label);
+        $mform->addElement('header', $name.'_hdr', $label);
         if (method_exists($mform, 'setExpanded')) {
-            $mform->setExpanded($name, false);
+            $mform->setExpanded($name.'_hdr', false);
         }
 
-        self::add_settings($mform, $config, $plugin);
+        $config = $this->get_all_config($plugin);
+        self::add_settings($mform, $plugin, $config);
    }
 
     /**
@@ -172,7 +173,8 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param $config
      * @todo Finish documenting this function
      */
-    static public function add_settings($mform, $config, $plugin) {
+    static public function add_settings($mform, $plugin, $config, $custom=null) {
+        global $OUTPUT;
 
         $elements = array();
         $options = self::get_text_options();
@@ -184,6 +186,8 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $elements[] = $mform->createElement('static', '', '', $label);
             }
             $label = get_string($name, $plugin);
+            $label .= $OUTPUT->help_icon($name, $plugin);
+            $label = html_writer::tag('div', $label, array('class' => 'settingtitle wide'));
             $elements[] = $mform->createElement('static', '', '', $label);
             $elements[] = $mform->createElement('text', $name, '', $options);
         }
@@ -297,6 +301,12 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // disable "showpointstoday" if we are not using incremental points
         $mform->disabledIf('showpointstoday', 'pointstype', 'ne', '0');
+
+        // ========================
+        // jQuery (javascript)
+        // ========================
+        //
+        self::add_field_jquery($mform, $plugin, $custom);
     }
 
     /**
@@ -360,8 +370,8 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $label .= $OUTPUT->help_icon($setting, $plugin);
             }
             switch ($labeltype) {
-                case 2: $options = array('class' => 'namesettingtitle wide'); break;
-                case 1: $options = array('class' => 'namesettingtitle thin'); break;
+                case 2: $options = array('class' => 'settingtitle wide'); break;
+                case 1: $options = array('class' => 'settingtitle thin'); break;
                 default: $options = null; // shouldn't happen !!
             }
             $label = html_writer::tag('div', $label, $options);
@@ -388,6 +398,152 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
             $elements[] = $mform->createElement('static', '', '', $space);
         }
+    }
+
+    /**
+     * add_field_jquery
+     *
+     * add jQuery javascript to make users draggable in a resizable container
+     *
+     * @param object  $mform
+     * @param string  $plugin
+     * @param object  $custom (optional, default=null)
+     */
+    static public function add_field_jquery($mform, $plugin, $custom=null) {
+        global $CFG, $OUTPUT;
+
+        // add jQuery script to this page
+        self::requires_jquery('/mod/assign/feedback/points/awardpoints.js', $plugin);
+
+        $js = '';
+        $js .= '<script type="text/javascript">'."\n";
+        $js .= '//<![CDATA['."\n";
+
+        $js .= '    if (typeof(window.PTS)=="undefined") {'."\n";
+        $js .= '        window.PTS = {};'."\n";
+        $js .= '    }'."\n";
+
+        $js .= '    PTS.str = {};'."\n";
+        $js .= '    PTS.str.showless         = "'.self::js_safe(get_string('showless', 'form')).'";'."\n";
+        $js .= '    PTS.str.showmore         = "'.self::js_safe(get_string('showmore', 'form')).'";'."\n";
+        $js .= '    PTS.str.newlineempty     = "'.self::js_safe(get_string('newlineempty', $plugin)).'";'."\n";
+        $js .= '    PTS.str.newlinespace     = "'.self::js_safe(get_string('newlinespace', $plugin)).'";'."\n";
+
+        if ($custom) {
+            $js .= '    PTS.str.contactingserver = "'.self::js_safe(get_string('contactingserver', $plugin)).'";'."\n";
+
+            // determine html tag used to enclose group elements
+            // templatable forms on Moodle >= 2.9 use "LABEL" tags
+            // non-templatable forms use "SPAN" tags
+
+            if (method_exists($OUTPUT, 'mform_element')) {
+                // Moodle >= 2.9
+                $element = $mform->getElement('mapmodeelements'); // group of radio elements
+                $element = $element->getElements();               // array of radio elements
+                $element = $element[0];                           // the first radio element
+                $element = $OUTPUT->mform_element($element, false, false, '', true);
+                $group_element_tag = preg_replace('/^.*?<(\w+)[^>]*>.*$/s', '$1', $element);
+            } else {
+                // Moodle <= 2.8
+                $group_element_tag = 'span';
+            }
+
+            if ($group_element_tag=='label') {
+                // templatable theme for Moodle >= 2.9
+                $theme_type          = self::THEME_TYPE_LABEL;
+                $mapaction_container = '#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement';
+                $mapmode_container   = '#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement';
+                $user_container      = '#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement';
+                $points_container    = '#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement';
+                $layouts_container   = '#id_layouts_hdr div.form-group.row:nth-child(1) div.felement';
+            } else {
+                // non-templatable theme
+                $theme_type          = self::THEME_TYPE_SPAN;
+                $mapaction_container = '#fgroup_id_mapactionelements fieldset.fgroup';
+                $mapmode_container   = '#fgroup_id_mapmodeelements fieldset.fgroup';
+                $user_container      = '#fgroup_id_awardtoelements fieldset.fgroup';
+                $points_container    = '#fgroup_id_pointselements fieldset.fgroup';
+                $layouts_container   = '#fgroup_id_layoutselements';
+            }
+
+            $js .= '    PTS.gradingmethod         = "'.$custom->gradingmethod.'";'."\n";
+            $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
+
+            $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
+            $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
+
+            $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
+            $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
+            $js .= '    PTS.showpointstoday       = '.intval($custom->config->showpointstoday).";\n";
+            $js .= '    PTS.showpointstotal       = '.intval($custom->config->showpointstotal).";\n";
+            $js .= '    PTS.showscorerubric       = '.intval($custom->config->showscorerubric).";\n";
+            $js .= '    PTS.showscoreguide        = '.intval($custom->config->showscoreguide).";\n";
+            $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
+
+            $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
+            $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
+            $js .= '    PTS.THEME_TYPE_LABEL      = '.self::THEME_TYPE_LABEL."\n";
+            $js .= '    PTS.group_element_tag     = "'.$group_element_tag.'";'."\n";
+            $js .= '    PTS.GROUP_ELEMENT_TAG     = PTS.group_element_tag.toUpperCase();'."\n";
+
+            $js .= '    PTS.mapaction_container   = "'.$mapaction_container.'";'."\n";
+            $js .= '    PTS.mapaction_min_width   = 48;'."\n";
+            $js .= '    PTS.mapaction_min_height  = 18;'."\n";
+
+            $js .= '    PTS.mapmode_container     = "'.$mapmode_container.'";'."\n";
+            $js .= '    PTS.mapmode_min_width     = 48;'."\n";
+            $js .= '    PTS.mapmode_min_height    = 18;'."\n";
+
+            $js .= '    PTS.user_container        = "'.$user_container.'";'."\n";
+            $js .= '    PTS.user_min_width        = 60;'."\n";
+            $js .= '    PTS.user_min_height       = 18;'."\n";
+
+            $js .= '    PTS.points_container      = "'.$points_container.'";'."\n";
+            $js .= '    PTS.points_min_width      = (PTS.theme_type==PTS.THEME_TYPE_LABEL ? 48 : 36);'."\n";
+            $js .= '    PTS.points_min_height     = 24;'."\n";
+
+            $js .= '    PTS.layouts_container     = "'.$layouts_container.'"'.";\n";
+
+            $js .= '    PTS.report_container_id   = "id_report_container";'."\n";
+            $js .= '    PTS.report_container      = "#" + PTS.report_container_id;'."\n";
+
+            $url  = '/mod/assign/feedback/points/awardpoints.ajax.php';
+            $url  = new moodle_url($url, array('id' => $custom->cm->id));
+            $js .= '    PTS.awardpoints_ajax_php  = "'.self::js_safe($url).'";'."\n";
+
+            $url = '/mod/assign/feedback/points/reportpoints.ajax.php';
+            $url = new moodle_url($url, array('id' => $custom->cm->id));
+            $js .= '    PTS.reportpoints_ajax_php = "'.self::js_safe($url).'";'."\n";
+
+            $js .= '    PTS.groupid               = '.intval($custom->groupid).";\n";
+            $js .= '    PTS.sesskey               = "'.sesskey().'";'."\n";
+
+            $js .= '    PTS.cleanup               = {duration : 400};'."\n";
+            $js .= '    PTS.separate              = {duration : 400, grid : {x : 12, y : 8}};'."\n";
+            $js .= '    PTS.rotate                = {duration : 400};'."\n";
+            $js .= '    PTS.resize                = {duration : 400};'."\n";
+            $js .= '    PTS.shuffle               = {duration : 400};'."\n";
+
+            $js .= '    PTS.allowselectable       = '.intval($custom->config->allowselectable).';'."\n";
+        }
+
+        $js .= '//]]>'."\n";
+        $js .= '</script>'."\n";
+
+        $mform->addElement('html', $js);
+    }
+
+    /**
+     * js_safe
+     *
+     * @param string $str
+     */
+    static public function js_safe($str) {
+        static $replace = array(
+            '\\'   => '\\\\',  "'"  =>"\\'", '"'=>'\\"',  // slashes and quotes
+            "\r\n" => '\\n',   "\r" =>'\\n', "\n"=>'\\n', // newlines (win, mac, nix)
+            "\0"   => '\\0',   '</' =>'<\\/');            // other replacements
+        return strtr($str, $replace);
     }
 
     /**
@@ -538,9 +694,6 @@ class assign_feedback_points extends assign_feedback_plugin {
             'pluginaction'  => 'awardpoints'
         );
         $PAGE->set_url(new moodle_url('/mod/assign/view.php', $params));
-
-        // add jQuery script to this page
-        self::requires_jquery('/mod/assign/feedback/points/awardpoints.js', $plugin);
 
         // process incoming formdata, and fetch output settings
         // $multipleusers, $groupid, $map, $feedback, $userlist
