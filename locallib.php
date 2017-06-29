@@ -774,7 +774,9 @@ class assign_feedback_points extends assign_feedback_plugin {
         // format the display names for these users
         foreach ($userlist as $id => $user) {
 
+            $defaultname = fullname($user);
             $displayname = $config->nameformat;
+
             foreach ($config->nametokens as $i => $nametoken) {
                 $nametoken = (object)$nametoken;
 
@@ -786,7 +788,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 if (array_key_exists($field, $user_name_fields) && property_exists($user, $field)) {
                     $text = $user->$field;
                 } else if ($field=='default') {
-                    $text = fullname($user);
+                    $text = $defaultname;
                 } else {
                     continue; // shoudln't happen !!
                 }
@@ -832,7 +834,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $displayname = preg_replace($search, html_writer::empty_tag('br'), $displayname);
             }
 
-            $userlist[$id]->fullname = fullname($user);
+            $userlist[$id]->defaultname = $defaultname;
             $userlist[$id]->displayname = $displayname;
         }
 
@@ -866,7 +868,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     // append "feedback" details
                     if (array_key_exists($points->awardto, $userlist)) {
                         $feedback->points = $points->points;
-                        $feedback->userlist[] = fullname($userlist[$points->awardto]);
+                        $feedback->userlist[] = $userlist[$points->awardto]->displayname;
                     }
                 }
             }
@@ -1469,7 +1471,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
 
                 // append this user to "feedback" details
-                $feedback->userlist[] = fullname($userlist[$userid]);
+                $feedback->userlist[] = $userlist[$userid]->displayname;
 
                 if ($pointstype==self::POINTSTYPE_SUM) { // incremental points
                     $params = array('assignid'   => $instance->id,
