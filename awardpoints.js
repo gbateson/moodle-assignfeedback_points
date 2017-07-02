@@ -910,14 +910,14 @@ PTS.set_usermap_size = function(usermap) {
 }
 
 /**
- * set_points_size
+ * set_points_width
  *
  * param object points_container
  * param object points_elements
  * param object action_elements
  * @return void
  */
-PTS.set_points_size = function(points_container, points_elements, action_elements) {
+PTS.set_points_width = function(points_container, points_elements, action_elements) {
     var l = null;
     var r = null;
     var w = 0; // width
@@ -945,7 +945,7 @@ PTS.set_points_size = function(points_container, points_elements, action_element
     });
     if (w==0) {
         w = $("#id_mapwidth").val();
-        if (l && r && (r > l) && ((r - l) > w)) {
+        if (w < (r - l)) {
             w = (r - l);
         }
     }
@@ -1425,8 +1425,7 @@ $(document).ready(function() {
     PTS.set_user_size(user_elements);
     PTS.set_elm_position(user_elements);
 
-    // restrict width of points container
-    PTS.set_points_size(points_container, points_elements, action_elements);
+    PTS.set_points_width(points_container, points_elements, action_elements);
 
     PTS.set_elm_event_handlers(action_elements, PTS.do_map_action);
     PTS.set_elm_event_handlers(mode_elements,   false);
