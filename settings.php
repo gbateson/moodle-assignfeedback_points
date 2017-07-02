@@ -32,7 +32,8 @@ $setting = new admin_setting_configcheckbox("$pluginname/$settingname", $label, 
 $settings->add($setting);
 
 // integer and text fields
-$settingnames = array('minpoints'  => -1, 'maxpoints'   => 2,  'increment' => 1,
+$settingnames = array('minpoints'  => 0, 'maxpoints'    => 10,
+                      'increment'  => 1, 'pointsperrow' =>  5,
                       'nameformat' => '', 'newlinetoken' => '');
 foreach ($settingnames as $settingname => $default) {
     $label   = new lang_string($settingname, $pluginname);
@@ -48,7 +49,7 @@ foreach ($settingnames as $settingname => $default) {
 
 // boolean fields
 $settingnames = array('sendimmediately' => 1, 'multipleusers'   => 0,
-                      'showelement'     => 0, 'showpicture'     => 0, 'showusername' => 0,
+                      'showelement'     => 0, 'showpicture'     => 0,
                       'showpointstoday' => 1, 'showpointstotal' => 1,
                       'showcomments'    => 1, 'showfeedback'    => 1,
                       'showlink'        => 1, 'allowselectable' => 1);
