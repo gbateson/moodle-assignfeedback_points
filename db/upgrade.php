@@ -296,7 +296,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         $params = array('pointstype',      'minpoints',
                         'increment',       'maxpoints',
                         'sendimmediately', 'multipleusers',
-                        'showelement',     'showpicture',   'showusername',
+                        'showelement',     'showpicture',
                         'nameformat',      'namenewline',   'namefields',
                         'showpointstoday', 'showpointstotal',
                         'showscorerubric', 'showscoreguide',

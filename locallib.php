@@ -152,63 +152,52 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     public function get_settings(MoodleQuickForm $mform) {
         $plugin = 'assignfeedback_points';
-
-        // add header for new section
-        // (because there are quite a few settings)
-        $name = 'settings';
-        $label = get_string($name, $plugin);
-        $mform->addElement('header', $name.'_hdr', $label);
-        if (method_exists($mform, 'setExpanded')) {
-            $mform->setExpanded($name.'_hdr', false);
-        }
-
         $config = $this->get_all_config($plugin);
         self::add_settings($mform, $plugin, $config);
    }
 
     /**
+     * add_heading
+     *
+     * @param object  $mform
+     * @param string  $name
+     * @param string  $plugin
+     * @param boolean $expanded (optional, default=TRUE)
+     * @param string  $suffix   (optional, default="_hdr")
+     */
+    static public function add_heading($mform, $name, $plugin, $expanded=true, $suffix='_hdr') {
+        $label = get_string($name, $plugin);
+        $mform->addElement('header', $name.$suffix, $label);
+        if (method_exists($mform, 'setExpanded')) {
+            $mform->setExpanded($name.$suffix, $expanded);
+        }
+    }
+
+    /**
      * add_settings
      *
-     * @param $mform
-     * @param $config
+     * @param object $mform
+     * @param string $plugin
+     * @param object $config
+     * @param object $custom (optional, default=null
      * @todo Finish documenting this function
      */
     static public function add_settings($mform, $plugin, $config, $custom=null) {
         global $OUTPUT;
 
-        $elements = array();
-        $options = self::get_text_options();
-        $names = array('minpoints', 'increment', 'maxpoints', 'pointsperrow');
-        foreach ($names as $name) {
-            if (count($elements)) {
-                $label = html_writer::empty_tag('br');
-                $elements[] = $mform->createElement('static', '', '', $label);
-            }
-            $label = get_string($name, $plugin);
-            $label .= $OUTPUT->help_icon($name, $plugin);
-            $label = html_writer::tag('div', $label, array('class' => 'settingtitle wide'));
-            $elements[] = $mform->createElement('static', '', '', $label);
-            $elements[] = $mform->createElement('text', $name, '', $options);
+        // add header for new section
+        // (because there are quite a few settings)
+        if ($custom==null) {
+            self::add_heading($mform, 'settings', $plugin, false);
         }
 
-        $name = 'pointsrange';
-        $label = get_string($name, $plugin);
-        $mform->addElement('group', $name, $label, $elements, ' ', false);
-        $mform->addHelpButton($name, $name, $plugin);
-
-        foreach ($names as $name) {
-            $mform->setType($name, PARAM_INT);
-            $mform->setDefault($name, $config->$name);
+        if ($custom) {
+            self::add_heading($mform, 'picturesandnames', $plugin, false);
         }
 
-        $options = self::get_pointstype_options();
-        self::add_setting($mform, $config, 'pointstype', 'select', 0, $options);
-
-        self::add_setting($mform, $config, 'showpicture',     'checkbox', 0);
-        self::add_setting($mform, $config, 'showusername',    'checkbox', 0);
-
-        self::add_setting($mform, $config, 'nameformat',  'text', '', self::get_text_options(20), PARAM_TEXT);
-        self::add_setting($mform, $config, 'newlinetoken', 'text', '', self::get_text_options(),   PARAM_TEXT);
+        self::add_setting($mform, $config, 'showpicture', 'checkbox', 0);
+        self::add_setting($mform, $config, 'nameformat', 'text', '', self::get_text_options(20), PARAM_TEXT);
+        self::add_setting($mform, $config, 'newlinetoken', 'text', '', self::get_text_options(), PARAM_TEXT);
 
         // nametokens
         $name = 'nametokens';
@@ -281,21 +270,104 @@ class assign_feedback_points extends assign_feedback_plugin {
         $mform->addElement('submit', $name.'add', $label);
         $mform->registerNoSubmitButton($name.'add');
 
+        // Points settings
+        $names = array('minpoints',
+                       'maxpoints',
+                       'increment',
+                       'pointsperrow');
+        if ($custom && $custom->gradingmethod) {
+
+            // Advanced Grading (in awardpoints_form)
+            array_push($names, 'pointstype',
+                               'showcomments');
+            foreach ($names as $name) {
+                $mform->addElement('hidden', $name, $config->$name);
+                $mform->setType($name, PARAM_INT);
+            }
+
+        } else {
+
+            // Simple Direct Grading (or Assignment settings form)
+
+            if ($custom) {
+                self::add_heading($mform, 'gradingmethodnone', 'grading', false);
+            }
+
+            $options = self::get_text_options();
+            foreach ($names as $name) {
+                self::add_setting($mform, $config, $name, 'text', 0, $options);
+                if ($custom==null) {
+                    $mform->disabledIf($name, 'advancedgradingmethod_submissions', 'ne', '');
+                }
+            }
+
+            $name = 'pointstype';
+            $options = self::get_pointstype_options();
+            self::add_setting($mform, $config, $name, 'select', 0, $options);
+            $mform->disabledIf($name, 'advancedgradingmethod_submissions', 'ne', '');
+
+            $name = 'showcomments';
+            self::add_setting($mform, $config, $name, 'checkbox', 0);
+        }
+
         // points, scores and grades
-        self::add_setting($mform, $config, 'showpointstoday', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showpointstotal', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showscorerubric', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showscoreguide',  'checkbox', 0);
+        if ($custom) {
+            self::add_heading($mform, 'pointsscoresgrades', $plugin , false);
+        }
+
+        // $names of hidden fields
+        $names = array();
+        $gradingmethod = 'advancedgradingmethod_submissions';
+
+        $name = 'showpointstoday';
+        if ($custom==null || $custom->gradingmethod=='') {
+            self::add_setting($mform, $config, $name, 'checkbox', 0);
+            $mform->disabledIf($name, $gradingmethod, 'ne', '');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showpointstoday';
+        if ($custom==null || $custom->gradingmethod=='') {
+            self::add_setting($mform, $config, $name, 'checkbox', 0);
+            $mform->disabledIf($name, $gradingmethod, 'ne', '');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showscorerubric';
+        if ($custom==null || $custom->gradingmethod=='rubric') {
+            self::add_setting($mform, $config, $name, 'checkbox', 0);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showscoreguide';
+        if ($custom==null || $custom->gradingmethod=='guide') {
+            self::add_setting($mform, $config, $name, 'checkbox', 0);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
+        } else {
+            $names[] = $name;
+        }
+
+        foreach ($names as $name) {
+            $mform->addElement('hidden', $name, $config->$name);
+            $mform->setType($name, PARAM_INT);
+        }
+
         self::add_setting($mform, $config, 'showgradeassign', 'checkbox', 0);
         self::add_setting($mform, $config, 'showgradecourse', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showcomments',    'checkbox', 0);
 
         // development settings (one day, these may be hidden completely)
+        if ($custom) {
+            self::add_heading($mform, 'developmentsettings', $plugin, false);
+        }
+        self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options());
         self::add_setting($mform, $config, 'showelement',     'checkbox', 0);
         self::add_setting($mform, $config, 'multipleusers',   'checkbox', 1);
-        self::add_setting($mform, $config, 'allowselectable', 'checkbox', 1);
         self::add_setting($mform, $config, 'sendimmediately', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options());
+        self::add_setting($mform, $config, 'allowselectable', 'checkbox', 1);
         self::add_setting($mform, $config, 'showlink',        'checkbox', 1);
 
         // disable "showpointstoday" if we are not using incremental points
@@ -2045,7 +2117,6 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'multipleusers'   => 0,
                      'showelement'     => 0,
                      'showpicture'     => 0,
-                     'showusername'    => 0,
                      'nameformat'      => '',
                      'newlinetoken'     => get_string('newlinetokendefault', $plugin),
                      'nametokens'      => array(), // base64_encode(serialize(array()))
@@ -2159,6 +2230,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     static public function get_nametoken_field_options() {
         $fields = array('' => '', 'default' => '');
         $fields += self::get_all_user_name_fields();
+        $fields['username'] = '';
         foreach (array_keys($fields) as $field) {
             if ($field) {
                 $fields[$field] = get_string($field);

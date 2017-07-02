@@ -74,7 +74,8 @@ class assignfeedback_points_award_points_form extends moodleform {
         // ========================
         //
         $name = 'awardpoints';
-        $this->add_heading($mform, $name, $plugin, true);
+        assign_feedback_points::add_heading($mform, $name, $plugin, true);
+
         $this->add_field_groups($mform, $custom, $plugin);
         $this->add_field_feedback($mform, $custom, $plugin);
         $this->add_field_mapaction($mform, $custom, $plugin);
@@ -90,24 +91,23 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
 
         // ========================
-        // layouts section
-        // ========================
-        //
-        $this->add_heading($mform, 'layouts', $plugin, false);
-        $this->add_field_layouts($mform, $custom, $plugin);
-
-        // ========================
         // settings section
         // ========================
         //
-        $this->add_heading($mform, 'settings', 'moodle', true);
         assign_feedback_points::add_settings($mform, $plugin, $custom->config, $custom);
+
+        // ========================
+        // layouts section
+        // ========================
+        //
+        assign_feedback_points::add_heading($mform, 'layouts', $plugin, false);
+        $this->add_field_layouts($mform, $custom, $plugin);
 
         // ========================
         // report section
         // ========================
         //
-        $this->add_heading($mform, 'report', 'moodle', false);
+        assign_feedback_points::add_heading($mform, 'report', 'moodle', false);
         $this->add_field_report($mform, $custom, $plugin);
 
         // ========================
@@ -151,23 +151,6 @@ class assignfeedback_points_award_points_form extends moodleform {
         $attributes = $mform->getAttributes();
         $attributes['id'] = get_class($this);
         $mform->setAttributes($attributes);
-    }
-
-    /**
-     * add_heading
-     *
-     * @param object  $mform
-     * @param string  $name
-     * @param string  $plugin
-     * @param boolean $expanded (optional, default=TRUE)
-     * @param string  $suffix   (optional, default="_hdr")
-     */
-    private function add_heading($mform, $name, $plugin, $expanded=true, $suffix='_hdr') {
-        $label = get_string($name, $plugin);
-        $mform->addElement('header', $name.$suffix, $label);
-        if (method_exists($mform, 'setExpanded')) {
-            $mform->setExpanded($name.$suffix, $expanded);
-        }
     }
 
     /**

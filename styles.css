@@ -398,7 +398,7 @@ body.path-mod-assign #fgroup_id_layoutselements input.indent,
 ***********************************/
 
 body.path-mod-assign #id_settings_hdr .settingtitle,
-#assignfeedback_points_award_points_form #id_settings_hdr .settingtitle {
+#assignfeedback_points_award_points_form .settingtitle {
     display     : inline-block;
     font-weight : bold;
     margin-left : 0px;
@@ -408,12 +408,12 @@ body.path-mod-assign #id_settings_hdr .settingtitle,
 }
 
 body.path-mod-assign #id_settings_hdr .settingtitle.wide,
-#assignfeedback_points_award_points_form #id_settings_hdr .settingtitle.wide {
+#assignfeedback_points_award_points_form .settingtitle.wide {
     width       : 96px;
 }
 
 body.path-mod-assign #id_settings_hdr .settingtitle.thin,
-#assignfeedback_points_award_points_form #id_settings_hdr .settingtitle.thin {
+#assignfeedback_points_award_points_form .settingtitle.thin {
     width       : 48px;
 }
 

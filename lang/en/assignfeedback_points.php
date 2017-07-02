@@ -50,6 +50,7 @@ $string['count'] = 'Count';
 $string['default_help'] = 'If set, this feedback method will be enabled by default for all new assignments.';
 $string['default'] = 'Enabled by default';
 $string['delete'] = 'Delete';
+$string['developmentsettings'] = 'Development settings';
 $string['enabled_help'] = 'If enabled, the marker can award points to other users.';
 $string['enabled'] = 'Enabled';
 $string['feedback_help'] = 'Messages will be displayed here regarding the transfer, via AJAX to the Moodle server, of data about points awarded.
@@ -61,8 +62,8 @@ $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
 $string['head'] = 'Head';
 $string['horizontal'] = 'Horizontal';
-$string['increment_help'] = 'the incremental difference in points between successive "Points" buttons';
-$string['increment'] = 'Increment';
+$string['increment_help'] = 'the incremental difference, in points, between successive "Points" buttons';
+$string['increment'] = 'Points increment';
 $string['islands'] = 'Islands';
 $string['join'] = 'Join';
 $string['layouts_help'] = 'Use these settings to setup, save, load, and delete layouts for the user-map';
@@ -97,9 +98,9 @@ $string['mapaction'] = 'User-map action';
 $string['mapmode_help'] = 'the action that will be taken when you click on a user in the user-map';
 $string['mapmode'] = 'User-map mode';
 $string['maxpoints_help'] = 'the number of points awarded by the "Points" button with the highest value';
-$string['maxpoints'] = 'Maximum';
+$string['maxpoints'] = 'Maximum points';
 $string['minpoints_help'] = 'the number of points awarded by the "Points" button with the lowest value - this can be a negative number';
-$string['minpoints'] = 'Minimum';
+$string['minpoints'] = 'Minimum points';
 $string['multipleusers_help'] = 'If this setting is enabled, more than one student can be selected when points are awarded. Otherwise, only a single student can be awarded points at one time.';
 $string['multipleusers'] = 'Select multiple users';
 $string['nametoken_help'] = 'Specify the token that represents this name in the name format string, and then select a name field to be displayed from the user profile.
@@ -156,15 +157,13 @@ $string['percent100'] = 'full';
 $string['percent25'] = '¼';
 $string['percent50'] = '½';
 $string['percent75'] = '¾';
+$string['picturesandnames'] = 'Pictures and names';
 $string['points_help'] = 'The number of points to be awarded';
 $string['points'] = 'Points';
 $string['pointsperrow_help'] = 'The number of points buttons per row.';
-$string['pointsperrow'] = 'Row width';
-$string['pointsrange_help'] = 'These settings specify the range of points that may be awarded to students using the "Points" buttons.
-
-The "Points" buttons are generated automatically. Their values range from the "Minimum" value to the "Maximum" value, and are incremented by the "Increment" amount.';
-$string['pointsrange'] = 'Point range';
+$string['pointsperrow'] = 'Points row width';
 $string['pointsreporttitle'] = 'Points report';
+$string['pointsscoresgrades'] = 'Points, scores and grades';
 $string['pointstoday'] = 'Points (today): {$a}';
 $string['pointstotal'] = 'Points (total): {$a}';
 $string['pointstype_help'] = 'This setting specifies how point awards are combined to calculate grades for this assignment. The following aggregation methods are available:
@@ -193,8 +192,8 @@ $string['pointstype_help'] = 'This setting specifies how point awards are combin
 **oldest**
 : The assignment grade will be set to the value of the oldest, i.e. the first, point award.
 
-***Note:*** Point aggregation is only used for "Simple Direct Grading". It is not used for "Advanced grading" methods, such as a "Rubric" or "Marking guide".';
-$string['pointstype'] = 'Point aggregation';
+***Note:*** Points aggregation is only used for "Simple Direct Grading". It is not used for "Advanced grading" methods, such as a "Rubric" or "Marking guide".';
+$string['pointstype'] = 'Points aggregation';
 $string['pointstypeaverage'] = 'average';
 $string['pointstypemaximum'] = 'maximum';
 $string['pointstypemedian'] = 'median';
@@ -224,7 +223,7 @@ $string['scorerubric'] = 'Rubric score: {$a}';
 $string['sendimmediately_help'] = 'If this setting is enabled, points will be awarded and sent to Moodle (via AJAX) as soon as the teacher clicks or taps a student\'s name or image. Otherwise, points will be sent to Moodle when the teacher clicks the "Award points" button at the bottom of this page.';
 $string['sendimmediately'] = 'Send points immediately';
 $string['separate'] = 'Separate';
-$string['settings'] = 'Settings for feedback points';
+$string['settings'] = 'Settings for Feedback points';
 $string['setup'] = 'Setup';
 $string['showcomments_help'] = 'If this setting is enabled, the top ten most frequently used comments will be displayed for selection from a drop down menu.';
 $string['showcomments'] = 'Show frequent comments';
@@ -265,8 +264,6 @@ $string['showscorerubric_help'] = 'If this setting is enabled, the Rubric score 
 
 Usually, this setting is only required when using the Rubric advanced grading method, but it may also be useful after switching from the using a Rubric to using another grading method.';
 $string['showscorerubric'] = 'Show rubric score';
-$string['showusername_help'] = 'If this setting is enabled, the students\' login usernames will be shown in the list of students to whom points are awarded.';
-$string['showusername'] = 'Show usernames';
 $string['shuffle'] = 'Shuffle';
 $string['singlespace'] = '(single white space)';
 $string['split_help'] = 'These settings are optional. They specify how to extract a part of this user name field.
