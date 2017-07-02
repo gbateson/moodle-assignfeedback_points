@@ -919,6 +919,8 @@ PTS.set_usermap_size = function(usermap) {
 PTS.set_points_size = function(points_container, action_elements) {
     var l = null;
     var r = null;
+    var i = 0; // index
+    var w = 0; // width
     action_elements.each(function(){
         var p = $(this).position();
         p.right = p.left + $(this).width();
@@ -928,10 +930,18 @@ PTS.set_points_size = function(points_container, action_elements) {
         if (r===null || r < p.right) {
             r = p.right;
         }
+        if (i < PTS.pointsperrow) {
+            i++;
+            if (w < (r - l - 10)) {
+                w = (r - l - 10);
+            }
+        }
     });
-    var w = $("#id_mapwidth").val();
-    if (l && r && (r > l) && ((r - l) > w)) {
-        w = (r - l);
+    if (w==0) {
+        w = $("#id_mapwidth").val();
+        if (l && r && (r > l) && ((r - l - 10) > w)) {
+            w = (r - l - 10);
+        }
     }
     points_container.css("max-width", w + "px");
 }

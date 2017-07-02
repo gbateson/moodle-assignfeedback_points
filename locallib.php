@@ -178,8 +178,7 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         $elements = array();
         $options = self::get_text_options();
-
-        $names = array('minpoints', 'increment', 'maxpoints');
+        $names = array('minpoints', 'increment', 'maxpoints', 'pointsperrow');
         foreach ($names as $name) {
             if (count($elements)) {
                 $label = html_writer::empty_tag('br');
@@ -473,6 +472,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
 
             $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
+            $js .= '    PTS.pointsperrow          = '.intval($custom->config->pointsperrow).";\n";
             $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
             $js .= '    PTS.showpointstoday       = '.intval($custom->config->showpointstoday).";\n";
             $js .= '    PTS.showpointstotal       = '.intval($custom->config->showpointstotal).";\n";
@@ -2040,6 +2040,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'minpoints'       => 1,
                      'increment'       => 1,
                      'maxpoints'       => 2,
+                     'pointsperrow'    => 0,
                      'sendimmediately' => 1,
                      'multipleusers'   => 0,
                      'showelement'     => 0,

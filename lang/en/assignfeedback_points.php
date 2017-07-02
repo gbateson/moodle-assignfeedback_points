@@ -158,6 +158,8 @@ $string['percent50'] = '½';
 $string['percent75'] = '¾';
 $string['points_help'] = 'The number of points to be awarded';
 $string['points'] = 'Points';
+$string['pointsperrow_help'] = 'The number of points buttons per row.';
+$string['pointsperrow'] = 'Row width';
 $string['pointsrange_help'] = 'These settings specify the range of points that may be awarded to students using the "Points" buttons.
 
 The "Points" buttons are generated automatically. Their values range from the "Minimum" value to the "Maximum" value, and are incremented by the "Increment" amount.';
@@ -298,4 +300,3 @@ $string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a
 $string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
 $string['uppercase'] = 'UPPER CASE';
 $string['vertical'] = 'Vertical';
-

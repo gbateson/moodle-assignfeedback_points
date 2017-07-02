@@ -538,16 +538,16 @@ class assignfeedback_points_award_points_form extends moodleform {
             $inc = min(-1, $inc);
         }
         $elements = array();
-        // add a reset element if necessary
-        if (($min<0 && $max<0) || ($min>0 && $max>0)) {
-            $elements[] = $mform->createElement('radio', $name, '', get_string('reset'), 0);
-        }
         // add one element for each point value
         for ($i=$min; $i<($max + $inc); $i+=$inc) {
             if ($i > $max) {
                 $i = $max;
             }
             $elements[] = $mform->createElement('radio', $name, '', $i, $i);
+        }
+        // append a reset element if necessary
+        if (($min<0 && $max<0) || ($min>0 && $max>0)) {
+            $elements[] = $mform->createElement('radio', $name, '', get_string('reset'), 0);
         }
         $mform->addGroup($elements, $name.'elements', $label, '', false);
         $mform->addHelpButton($name.'elements', $name, $plugin);
