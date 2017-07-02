@@ -858,7 +858,7 @@ PTS.send_points_via_ajax = function(input) {
  * @param string display (optional)
  * @return void
  */
-PTS.set_elm_size_color = function(elms, w, h, display) {
+PTS.set_elm_size_color = function(elms, w, h, display, debug) {
     elms.each(function(){
         $(this).find("input").css("display", display);
     });
@@ -912,18 +912,24 @@ PTS.set_usermap_size = function(usermap) {
 /**
  * set_points_size
  *
- * @param object points_container
- * @param object action_elements
+ * param object points_container
+ * param object points_elements
+ * param object action_elements
  * @return void
  */
-PTS.set_points_size = function(points_container, action_elements) {
+PTS.set_points_size = function(points_container, points_elements, action_elements) {
     var l = null;
     var r = null;
-    var i = 0; // index
     var w = 0; // width
-    action_elements.each(function(){
+    var i = 0; // index on elms
+    if (PTS.pointsperrow) {
+        var elms = points_elements;
+    } else {
+        var elms = action_elements;
+    }
+    elms.each(function(){
         var p = $(this).position();
-        p.right = p.left + $(this).width();
+        p.right = p.left + $(this).outerWidth(true);
         if (l===null || l > p.left) {
             l = p.left;
         }
@@ -932,15 +938,15 @@ PTS.set_points_size = function(points_container, action_elements) {
         }
         if (i < PTS.pointsperrow) {
             i++;
-            if (w < (r - l - 10)) {
-                w = (r - l - 10);
+            if (w < (r - l)) {
+                w = (r - l);
             }
         }
     });
     if (w==0) {
         w = $("#id_mapwidth").val();
-        if (l && r && (r > l) && ((r - l - 10) > w)) {
-            w = (r - l - 10);
+        if (l && r && (r > l) && ((r - l) > w)) {
+            w = (r - l);
         }
     }
     points_container.css("max-width", w + "px");
@@ -1411,16 +1417,16 @@ $(document).ready(function() {
     PTS.set_feedback_visibility();
     PTS.set_usermap_size(user_container);
 
-    // restrict width of points container
-    PTS.set_points_size(points_container, action_elements);
-
     PTS.set_elm_size_color(action_elements, PTS.mapaction_min_width, PTS.mapaction_min_height, "none");
     PTS.set_elm_size_color(mode_elements,   PTS.mapmode_min_width,   PTS.mapmode_min_height,   "none");
     PTS.set_elm_size_color(user_elements,   PTS.user_min_width,      PTS.user_min_height,      PTS.elementdisplay);
-    PTS.set_elm_size_color(points_elements, PTS.points_min_width,    PTS.points_min_height,    "none");
+    PTS.set_elm_size_color(points_elements, PTS.points_min_width,    PTS.points_min_height,    "none", "debug");
 
     PTS.set_user_size(user_elements);
     PTS.set_elm_position(user_elements);
+
+    // restrict width of points container
+    PTS.set_points_size(points_container, points_elements, action_elements);
 
     PTS.set_elm_event_handlers(action_elements, PTS.do_map_action);
     PTS.set_elm_event_handlers(mode_elements,   false);
