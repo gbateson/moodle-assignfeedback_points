@@ -91,17 +91,21 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
 
         // ========================
-        // settings section
-        // ========================
-        //
-        assign_feedback_points::add_settings($mform, $plugin, $custom->config, $custom);
-
-        // ========================
         // layouts section
         // ========================
         //
         assign_feedback_points::add_heading($mform, 'layouts', $plugin, false);
         $this->add_field_layouts($mform, $custom, $plugin);
+
+        // ========================
+        // settings section
+        // - Points range
+        // - Display names
+        // - Display totals
+        // - Development
+        // ========================
+        //
+        assign_feedback_points::add_settings($mform, $plugin, $custom->config, $custom);
 
         // ========================
         // report section
@@ -429,22 +433,22 @@ class assignfeedback_points_award_points_form extends moodleform {
             if ($custom->config->showusername || count($text)==0) {
                 $text[] = html_writer::tag('em', $user->username, array('class' => 'name'));
             }
-            if ($custom->config->showpointstotal) {
+            if ($custom->gradingmethod=='' && $custom->config->showpointstotal) {
                 $value = (isset($pointstotal[$userid]) ? $pointstotal[$userid] : 0);
                 $value = get_string('pointstotal', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => 'pointstotal'));
             }
-            if ($custom->config->showpointstoday) {
+            if ($custom->gradingmethod=='' && $custom->config->showpointstoday) {
                 $value = (isset($pointstoday[$userid]) ? $pointstoday[$userid] : 0);
                 $value = get_string('pointstoday', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => 'pointstoday'));
             }
-            if ($custom->config->showscorerubric) {
+            if ($custom->gradingmethod=='rubric' && $custom->config->showscorerubric) {
                 $value = (isset($scorerubric[$userid]) ? $scorerubric[$userid] : 0);
                 $value = get_string('scorerubric', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => 'scorerubric'));
             }
-            if ($custom->config->showscoreguide) {
+            if ($custom->gradingmethod=='guide' && $custom->config->showscoreguide) {
                 $value = (isset($scoreguide[$userid]) ? $scoreguide[$userid] : 0);
                 $value = get_string('scoreguide', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => 'scoreguide'));

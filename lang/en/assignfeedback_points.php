@@ -87,13 +87,13 @@ $string['mapaction_help'] = 'Click these buttons to perform operations on the us
 : User-tiles that overlap will be moved apart in the direction of the smallest overlap.
 
 **Shuffle**
-: Users will be shuffled randonly and placed in different tiles. The tiles themselves will not be moved.
+: The user tiles will be shuffled randonly and placed in new positions. Because the shuffling is random, some tiles may not move.
 
 **Resize**
-: User-tiles will be shrunk or enlarged to match the current size of the user-map.
+: The user-map will be shrunk or enlarged to completely surround all the user-tiles.
 
 **Rotate**
-: The entire user-map will be rotated by ¼, ½, ¾ or a full turn.';
+: The entire user-map will be rotated by a ¼ turn in an anti-clockwise direction.';
 $string['mapaction'] = 'User-map action';
 $string['mapmode_help'] = 'the action that will be taken when you click on a user in the user-map';
 $string['mapmode'] = 'User-map mode';
@@ -103,6 +103,7 @@ $string['minpoints_help'] = 'the number of points awarded by the "Points" button
 $string['minpoints'] = 'Minimum points';
 $string['multipleusers_help'] = 'If this setting is enabled, more than one student can be selected when points are awarded. Otherwise, only a single student can be awarded points at one time.';
 $string['multipleusers'] = 'Select multiple users';
+$string['names'] = 'Names';
 $string['nametoken_help'] = 'Specify the token that represents this name in the name format string, and then select a name field to be displayed from the user profile.
 
 In addition, the following formatting options are available:
@@ -157,13 +158,12 @@ $string['percent100'] = 'full';
 $string['percent25'] = '¼';
 $string['percent50'] = '½';
 $string['percent75'] = '¾';
-$string['picturesandnames'] = 'Pictures and names';
 $string['points_help'] = 'The number of points to be awarded';
 $string['points'] = 'Points';
 $string['pointsperrow_help'] = 'The number of points buttons per row.';
 $string['pointsperrow'] = 'Points row width';
+$string['pointsrange'] = 'Points range';
 $string['pointsreporttitle'] = 'Points report';
-$string['pointsscoresgrades'] = 'Points, scores and grades';
 $string['pointstoday'] = 'Points (today): {$a}';
 $string['pointstotal'] = 'Points (total): {$a}';
 $string['pointstype_help'] = 'This setting specifies how point awards are combined to calculate grades for this assignment. The following aggregation methods are available:
@@ -288,6 +288,7 @@ $string['style'] = 'Style';
 $string['subtotal'] = 'Sub-total';
 $string['tail'] = 'Tail';
 $string['textforgradebook'] = '{$a->timeawarded} ({$a->points} pts) {$a->comment}';
+$string['totals'] = 'Totals';
 $string['timeawarded'] = 'Time awarded';
 $string['timecancelled'] = 'Time cancelled';
 $string['undo'] = 'Undo';

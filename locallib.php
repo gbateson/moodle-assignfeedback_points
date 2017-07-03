@@ -157,23 +157,6 @@ class assign_feedback_points extends assign_feedback_plugin {
    }
 
     /**
-     * add_heading
-     *
-     * @param object  $mform
-     * @param string  $name
-     * @param string  $plugin
-     * @param boolean $expanded (optional, default=TRUE)
-     * @param string  $suffix   (optional, default="_hdr")
-     */
-    static public function add_heading($mform, $name, $plugin, $expanded=true, $suffix='_hdr') {
-        $label = get_string($name, $plugin);
-        $mform->addElement('header', $name.$suffix, $label);
-        if (method_exists($mform, 'setExpanded')) {
-            $mform->setExpanded($name.$suffix, $expanded);
-        }
-    }
-
-    /**
      * add_settings
      *
      * @param object $mform
@@ -191,8 +174,101 @@ class assign_feedback_points extends assign_feedback_plugin {
             self::add_heading($mform, 'settings', $plugin, false);
         }
 
+        // Points settings
+        $names = array('minpoints',
+                       'maxpoints',
+                       'increment',
+                       'pointsperrow');
+        if ($custom && $custom->gradingmethod) {
+
+            // Advanced Grading (in awardpoints_form)
+            array_push($names, 'pointstype',
+                               'showcomments');
+            foreach ($names as $name) {
+                $mform->addElement('hidden', $name, $config->$name);
+                $mform->setType($name, PARAM_INT);
+            }
+
+        } else {
+
+            // Simple Direct Grading (or Assignment settings form)
+
+            if ($custom) {
+                self::add_heading($mform, 'points', $plugin, false);
+            }
+
+            $options = self::get_text_options();
+            foreach ($names as $name) {
+                self::add_setting($mform, $config, $name, 'text', 0, $options);
+                if ($custom==null) {
+                    $mform->disabledIf($name, 'advancedgradingmethod_submissions', 'ne', '');
+                }
+            }
+
+            $name = 'pointstype';
+            $options = self::get_pointstype_options();
+            self::add_setting($mform, $config, $name, 'select', 0, $options);
+            $mform->disabledIf($name, 'advancedgradingmethod_submissions', 'ne', '');
+
+            $name = 'showcomments';
+            self::add_setting($mform, $config, $name, 'checkbox', 0);
+        }
+
+        // points, scores and grades
         if ($custom) {
-            self::add_heading($mform, 'picturesandnames', $plugin, false);
+            self::add_heading($mform, 'totals', $plugin , false);
+        }
+
+        // $names of hidden fields
+        $names = array();
+
+        // cache name of gradingmethod field for use in "disabledIf" conditions
+        $gradingmethod = 'advancedgradingmethod_submissions';
+
+        $name = 'showpointstoday';
+        if ($custom==null || $custom->gradingmethod=='') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', '');
+            $mform->disabledIf($name, 'pointstype', 'ne', self::POINTSTYPE_SUM);
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showpointstotal';
+        if ($custom==null || $custom->gradingmethod=='') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', '');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showscorerubric';
+        if ($custom==null || $custom->gradingmethod=='rubric') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showscoreguide';
+        if ($custom==null || $custom->gradingmethod=='guide') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
+        } else {
+            $names[] = $name;
+        }
+
+        // add hidden fields, if any
+        foreach ($names as $name) {
+            $mform->addElement('hidden', $name, $config->$name);
+            $mform->setType($name, PARAM_INT);
+        }
+
+        self::add_setting($mform, $config, 'showgradeassign', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showgradecourse', 'checkbox', 0);
+
+        if ($custom) {
+            self::add_heading($mform, 'names', $plugin, false);
         }
 
         self::add_setting($mform, $config, 'showpicture', 'checkbox', 0);
@@ -270,114 +346,39 @@ class assign_feedback_points extends assign_feedback_plugin {
         $mform->addElement('submit', $name.'add', $label);
         $mform->registerNoSubmitButton($name.'add');
 
-        // Points settings
-        $names = array('minpoints',
-                       'maxpoints',
-                       'increment',
-                       'pointsperrow');
-        if ($custom && $custom->gradingmethod) {
-
-            // Advanced Grading (in awardpoints_form)
-            array_push($names, 'pointstype',
-                               'showcomments');
-            foreach ($names as $name) {
-                $mform->addElement('hidden', $name, $config->$name);
-                $mform->setType($name, PARAM_INT);
-            }
-
-        } else {
-
-            // Simple Direct Grading (or Assignment settings form)
-
-            if ($custom) {
-                self::add_heading($mform, 'gradingmethodnone', 'grading', false);
-            }
-
-            $options = self::get_text_options();
-            foreach ($names as $name) {
-                self::add_setting($mform, $config, $name, 'text', 0, $options);
-                if ($custom==null) {
-                    $mform->disabledIf($name, 'advancedgradingmethod_submissions', 'ne', '');
-                }
-            }
-
-            $name = 'pointstype';
-            $options = self::get_pointstype_options();
-            self::add_setting($mform, $config, $name, 'select', 0, $options);
-            $mform->disabledIf($name, 'advancedgradingmethod_submissions', 'ne', '');
-
-            $name = 'showcomments';
-            self::add_setting($mform, $config, $name, 'checkbox', 0);
-        }
-
-        // points, scores and grades
-        if ($custom) {
-            self::add_heading($mform, 'pointsscoresgrades', $plugin , false);
-        }
-
-        // $names of hidden fields
-        $names = array();
-        $gradingmethod = 'advancedgradingmethod_submissions';
-
-        $name = 'showpointstoday';
-        if ($custom==null || $custom->gradingmethod=='') {
-            self::add_setting($mform, $config, $name, 'checkbox', 0);
-            $mform->disabledIf($name, $gradingmethod, 'ne', '');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showpointstoday';
-        if ($custom==null || $custom->gradingmethod=='') {
-            self::add_setting($mform, $config, $name, 'checkbox', 0);
-            $mform->disabledIf($name, $gradingmethod, 'ne', '');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showscorerubric';
-        if ($custom==null || $custom->gradingmethod=='rubric') {
-            self::add_setting($mform, $config, $name, 'checkbox', 0);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showscoreguide';
-        if ($custom==null || $custom->gradingmethod=='guide') {
-            self::add_setting($mform, $config, $name, 'checkbox', 0);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
-        } else {
-            $names[] = $name;
-        }
-
-        foreach ($names as $name) {
-            $mform->addElement('hidden', $name, $config->$name);
-            $mform->setType($name, PARAM_INT);
-        }
-
-        self::add_setting($mform, $config, 'showgradeassign', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showgradecourse', 'checkbox', 0);
-
         // development settings (one day, these may be hidden completely)
         if ($custom) {
-            self::add_heading($mform, 'developmentsettings', $plugin, false);
+            self::add_heading($mform, 'development', 'admin', false);
         }
         self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options());
         self::add_setting($mform, $config, 'showelement',     'checkbox', 0);
-        self::add_setting($mform, $config, 'multipleusers',   'checkbox', 1);
-        self::add_setting($mform, $config, 'sendimmediately', 'checkbox', 0);
+        self::add_setting($mform, $config, 'multipleusers',   'checkbox', 0);
+        self::add_setting($mform, $config, 'sendimmediately', 'checkbox', 1);
         self::add_setting($mform, $config, 'allowselectable', 'checkbox', 1);
         self::add_setting($mform, $config, 'showlink',        'checkbox', 1);
-
-        // disable "showpointstoday" if we are not using incremental points
-        $mform->disabledIf('showpointstoday', 'pointstype', 'ne', '0');
 
         // ========================
         // jQuery (javascript)
         // ========================
         //
         self::add_field_jquery($mform, $plugin, $custom);
+    }
+
+    /**
+     * add_heading
+     *
+     * @param object  $mform
+     * @param string  $name
+     * @param string  $plugin
+     * @param boolean $expanded (optional, default=TRUE)
+     * @param string  $suffix   (optional, default="_hdr")
+     */
+    static public function add_heading($mform, $name, $plugin, $expanded=true, $suffix='_hdr') {
+        $label = get_string($name, $plugin);
+        $mform->addElement('header', $name.$suffix, $label);
+        if (method_exists($mform, 'setExpanded')) {
+            $mform->setExpanded($name.$suffix, $expanded);
+        }
     }
 
     /**
@@ -537,6 +538,23 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $layouts_container   = '#fgroup_id_layoutselements';
             }
 
+            $showpointstoday = 0;
+            $showpointstotal = 0;
+            $showscorerubric = 0;
+            $showscoreguide  = 0;
+            switch ($custom->gradingmethod) {
+                case '':
+                    $showpointstoday = intval($custom->config->showpointstoday);
+                    $showpointstotal = intval($custom->config->showpointstotal);
+                    break;
+                case 'guide':
+                    $showscoreguide = intval($custom->config->showscoreguide);
+                    break;
+                case 'rubric':
+                    $showscorerubric = intval($custom->config->showscorerubric);
+                    break;
+            }
+
             $js .= '    PTS.gradingmethod         = "'.$custom->gradingmethod.'";'."\n";
             $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
 
@@ -546,10 +564,10 @@ class assign_feedback_points extends assign_feedback_plugin {
             $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
             $js .= '    PTS.pointsperrow          = '.intval($custom->config->pointsperrow).";\n";
             $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
-            $js .= '    PTS.showpointstoday       = '.intval($custom->config->showpointstoday).";\n";
-            $js .= '    PTS.showpointstotal       = '.intval($custom->config->showpointstotal).";\n";
-            $js .= '    PTS.showscorerubric       = '.intval($custom->config->showscorerubric).";\n";
-            $js .= '    PTS.showscoreguide        = '.intval($custom->config->showscoreguide).";\n";
+            $js .= '    PTS.showpointstoday       = '.$showpointstoday.";\n";
+            $js .= '    PTS.showpointstotal       = '.$showpointstotal.";\n";
+            $js .= '    PTS.showscorerubric       = '.$showscorerubric.";\n";
+            $js .= '    PTS.showscoreguide        = '.$showscoreguide.";\n";
             $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
 
             $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
@@ -2113,23 +2131,23 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'increment'       => 1,
                      'maxpoints'       => 2,
                      'pointsperrow'    => 0,
-                     'sendimmediately' => 1,
-                     'multipleusers'   => 0,
-                     'showelement'     => 0,
-                     'showpicture'     => 0,
+                     'showcomments'    => 1,
                      'nameformat'      => '',
                      'newlinetoken'     => get_string('newlinetokendefault', $plugin),
                      'nametokens'      => array(), // base64_encode(serialize(array()))
+                     'showpicture'     => 0,
                      'showpointstoday' => 1,
                      'showpointstotal' => 1,
-                     'showscorerubric' => 0,
-                     'showscoreguide'  => 0,
+                     'showscorerubric' => 1,
+                     'showscoreguide'  => 1,
                      'showgradeassign' => 0,
                      'showgradecourse' => 0,
-                     'showcomments'    => 1,
                      'showfeedback'    => 0,
-                     'showlink'        => 1,
-                     'allowselectable' => 1);
+                     'showelement'     => 0,
+                     'multipleusers'   => 0,
+                     'sendimmediately' => 1,
+                     'allowselectable' => 1,
+                     'showlink'        => 1);
     }
 
     /**
