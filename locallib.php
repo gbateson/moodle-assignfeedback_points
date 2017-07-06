@@ -242,7 +242,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $names[] = $name;
         }
 
-        $name = 'showscorerubric';
+        $name = 'showrubricscores';
         if ($custom==null || $custom->gradingmethod=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
@@ -250,7 +250,39 @@ class assign_feedback_points extends assign_feedback_plugin {
             $names[] = $name;
         }
 
-        $name = 'showscoreguide';
+        $name = 'showrubriccriteria';
+        if ($custom==null || $custom->gradingmethod=='rubric') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showrubricremarks';
+        if ($custom==null || $custom->gradingmethod=='rubric') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showguidescores';
+        if ($custom==null || $custom->gradingmethod=='guide') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showguidecriteria';
+        if ($custom==null || $custom->gradingmethod=='guide') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showguideremarks';
         if ($custom==null || $custom->gradingmethod=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
@@ -264,8 +296,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             $mform->setType($name, PARAM_INT);
         }
 
-        self::add_setting($mform, $config, 'showgradeassign', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showgradecourse', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showassigngrade', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showcoursegrade', 'checkbox', 0);
 
         if ($custom) {
             self::add_heading($mform, 'names', $plugin, false);
@@ -540,18 +572,29 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             $showpointstoday = 0;
             $showpointstotal = 0;
-            $showscorerubric = 0;
-            $showscoreguide  = 0;
+
+            $showguidecriteria = 0;
+            $showguideremarks = 0;
+            $showguidescores = 0;
+
+            $showrubriccriteria = 0;
+            $showrubricremarks = 0;
+            $showrubricscores = 0;
+
             switch ($custom->gradingmethod) {
                 case '':
                     $showpointstoday = intval($custom->config->showpointstoday);
                     $showpointstotal = intval($custom->config->showpointstotal);
                     break;
                 case 'guide':
-                    $showscoreguide = intval($custom->config->showscoreguide);
+                    $showguidecriteria = intval($custom->config->showguidecriteria);
+                    $showguideremarks = intval($custom->config->showguideremarks);
+                    $showguidescores = intval($custom->config->showguidescores);
                     break;
                 case 'rubric':
-                    $showscorerubric = intval($custom->config->showscorerubric);
+                    $showrubriccriteria = intval($custom->config->showrubriccriteria);
+                    $showrubricremarks = intval($custom->config->showrubricremarks);
+                    $showrubricscores = intval($custom->config->showrubricscores);
                     break;
             }
 
@@ -564,11 +607,18 @@ class assign_feedback_points extends assign_feedback_plugin {
             $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
             $js .= '    PTS.pointsperrow          = '.intval($custom->config->pointsperrow).";\n";
             $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
+            $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
+
             $js .= '    PTS.showpointstoday       = '.$showpointstoday.";\n";
             $js .= '    PTS.showpointstotal       = '.$showpointstotal.";\n";
-            $js .= '    PTS.showscorerubric       = '.$showscorerubric.";\n";
-            $js .= '    PTS.showscoreguide        = '.$showscoreguide.";\n";
-            $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
+
+            $js .= '    PTS.showrubriccriteria    = '.$showrubriccriteria.";\n";
+            $js .= '    PTS.showrubricremarks     = '.$showrubricremarks.";\n";
+            $js .= '    PTS.showrubricscores      = '.$showrubricscores.";\n";
+
+            $js .= '    PTS.showguidecriteria     = '.$showguidecriteria.";\n";
+            $js .= '    PTS.showguideremarks      = '.$showguideremarks.";\n";
+            $js .= '    PTS.showguidescores       = '.$showguidescores.";\n";
 
             $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
             $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
@@ -2126,28 +2176,32 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array(name => default)
      */
     static public function get_defaultvalues($plugin) {
-        return array('pointstype'      => 0,
-                     'minpoints'       => 1,
-                     'increment'       => 1,
-                     'maxpoints'       => 2,
-                     'pointsperrow'    => 0,
-                     'showcomments'    => 1,
-                     'nameformat'      => '',
-                     'newlinetoken'     => get_string('newlinetokendefault', $plugin),
-                     'nametokens'      => array(), // base64_encode(serialize(array()))
-                     'showpicture'     => 0,
-                     'showpointstoday' => 1,
-                     'showpointstotal' => 1,
-                     'showscorerubric' => 1,
-                     'showscoreguide'  => 1,
-                     'showgradeassign' => 0,
-                     'showgradecourse' => 0,
-                     'showfeedback'    => 0,
-                     'showelement'     => 0,
-                     'multipleusers'   => 0,
-                     'sendimmediately' => 1,
-                     'allowselectable' => 1,
-                     'showlink'        => 1);
+        return array('pointstype'         => 0,
+                     'minpoints'          => 1,
+                     'increment'          => 1,
+                     'maxpoints'          => 2,
+                     'pointsperrow'       => 0,
+                     'showcomments'       => 1,
+                     'nameformat'         => '',
+                     'newlinetoken'       => get_string('newlinetokendefault', $plugin),
+                     'nametokens'         => array(), // base64_encode(serialize(array()))
+                     'showpicture'        => 0,
+                     'showpointstoday'    => 1,
+                     'showpointstotal'    => 1,
+                     'showrubriccriteria' => 0,
+                     'showrubricremarks'  => 0,
+                     'showrubricscores'   => 1,
+                     'showguidecriteria'  => 0,
+                     'showguideremarks'   => 0,
+                     'showguidescores'    => 1,
+                     'showassigngrade'    => 0,
+                     'showcoursegrade'    => 0,
+                     'showfeedback'       => 0,
+                     'showelement'        => 0,
+                     'multipleusers'      => 0,
+                     'sendimmediately'    => 1,
+                     'allowselectable'    => 1,
+                     'showlink'           => 1);
     }
 
     /**

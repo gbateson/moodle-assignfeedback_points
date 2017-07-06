@@ -837,11 +837,11 @@ PTS.send_points_via_ajax = function(input) {
             if (PTS.showpointstotal && PTS.gradingmethod=="") {
                 PTS.update_points_html(input, "pointstotal", points);
             }
-            if (PTS.showscorerubric && PTS.gradingmethod=="rubric") {
-                PTS.update_points_html(input, "scorerubric", points);
+            if (PTS.showrubricscores && PTS.gradingmethod=="rubric") {
+                PTS.update_points_html(input, "rubricscore", points);
             }
-            if (PTS.showscoreguide && PTS.gradingmethod=="guide") {
-                PTS.update_points_html(input, "scoreguide", points);
+            if (PTS.showguidescores && PTS.gradingmethod=="guide") {
+                PTS.update_points_html(input, "guidescore", points);
             }
             input.parent().removeClass("checked");
             input.prop("checked", false);

@@ -252,9 +252,9 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                 }
                 if ($nameformat = implode($namenewline, $nameformat)) {
                     $namefields = base64_encode(serialize($namefields));
-                    xmldb_assignfeedback_points_config($configids, $table, $assignid, 'nameformat', $nameformat);
-                    xmldb_assignfeedback_points_config($configids, $table, $assignid, 'namechar',   $namenewline);
-                    xmldb_assignfeedback_points_config($configids, $table, $assignid, 'namefields', $namefields);
+                    xmldb_assignfeedback_points_insert($configids, $table, $assignid, 'nameformat', $nameformat);
+                    xmldb_assignfeedback_points_insert($configids, $table, $assignid, 'namechar',   $namenewline);
+                    xmldb_assignfeedback_points_insert($configids, $table, $assignid, 'namefields', $namefields);
                 }
             }
         }
@@ -266,41 +266,29 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
 
     $newversion = 2017062284;
     if ($result && $oldversion < $newversion) {
-        $table = 'assign_plugin_config';
-
-        // rename config setting: "names" => "namefields"
-        $params = array('subtype' => 'assignfeedback',
-                        'plugin'  => 'points',
-                        'name'    => 'names');
-        $DB->set_field($table, 'name', 'namefields', $params);
-
-        // rename config setting: "newlinechar" => "namechar"
-        $params = array('subtype' => 'assignfeedback',
-                        'plugin'  => 'points',
-                        'name'    => 'newlinechar');
-        $DB->set_field($table, 'name', 'namechar', $params);
+        $fields = array('names'       => 'namefields',
+                        'newlinechar' => 'namechar');
+        xmldb_assignfeedback_points_rename($fields);
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
     $newversion = 2017062586;
     if ($result && $oldversion < $newversion) {
-        $table = 'assign_plugin_config';
 
-        // rename config setting: "namechar" => "namenewline"
-        $params = array('subtype' => 'assignfeedback',
-                        'plugin'  => 'points',
-                        'name'    => 'namechar');
-        $DB->set_field($table, 'name', 'namenewline', $params);
+        // rename field
+        $fields = array('namechar' => 'namenewline');
+        xmldb_assignfeedback_points_rename($fields);
 
         // delete all unrecognized config settings for this plugin
+        $table = 'assign_plugin_config';
         $params = array('pointstype',      'minpoints',
                         'increment',       'maxpoints',
                         'sendimmediately', 'multipleusers',
                         'showelement',     'showpicture',
                         'nameformat',      'namenewline',   'namefields',
                         'showpointstoday', 'showpointstotal',
-                        'showscorerubric', 'showscoreguide',
-                        'showgradeassign', 'showgradecourse',
+                        'showrubricscores', 'showguidescores',
+                        'showassigngrade', 'showcoursegrade',
                         'showcomments',    'showfeedback',
                         'showlink',        'allowselectable',
                         'enabled'); // used by the "assign" mod
@@ -350,17 +338,10 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
     if ($result && $oldversion < $newversion) {
         $table = 'assign_plugin_config';
 
-        // rename config setting: "namefields" => "nametokens"
-        $params = array('subtype' => 'assignfeedback',
-                        'plugin'  => 'points',
-                        'name'    => 'namefields');
-        $DB->set_field($table, 'name', 'nametokens', $params);
-
-        // rename config setting: "namenewline" => "newlinetoken"
-        $params = array('subtype' => 'assignfeedback',
-                        'plugin'  => 'points',
-                        'name'    => 'namenewline');
-        $DB->set_field($table, 'name', 'newlinetoken', $params);
+        // rename config settings: $old => $new
+        $fields = array('namefields'  => 'nametokens',
+                        'namenewline' => 'newlinetoken');
+        xmldb_assignfeedback_points_rename($fields);
 
         // reduce the size of the "pointstype" field from "10" to "4"
         $table = new xmldb_table('assignfeedback_points');
@@ -379,6 +360,16 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2017070607;
+    if ($result && $oldversion < $newversion) {
+        $fields = array('showrubricscore' => 'showrubricscores',
+                        'showguidescore'  => 'showguidescores',
+                        'showgradecourse' => 'showcoursegrade',
+                        'showgradeassign' => 'showassigngrade');
+        xmldb_assignfeedback_points_rename($fields);
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
     return $result;
 }
 
@@ -388,7 +379,24 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
  * @param int $oldversion
  * @return bool
  */
-function xmldb_assignfeedback_points_config(&$configids, $table, $assignid, $name, $value) {
+function xmldb_assignfeedback_points_rename($fields) {
+    global $DB;
+    $table = 'assign_plugin_config';
+    foreach ($fields as $oldname => $newname) {
+        $params = array('subtype' => 'assignfeedback',
+                        'plugin'  => 'points',
+                        'name'    => $oldname);
+        $DB->set_field($table, 'name', $newname, $params);
+    }
+}
+
+/**
+ * xmldb_assignfeedback_points_upgrade
+ *
+ * @param int $oldversion
+ * @return bool
+ */
+function xmldb_assignfeedback_points_insert(&$configids, $table, $assignid, $name, $value) {
     global $DB;
     if ($configid = array_pop($configids)) {
         $DB->set_field($table, 'name',  $name,  array('id' => $configid));

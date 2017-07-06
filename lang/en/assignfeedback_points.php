@@ -218,15 +218,19 @@ $string['romanize_help'] = 'Specify whether this name field should be romainzed.
 $string['romanize'] = 'Romanize';
 $string['rotate'] = 'Rotate';
 $string['save'] = 'Save';
-$string['scoreguide'] = 'Guide score: {$a}';
-$string['scorerubric'] = 'Rubric score: {$a}';
+$string['guidescore'] = 'Guide score: {$a}';
+$string['rubricscore'] = 'Rubric score: {$a}';
 $string['sendimmediately_help'] = 'If this setting is enabled, points will be awarded and sent to Moodle (via AJAX) as soon as the teacher clicks or taps a student\'s name or image. Otherwise, points will be sent to Moodle when the teacher clicks the "Award points" button at the bottom of this page.';
 $string['sendimmediately'] = 'Send points immediately';
 $string['separate'] = 'Separate';
 $string['settings'] = 'Settings for Feedback points';
 $string['setup'] = 'Setup';
+$string['showassigngrade_help'] = 'If this setting is enabled, each student\'s raw grade for this assignment will be displayed.';
+$string['showassigngrade'] = 'Show assignment grades';
 $string['showcomments_help'] = 'If this setting is enabled, the top ten most frequently used comments will be displayed for selection from a drop down menu.';
 $string['showcomments'] = 'Show frequent comments';
+$string['showcoursegrade_help'] = 'If this setting is enabled, each student\'s adjusted gradebook grade for this assignment will be displayed.';
+$string['showcoursegrade'] = 'Show gradebook grades';
 $string['showelement_help'] = 'If this setting is enabled, the checkbox or radio button used to select each student will be shown alongside the name and/or picture of the student.';
 $string['showelement'] = 'Show form element';
 $string['showfeedback_help'] = 'This setting controls whether feedback about AJAX operations is displayed.
@@ -240,10 +244,12 @@ $string['showfeedback_help'] = 'This setting controls whether feedback about AJA
 **Automatic**
 : Feedback about AJAX operations appears only when an AJAX operation is in progress. Otherwise, it is hidden.';
 $string['showfeedback'] = 'Show AJAX feedback';
-$string['showgradeassign_help'] = 'If this setting is enabled, each student\'s raw grade for this assignment will be displayed.';
-$string['showgradeassign'] = 'Show assignment grades';
-$string['showgradecourse_help'] = 'If this setting is enabled, each student\'s adjusted gradebook grade for this assignment will be displayed.';
-$string['showgradecourse'] = 'Show gradebook grades';
+$string['showguidecriteria_help'] = 'If this setting is enabled, the individual scores for each Marking Guide criteria will be displayed.';
+$string['showguidecriteria'] = 'Show Marking Guide criteria';
+$string['showguideremarks_help'] = 'If this setting is enabled, the remarks for each Marking Guide criteria score will be displayed.';
+$string['showguideremarks'] = 'Show Marking Guide remarks';
+$string['showguidescores_help'] = 'If this setting is enabled, the total Marking Guide score for each student will be displayed.';
+$string['showguidescores'] = 'Show Marking Guide scores';
 $string['showlink_help'] = 'If this setting is enabled, a link that goes directly to this page for awarding points will be added on the teacher\'s main view page for this assignment.';
 $string['showlink'] = 'Show link from view page';
 $string['showpicture_help'] = 'If this setting is enabled, the students\' pictures will be shown in the list of students to whom points are awarded.';
@@ -256,14 +262,12 @@ $string['showpointstotal_help'] = 'If this setting is enabled, the total number 
 
 Usually, this setting is only required when using Simple Direct Grading method, but it may also be useful after switching from the using Simple Direct Grading to using another grading method.';
 $string['showpointstotal'] = 'Show points (total)';
-$string['showscoreguide_help'] = 'If this setting is enabled, the Marking Guide score for each student will be displayed.
-
-Usually, this setting is only required when using the Marking Guide advanced grading method, but it may also be useful after switching from the using a Marking Guide to using another grading method.';
-$string['showscoreguide'] = 'Show guide score';
-$string['showscorerubric_help'] = 'If this setting is enabled, the Rubric score for each student will be displayed.
-
-Usually, this setting is only required when using the Rubric advanced grading method, but it may also be useful after switching from the using a Rubric to using another grading method.';
-$string['showscorerubric'] = 'Show rubric score';
+$string['showrubriccriteria_help'] = 'If this setting is enabled, the individual scores for each Rubric criteria will be displayed.';
+$string['showrubriccriteria'] = 'Show Rubric criteria';
+$string['showrubricremarks_help'] = 'If this setting is enabled, the remarks for each Rubric criteria will be displayed.';
+$string['showrubricremarks'] = 'Show Rubric remarks';
+$string['showrubricscores_help'] = 'If this setting is enabled, the total Rubric score for each student will be displayed.';
+$string['showrubricscores'] = 'Show Rubric scores';
 $string['shuffle'] = 'Shuffle';
 $string['singlespace'] = '(single white space)';
 $string['split_help'] = 'These settings are optional. They specify how to extract a part of this user name field.

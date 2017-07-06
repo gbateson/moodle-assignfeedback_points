@@ -272,7 +272,7 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         // get precision for $grades
         $gradeprecision = 0;
-        if ($usersfound && ($custom->config->showgradeassign || $custom->config->showgradecourse)) {
+        if ($usersfound && ($custom->config->showassigngrade || $custom->config->showcoursegrade)) {
             $params = array('courseid' => $custom->courseid,
                             'name'     => 'decimalpoints');
             if ($DB->record_exists('grade_settings', $params)) {
@@ -350,7 +350,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
 
         // get total rubric points for each user, if required
-        if ($usersfound && $custom->config->showscorerubric) {
+        if ($usersfound && $custom->config->showrubricscores) {
             $select = "ag.userid AS $name, ROUND(SUM(grl.score),0) AS pointstotal";
             $from   = '{gradingform_rubric_levels} grl'.
                       ' JOIN {gradingform_rubric_fillings} grf ON grl.id = grf.levelid'.
@@ -360,16 +360,16 @@ class assignfeedback_points_award_points_form extends moodleform {
             $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where";
             array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
             $group  = 'ag.userid';
-            $scorerubric = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
+            $rubricscore = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
         } else {
-            $scorerubric = false;
+            $rubricscore = false;
         }
-        if ($scorerubric===false) {
-            $scorerubric = array();
+        if ($rubricscore===false) {
+            $rubricscore = array();
         }
 
         // get total marking guide points for each user, if required
-        if ($usersfound && $custom->config->showscoreguide) {
+        if ($usersfound && $custom->config->showguidescores) {
             $select = "ag.userid AS $name, ROUND(SUM(ggf.score),0) AS pointstotal";
             $from   = '{gradingform_guide_fillings} ggf'.
                       ' JOIN {grading_instances} gi ON ggf.instanceid = gi.id'.
@@ -378,16 +378,16 @@ class assignfeedback_points_award_points_form extends moodleform {
             $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where";
             array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
             $group  = 'ag.userid';
-            $scoreguide = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
+            $guidescore = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
         } else {
-            $scoreguide = false;
+            $guidescore = false;
         }
-        if ($scoreguide===false) {
-            $scoreguide = array();
+        if ($guidescore===false) {
+            $guidescore = array();
         }
 
         // get assignment grades, if required
-        if ($usersfound && $custom->config->showgradeassign) {
+        if ($usersfound && $custom->config->showassigngrade) {
             $select = 'userid, grade';
             $from   = '{assign_grades}';
             list($where, $params) = $DB->get_in_or_equal($userids);
@@ -402,7 +402,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
 
         // get course grades, if required
-        if ($usersfound && $custom->config->showgradecourse) {
+        if ($usersfound && $custom->config->showcoursegrade) {
             $gradecourse = grade_get_grades($custom->courseid, 'mod', 'assign', $custom->cm->instance, $userids);
             if ($gradecourse = reset($gradecourse->items)) {
                 $gradecourse = $gradecourse->grades;
@@ -443,22 +443,22 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $value = get_string('pointstoday', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => 'pointstoday'));
             }
-            if ($custom->gradingmethod=='rubric' && $custom->config->showscorerubric) {
-                $value = (isset($scorerubric[$userid]) ? $scorerubric[$userid] : 0);
-                $value = get_string('scorerubric', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'scorerubric'));
+            if ($custom->gradingmethod=='rubric' && $custom->config->showrubricscores) {
+                $value = (isset($rubricscore[$userid]) ? $rubricscore[$userid] : 0);
+                $value = get_string('rubricscore', $plugin, $value);
+                $text[] = html_writer::tag('em', $value, array('class' => 'rubricscore'));
             }
-            if ($custom->gradingmethod=='guide' && $custom->config->showscoreguide) {
-                $value = (isset($scoreguide[$userid]) ? $scoreguide[$userid] : 0);
-                $value = get_string('scoreguide', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'scoreguide'));
+            if ($custom->gradingmethod=='guide' && $custom->config->showguidescores) {
+                $value = (isset($guidescore[$userid]) ? $guidescore[$userid] : 0);
+                $value = get_string('guidescore', $plugin, $value);
+                $text[] = html_writer::tag('em', $value, array('class' => 'guidescore'));
             }
-            if ($custom->config->showgradeassign) {
+            if ($custom->config->showassigngrade) {
                 $value = (isset($gradeassign[$userid]) ? $gradeassign[$userid] : 0);
                 $value = get_string('gradeassign', $plugin, round($value, $gradeprecision));
                 $text[] = html_writer::tag('em', $value, array('class' => 'gradeassign'));
             }
-            if ($custom->config->showgradecourse) {
+            if ($custom->config->showcoursegrade) {
                 $value = (isset($gradecourse[$userid]) ? $gradecourse[$userid] : 0);
                 $value = get_string('gradecourse', $plugin, round($value, $gradeprecision));
                 $text[] = html_writer::tag('em', $value, array('class' => 'gradecourse'));
