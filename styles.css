@@ -400,21 +400,20 @@ body.path-mod-assign #fgroup_id_layoutselements input.indent,
 body.path-mod-assign #id_settings_hdr .settingtitle,
 #assignfeedback_points_award_points_form .settingtitle {
     display     : inline-block;
-    font-weight : bold;
-    margin-left : 0px;
-    margin-right: 6px;
-    min-width   : $minwidth;
+    font-weight :  bold;
+    margin-left :   0px;
+    margin-right:   6px;
     text-align  : right;
 }
 
 body.path-mod-assign #id_settings_hdr .settingtitle.wide,
 #assignfeedback_points_award_points_form .settingtitle.wide {
-    width       : 96px;
+    min-width   : 120px;
 }
 
 body.path-mod-assign #id_settings_hdr .settingtitle.thin,
 #assignfeedback_points_award_points_form .settingtitle.thin {
-    width       : 48px;
+    min-width   :  50px;
 }
 
 
@@ -453,10 +452,10 @@ body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.acti
 
 body.path-mod-assign .gradingtable .assignfeedback_points,
 body.path-grade-report-user .user-grade .assignfeedback_points {
-    font-size       : 12px;
-    line-height     : 16px;
-    list-style-type : none;
-    margin          :  0px;
+    font-size       :    12px;
+    line-height     :    16px;
+    list-style-type :    none;
+    margin          :     0px;
     padding         : 2px 4px;
 }
 

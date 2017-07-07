@@ -41,7 +41,13 @@ class assign_feedback_points extends assign_feedback_plugin {
     const NAME_COUNT_MAX = 4;
     const NAME_COUNT_ADD = 1;
 
-    const JAPANESE_NAME_STRING = '/^((t?chi|s?shi|t?tsu)|((by|t?ch|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
+    const JAPANESE_HIRAGANA_STRING = '/^[ \x{3000}-\x{303F}\x{3040}-\x{309F}]+$/u';
+    const JAPANESE_KATAKANA_STRING = '/^[ \x{3000}-\x{303F}\x{30A0}-\x{30FF}]+$/u';
+    // 3000 - 303F punctuation
+    // 3040 - 309F hiragana
+    // 30A0 - 30FF katakana
+    // 31F0 - 31FF katakana phonetic extensions
+    const JAPANESE_ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((by|t?ch|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
 
     const ROMANIZE_NO  = 0;
     const ROMANIZE_YES = 1;
@@ -942,8 +948,9 @@ class assign_feedback_points extends assign_feedback_plugin {
 
                 if ($nametoken->romanize) {
                     $is_firstname = is_numeric(strpos($field, 'firstname'));
-                    $force_standard = ($nametoken->romanize==self::ROMANIZE_FIX);
-                    $text = self::fix_romanization($text, $is_firstname, $force_standard);
+                    $fix_vowels = ($nametoken->romanize==self::ROMANIZE_FIX);
+                    $fix_consonants = ($nametoken->romanize==self::ROMANIZE_FIX);
+                    $text = self::fix_romanization($text, $is_firstname, $fix_vowels, $fix_consonants);
                 }
 
                 if ($nametoken->case) {
@@ -2110,13 +2117,34 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return string
      */
-    static public function fix_romanization($name, $is_firstname, $force_standard=true, $use_macrons=true) {
+    static public function fix_romanization($name, $is_firstname, $fix_vowels=true, $fix_consonants=true) {
+
+        // convert katakana and hiragana to romaji
+        switch (true) {
+            case preg_match(self::JAPANESE_HIRAGANA_STRING, $name):
+                $name = self::fix_romanization_hiragana($name);
+                $japanese_string = true;
+                break;
+            case preg_match(self::JAPANESE_KATAKANA_STRING, $name):
+                $name = self::fix_romanization_katakana($name);
+                $japanese_string = true;
+                break;
+            default:
+                $japanese_string = false;
+        }
+
+        if ($japanese_string) {
+            $name = preg_replace('/[ｯッっ](.)/u', '$1$1', $name);
+            $name = preg_replace('/n([b])/', 'm$1', $name); // mp
+        }
+
+        // convert to lower case
         $name= self::textlib('strtolower', $name);
 
-         // check that this looks like a romanized Japanese name
-        if (preg_match(self::JAPANESE_NAME_STRING, $name)) {
+        // check that $name looks like a romanized Japanese name
+        if (preg_match(self::JAPANESE_ROMAJI_STRING, $name)) {
 
-            if ($force_standard) {
+            if ($fix_consonants) {
                 // fix "si", "ti", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
                 $replace = array(
                     'si' => 'shi', 'ti' => 'chi', 'tu' => 'tsu', 'sy' => 'sh', 'jy' =>'j', 'nb' => 'mb'
@@ -2153,7 +2181,12 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $name = strtr($name, $replace);
             }
 
-            if ($use_macrons) {
+            // what to do with these names:
+            // ooizumi, ooie, ooba, oohama, tooru, iita (井板), fujii (藤井)
+            // takaaki, maako, kousuke, koura, inoue, matsuura, yuuki
+            // nanba, junpei, junichirou, shinya, shinnosuke, gonnokami, shinnou
+
+            if ($fix_vowels) {
                 $replace = array(
                     'noue' => 'noue', 'kaaki' => 'kaaki',
                     'aa' => 'ā', 'ii' => 'ī', 'uu' => 'ū', 'ee' => 'ē', 'oo' => 'ō', 'ou' => 'ō'
@@ -2168,6 +2201,123 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
         return $name;
 
+    }
+
+    /**
+     * fix_romanization_hiragana
+     *
+     * @param string $str
+     * @return string $str
+     */
+    static public function fix_romanization_hiragana($str) {
+        return strtr($str, array(
+            // space
+            '　' => ' ',
+
+            // two-char (double-byte hiragana)
+            'きゃ' => 'kya', 'ぎゃ' => 'gya', 'しゃ' => 'sha', 'じゃ' => 'ja',
+            'ちゃ' => 'cha', 'にゃ' => 'nya', 'ひゃ' => 'hya', 'りゃ' => 'rya',
+
+            'きゅ' => 'kyu', 'ぎゅ' => 'gyu', 'しゅ' => 'shu', 'じゅ' => 'ju',
+            'ちゅ' => 'chu', 'にゅ' => 'nyu', 'ひゅ' => 'hyu', 'りゅ' => 'ryu',
+
+            'きょ' => 'kyo', 'ぎょ' => 'gyo', 'しょ' => 'sho', 'じょ' => 'jo',
+            'ちょ' => 'cho', 'にょ' => 'nyo', 'ひょ' => 'hyo', 'りょ' => 'ryo',
+
+            'んあ' => "n'a", 'んい' => "n'i", 'んう' => "n'u", 'んえ' => "n'e", 'んお' => "n'o",
+            'んや' => "n'ya", 'んゆ' => "n'yu", 'んよ' => "n'yo",
+
+            // one-char (double-byte hiragana)
+            'あ' => 'a', 'い' => 'i', 'う' => 'u', 'え' => 'e', 'お' => 'o',
+            'か' => 'ka', 'き' => 'ki', 'く' => 'ku', 'け' => 'ke', 'こ' => 'ko',
+            'が' => 'ga', 'ぎ' => 'gi', 'ぐ' => 'gu', 'げ' => 'ge', 'ご' => 'go',
+            'さ' => 'sa', 'し' => 'shi', 'す' => 'su', 'せ' => 'se', 'そ' => 'so',
+            'ざ' => 'za', 'じ' => 'ji', 'ず' => 'zu', 'ぜ' => 'ze', 'ぞ' => 'zo',
+            'た' => 'ta', 'ち' => 'chi', 'つ' => 'tsu', 'て' => 'te', 'と' => 'to',
+            'だ' => 'da', 'ぢ' => 'ji', 'づ' => 'zu', 'で' => 'de', 'ど' => 'do',
+            'な' => 'na', 'に' => 'ni', 'ぬ' => 'nu', 'ね' => 'ne', 'の' => 'no',
+            'は' => 'ha', 'ひ' => 'hi', 'ふ' => 'fu', 'へ' => 'he', 'ほ' => 'ho',
+            'ば' => 'ba', 'び' => 'bi', 'ぶ' => 'bu', 'べ' => 'be', 'ぼ' => 'bo',
+            'ぱ' => 'pa', 'ぴ' => 'pi', 'ぷ' => 'pu', 'ぺ' => 'pe', 'ぽ' => 'po',
+            'ま' => 'ma', 'み' => 'mi', 'む' => 'mu', 'め' => 'me', 'も' => 'mo',
+            'や' => 'ya', 'ゆ' => 'yu', 'よ' => 'yo',
+            'ら' => 'ra', 'り' => 'ri', 'る' => 'ru', 'れ' => 're', 'ろ' => 'ro',
+            'わ' => 'wa', 'を' => 'o', 'ん' => 'n',
+        ));
+    }
+
+    /**
+     * fix_romanization_katakana
+     *
+     * @param string $str
+     * @return string $str
+     */
+    static public function fix_romanization_katakana($str) {
+        return strtr($str, array(
+            // space
+            '　' => ' ',
+
+            // two-char (double-byte katakana)
+            'キャ' => 'kya', 'ギャ' => 'gya', 'シャ' => 'sha', 'ジャ' => 'ja',
+            'チャ' => 'cha', 'ニャ' => 'nya', 'ヒャ' => 'hya', 'リャ' => 'rya',
+
+            'キュ' => 'kyu', 'ギュ' => 'gyu', 'シュ' => 'shu', 'ジュ' => 'ju',
+            'チュ' => 'chu', 'ニュ' => 'nyu', 'ヒュ' => 'hyu', 'リュ' => 'ryu',
+
+            'キョ' => 'kyo', 'ギョ' => 'gyo', 'ショ' => 'sho', 'ジョ' => 'jo',
+            'チョ' => 'cho', 'ニョ' => 'nyo', 'ヒョ' => 'hyo', 'リョ' => 'ryo',
+
+            'ンア' => "n'a", 'ンイ' => "n'i", 'ンウ' => "n'u", 'ンエ' => "n'e", 'ンオ' => "n'o",
+            'ンヤ' => "n'ya", 'ンユ' => "n'yu", 'ンヨ' => "n'yo",
+
+            // one-char (double-byte katakana)
+            'ア' => 'a', 'イ' => 'i', 'ウ' => 'u', 'エ' => 'e', 'オ' => 'o',
+            'カ' => 'ka', 'キ' => 'ki', 'ク' => 'ku', 'ケ' => 'ke', 'コ' => 'ko',
+            'ガ' => 'ga', 'ギ' => 'gi', 'グ' => 'gu', 'ゲ' => 'ge', 'ゴ' => 'go',
+            'サ' => 'sa', 'シ' => 'shi', 'ス' => 'su', 'セ' => 'se', 'ソ' => 'so',
+            'ザ' => 'za', 'ジ' => 'ji', 'ズ' => 'zu', 'ゼ' => 'ze', 'ゾ' => 'zo',
+            'タ' => 'ta', 'チ' => 'chi', 'ツ' => 'tsu', 'テ' => 'te', 'ト' => 'to',
+            'ダ' => 'da', 'ヂ' => 'ji', 'ヅ' => 'zu', 'デ' => 'de', 'ド' => 'do',
+            'ナ' => 'na', 'ニ' => 'ni', 'ヌ' => 'nu', 'ネ' => 'ne', 'ノ' => 'no',
+            'ハ' => 'ha', 'ヒ' => 'hi', 'フ' => 'fu', 'ヘ' => 'he', 'ホ' => 'ho',
+            'バ' => 'ba', 'ビ' => 'bi', 'ブ' => 'bu', 'ベ' => 'be', 'ボ' => 'bo',
+            'パ' => 'pa', 'ピ' => 'pi', 'プ' => 'pu', 'ペ' => 'pe', 'ポ' => 'po',
+            'マ' => 'ma', 'ミ' => 'mi', 'ム' => 'mu', 'メ' => 'me', 'モ' => 'mo',
+            'ヤ' => 'ya', 'ユ' => 'yu', 'ヨ' => 'yo',
+            'ラ' => 'ra', 'リ' => 'ri', 'ル' => 'ru', 'レ' => 're', 'ロ' => 'ro',
+            'ワ' => 'wa', 'ヲ' => 'o', 'ン' => 'n',
+
+            // two-char (single-byte katakana)
+            'ｷｬ' => 'kya', 'ｷﾞｬ' => 'gya', 'ｼｬ' => 'sha', 'ｼﾞｬ' => 'ja',
+            'ﾁｬ' => 'cha', 'ﾆｬ' => 'nya', 'ﾋｬ' => 'hya', 'ﾘｬ' => 'rya',
+
+            'ｷｭ' => 'kyu', 'ｷﾞｭ' => 'gyu', 'ｼｭ' => 'shu', 'ｼﾞｭ' => 'ju',
+            'ﾁｭ' => 'chu', 'ﾆｭ' => 'nyu', 'ﾋｭ' => 'hyu', 'ﾘｭ' => 'ryu',
+
+            'ｷｮ' => 'kyo', 'ｷﾞｮ' => 'gyo', 'ｼｮ' => 'sho', 'ｼﾞｮ' => 'jo',
+            'ﾁｮ' => 'cho', 'ﾆｮ' => 'nyo', 'ﾋｮ' => 'hyo', 'ﾘｮ' => 'ryo',
+
+            'ｶﾞ' => 'ga', 'ｷﾞ' => 'gi', 'ｸﾞ' => 'gu', 'ｹﾞ' => 'ge', 'ｺﾞ' => 'go',
+            'ｻﾞ' => 'za', 'ｼﾞ' => 'ji', 'ｽﾞ' => 'zu', 'ｾﾞ' => 'ze', 'ｿﾞ' => 'zo',
+            'ﾀﾞ' => 'da', 'ﾁﾞ' => 'ji', 'ﾂﾞ' => 'zu', 'ﾃﾞ' => 'de', 'ﾄﾞ' => 'do',
+            'ﾊﾞ' => 'ba', 'ﾋﾞ' => 'bi', 'ﾌﾞ' => 'bu', 'ﾍﾞ' => 'be', 'ﾎﾞ' => 'bo',
+            'ﾊﾟ' => 'pa', 'ﾋﾟ' => 'pi', 'ﾌﾟ' => 'pu', 'ﾍﾟ' => 'pe', 'ﾎﾟ' => 'po',
+
+            'ﾝｱ' => "n'a", 'ﾝｲ' => "n'i", 'ﾝｳ' => "n'u", 'ﾝｴ' => "n'e", 'ﾝｵ' => "n'o",
+            'ﾝﾔ' => "n'ya", 'ﾝﾕ' => "n'yu", 'ﾝﾖ' => "n'yo",
+
+            // one-char (single-byte katakana)
+            'ｱ' => 'a', 'ｲ' => 'i', 'ｳ' => 'u', 'ｴ' => 'e', 'ｵ' => 'o',
+            'ｶ' => 'ka', 'ｷ' => 'ki', 'ｸ' => 'ku', 'ｹ' => 'ke', 'ｺ' => 'ko',
+            'ｻ' => 'sa', 'ｼ' => 'shi', 'ｽ' => 'su', 'ｾ' => 'se', 'ｿ' => 'so',
+            'ﾀ' => 'ta', 'ﾁ' => 'chi', 'ﾂ' => 'tsu', 'ﾃ' => 'te', 'ﾄ' => 'to',
+            'ﾅ' => 'na', 'ﾆ' => 'ni', 'ﾇ' => 'nu', 'ﾈ' => 'ne', 'ﾉ' => 'no',
+            'ﾊ' => 'ha', 'ﾋ' => 'hi', 'ﾌ' => 'fu', 'ﾍ' => 'he', 'ﾎ' => 'ho',
+            'ﾏ' => 'ma', 'ﾐ' => 'mi', 'ﾑ' => 'mu', 'ﾒ' => 'me', 'ﾓ' => 'mo',
+            'ﾔ' => 'ya', 'ﾕ' => 'yu', 'ﾖ' => 'yo',
+            'ﾗ' => 'ra', 'ﾘ' => 'ri', 'ﾙ' => 'ru', 'ﾚ' => 're', 'ﾛ' => 'ro',
+            'ﾜ' => 'wa', 'ｦ' => 'o', 'ﾝ' => 'n'
+        ));
     }
 
     /**
@@ -2268,7 +2418,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array of form element options
      */
     static public function get_text_options($size=4) {
-        return array('size' => $size, 'maxsize' => $size);
+        return array('size' => $size, 'maxsize' => $size, 'style' => 'width: auto;');
     }
 
     /**
