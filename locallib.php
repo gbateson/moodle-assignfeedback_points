@@ -38,7 +38,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     const CASE_LOWER    = 2;
     const CASE_UPPER    = 3;
 
-    const NAME_COUNT_MAX = 4;
+    const NAME_COUNT_MAX = 8;
     const NAME_COUNT_ADD = 1;
 
     const JAPANESE_HIRAGANA_STRING = '/^[ \x{3000}-\x{303F}\x{3040}-\x{309F}]+$/u';
@@ -47,7 +47,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     // 3040 - 309F hiragana
     // 30A0 - 30FF katakana
     // 31F0 - 31FF katakana phonetic extensions
-    const JAPANESE_ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((by|t?ch|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
+    const JAPANESE_ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((by|t?ch|hy|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
 
     const ROMANIZE_NO  = 0;
     const ROMANIZE_YES = 1;
@@ -377,12 +377,14 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         // button to add more "nametokens"
-        $label = get_string($name.'add', $plugin);
-        if (self::NAME_COUNT_ADD > 1) {
-            $label = str_ireplace('{no}', self::NAME_COUNT_ADD, $label);
+        if ($count < self::NAME_COUNT_MAX) {
+            $label = get_string($name.'add', $plugin);
+            if (self::NAME_COUNT_ADD > 1) {
+                $label = str_ireplace('{no}', self::NAME_COUNT_ADD, $label);
+            }
+            $mform->addElement('submit', $name.'add', $label);
+            $mform->registerNoSubmitButton($name.'add');
         }
-        $mform->addElement('submit', $name.'add', $label);
-        $mform->registerNoSubmitButton($name.'add');
 
         // development settings (one day, these may be hidden completely)
         if ($custom) {
@@ -948,9 +950,9 @@ class assign_feedback_points extends assign_feedback_plugin {
 
                 if ($nametoken->romanize) {
                     $is_firstname = is_numeric(strpos($field, 'firstname'));
-                    $fix_vowels = ($nametoken->romanize==self::ROMANIZE_FIX);
-                    $fix_consonants = ($nametoken->romanize==self::ROMANIZE_FIX);
-                    $text = self::fix_romanization($text, $is_firstname, $fix_vowels, $fix_consonants);
+                    $fix_romaji = ($nametoken->romanize==self::ROMANIZE_FIX);
+                    $fix_macrons = ($nametoken->romanize==self::ROMANIZE_FIX);
+                    $text = self::fix_romanization($text, $is_firstname, $fix_romaji, $fix_macrons);
                 }
 
                 if ($nametoken->case) {
@@ -2117,7 +2119,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return string
      */
-    static public function fix_romanization($name, $is_firstname, $fix_vowels=true, $fix_consonants=true) {
+    static public function fix_romanization($name, $is_firstname, $fix_romaji=true, $fix_macrons=true) {
 
         // convert katakana and hiragana to romaji
         switch (true) {
@@ -2144,7 +2146,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         // check that $name looks like a romanized Japanese name
         if (preg_match(self::JAPANESE_ROMAJI_STRING, $name)) {
 
-            if ($fix_consonants) {
+            if ($fix_romaji) {
                 // fix "si", "ti", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
                 $replace = array(
                     'si' => 'shi', 'ti' => 'chi', 'tu' => 'tsu', 'sy' => 'sh', 'jy' =>'j', 'nb' => 'mb'
@@ -2186,7 +2188,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             // takaaki, maako, kousuke, koura, inoue, matsuura, yuuki
             // nanba, junpei, junichirou, shinya, shinnosuke, gonnokami, shinnou
 
-            if ($fix_vowels) {
+            if ($fix_macrons) {
                 $replace = array(
                     'noue' => 'noue', 'kaaki' => 'kaaki',
                     'aa' => 'ā', 'ii' => 'ī', 'uu' => 'ū', 'ee' => 'ē', 'oo' => 'ō', 'ou' => 'ō'
