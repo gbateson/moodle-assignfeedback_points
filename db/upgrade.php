@@ -302,7 +302,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
 
     $newversion = 2017062692;
     if ($result && $oldversion < $newversion) {
-        xmldb_assignfeedback_points_names('namefields');
+        xmldb_assignfeedback_points_names('namefields', $plugin);
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
@@ -342,10 +342,10 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
-    $newversion = 2017070812;
+    $newversion = 2017070813;
     if ($result && $oldversion < $newversion) {
         // add fixvowels setting to each name token
-        xmldb_assignfeedback_points_names('nametokens');
+        xmldb_assignfeedback_points_names('nametokens', $plugin);
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
@@ -358,7 +358,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
  * @param string $configname
  * @return bool
  */
-function xmldb_assignfeedback_points_names($configname) {
+function xmldb_assignfeedback_points_names($configname, $plugin) {
     global $CFG, $DB;
     require_once($CFG->dirroot.'/mod/assign/feedbackplugin.php');
     require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
