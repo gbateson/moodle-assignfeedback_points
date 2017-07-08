@@ -57,7 +57,10 @@ $string['feedback_help'] = 'Messages will be displayed here regarding the transf
 
 You can control whether this item is visible or hidden using the the "Show AJAX feedback" item in the "Settings" section at the bottom of this page.';
 $string['feedback'] = 'Feedback';
-$string['fix'] = 'Fix';
+$string['fixvowels_help'] = 'This setting specifies how to treat long vowels in romanized Japanese.';
+$string['fixvowels'] = 'Fix vowels';
+$string['fixvowelsshorten'] = 'Shorten long vowels to single vowels';
+$string['fixvowelsmacrons'] = 'Display long vowels using macrons';
 $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
 $string['head'] = 'Head';
@@ -216,6 +219,10 @@ $string['romanize_help'] = 'Specify whether this name field should be romainzed.
 **Fix**
 : The name will be romanized and furthermore will be converted to Hepburn romanization in which long vowels are displayed using macrons, i.e. āēīōū';
 $string['romanize'] = 'Romanize';
+$string['romanizehiragana'] = 'Romanize hiragana';
+$string['romanizekatakanafull'] = 'Romanize full-width katakana';
+$string['romanizekatakanahalf'] = 'Romanize half-width katakana';
+$string['romanizeromaji'] = 'Standardize romaji';
 $string['rotate'] = 'Rotate';
 $string['save'] = 'Save';
 $string['guidescore'] = 'Guide score: {$a}';

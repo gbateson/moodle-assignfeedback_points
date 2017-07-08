@@ -41,17 +41,23 @@ class assign_feedback_points extends assign_feedback_plugin {
     const NAME_COUNT_MAX = 8;
     const NAME_COUNT_ADD = 1;
 
-    const JAPANESE_HIRAGANA_STRING = '/^[ \x{3000}-\x{303F}\x{3040}-\x{309F}]+$/u';
-    const JAPANESE_KATAKANA_STRING = '/^[ \x{3000}-\x{303F}\x{30A0}-\x{30FF}]+$/u';
+    const HIRAGANA_STRING = '/^[ \x{3000}-\x{303F}\x{3040}-\x{309F}]+$/u';
+    const KATAKANA_STRING = '/^[ \x{3000}-\x{303F}\x{30A0}-\x{30FF}]+$/u';
     // 3000 - 303F punctuation
     // 3040 - 309F hiragana
     // 30A0 - 30FF katakana
     // 31F0 - 31FF katakana phonetic extensions
-    const JAPANESE_ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((by|t?ch|hy|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
+    const ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((by|t?ch|hy|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
 
-    const ROMANIZE_NO  = 0;
-    const ROMANIZE_YES = 1;
-    const ROMANIZE_FIX = 2;
+    const ROMANIZE_NO = 0;
+    const ROMANIZE_ROMAJI = 1;
+    const ROMANIZE_HIRAGANA = 2;
+    const ROMANIZE_KATAKANA_FULL = 3;
+    const ROMANIZE_KATAKANA_HALF = 4;
+
+    const FIXVOWELS_NO = 0;
+    const FIXVOWELS_MACRONS = 1;
+    const FIXVOWELS_SHORTEN = 2;
 
     const POINTSTYPE_SUM     = 0; // sum of awards (i.e. incremental points)
     const POINTSTYPE_NEWEST  = 1; // newest (=most recent) award (i.e. grade)
@@ -329,18 +335,19 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             // define elements in this nametoken group
             $elements = array();
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'token',    'text',   0, 3);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'field',    'select', 0, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'split',    'text',   2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'start',    'text',   1);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'count',    'text',   1, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'length',   'text',   2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'head',     'text',   1);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'join',     'text',   1);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'tail',     'text',   1, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'style',    'select', 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'case',     'select', 1, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'romanize', 'select', 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'token',     'text',   0, 3);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'field',     'select', 0, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'split',     'text',   2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'start',     'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'count',     'text',   1, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'romanize',  'select', 2, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'fixvowels', 'select', 2, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'length',    'text',   2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'head',      'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'join',      'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'tail',      'text',   1, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'style',     'select', 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'case',      'select', 1);
 
             // add this nametoken group
             $label = get_string('nametoken', $plugin, ($i + 1));
@@ -949,10 +956,50 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
 
                 if ($nametoken->romanize) {
-                    $is_firstname = is_numeric(strpos($field, 'firstname'));
-                    $fix_romaji = ($nametoken->romanize==self::ROMANIZE_FIX);
-                    $fix_macrons = ($nametoken->romanize==self::ROMANIZE_FIX);
-                    $text = self::fix_romanization($text, $is_firstname, $fix_romaji, $fix_macrons);
+                    switch ($nametoken->romanize) {
+                        case self::ROMANIZE_ROMAJI:
+                            if (preg_match(self::ROMAJI_STRING, $text)) {
+                                $text = self::romanize_romaji($text, $field);
+                            }
+                            break;
+                        case self::ROMANIZE_HIRAGANA:
+                            if (preg_match(self::HIRAGANA_STRING, $text)) {
+                                $text = self::romanize_hiragana($text);
+                            }
+                            break;
+                        case self::ROMANIZE_KATAKANA_FULL:
+                            if (preg_match(self::KATAKANA_STRING, $text)) {
+                                $text = self::romanize_katakana_full($text);
+                            }
+                            break;
+                        case self::ROMANIZE_KATAKANA_HALF:
+                            if (preg_match(self::KATAKANA_STRING, $text)) {
+                                $text = self::romanize_katakana_half($text);
+                            }
+                            break;
+                    }
+
+                    // what to do with these names:
+                    // ooizumi, ooie, ooba, oohama, tooru, iita (井板), fujii (藤井)
+                    // takaaki, maako, kousuke, koura, inoue, matsuura, yuuki
+                    // nanba, junpei, junichirou, shinya, shinnosuke, gonnokami, shinnou
+
+                    switch ($nametoken->fixvowels) {
+                        case self::FIXVOWELS_MACRONS:
+                            $text = strtr($text, array(
+                                'noue' => 'noue', 'kaaki' => 'kaaki',
+                                'aa' => 'ā', 'ii' => 'ī', 'uu' => 'ū',
+                                'ee' => 'ē', 'oo' => 'ō', 'ou' => 'ō'
+                            ));
+                            break;
+                        case self::FIXVOWELS_SHORTEN:
+                            $text = strtr($text, array(
+                                'ooa' => "oh'a", 'ooi' => "oh'i", 'oou' => "oh'u",
+                                'ooe' => "oh'e", 'ooo' => "oh'o", 'too' => 'to',
+                                'oo'  => 'oh',   'ou'  => 'o',    'uu'  => 'u'
+                            ));
+                            break;
+                    }
                 }
 
                 if ($nametoken->case) {
@@ -2115,104 +2162,60 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * fix_romanization
+     * romanize_romaji
      *
      * @return string
      */
-    static public function fix_romanization($name, $is_firstname, $fix_romaji=true, $fix_macrons=true) {
-
-        // convert katakana and hiragana to romaji
-        switch (true) {
-            case preg_match(self::JAPANESE_HIRAGANA_STRING, $name):
-                $name = self::fix_romanization_hiragana($name);
-                $japanese_string = true;
-                break;
-            case preg_match(self::JAPANESE_KATAKANA_STRING, $name):
-                $name = self::fix_romanization_katakana($name);
-                $japanese_string = true;
-                break;
-            default:
-                $japanese_string = false;
-        }
-
-        if ($japanese_string) {
-            $name = preg_replace('/[ｯッっ](.)/u', '$1$1', $name);
-            $name = preg_replace('/n([b])/', 'm$1', $name); // mp
-        }
+    static public function romanize_romaji($name, $field) {
 
         // convert to lower case
         $name= self::textlib('strtolower', $name);
 
-        // check that $name looks like a romanized Japanese name
-        if (preg_match(self::JAPANESE_ROMAJI_STRING, $name)) {
+        // fix "si", "ti", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
+        $name = strtr($name, array(
+            'si' => 'shi', 'ti' => 'chi', 'tu' => 'tsu',
+            'sy' => 'sh',  'jy' =>'j',    'nb' => 'mb'
+        ));
 
-            if ($fix_romaji) {
-                // fix "si", "ti", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
-                $replace = array(
-                    'si' => 'shi', 'ti' => 'chi', 'tu' => 'tsu', 'sy' => 'sh', 'jy' =>'j', 'nb' => 'mb'
-                );
-                $name = strtr($name, $replace);
+        // fix "hu" (but not "chu" or "shu") e.g. hujimura
+        $name = preg_replace('/(?<![cs])hu/', 'fu', $name);
 
-                // fix "hu" (but not "chu" or "shu") e.g. hujimura
-                $name = preg_replace('/(?<![cs])hu/', 'fu', $name);
-
-                if ($is_firstname) {
-                    // kiyou(hei)
-                    // shiyou(go|hei|ta|tarou)
-                    // shiyun(suke|ya), shiyuu(ji|ta|tarou|ya)
-                    // riyou(ga|ki|suke|ta|tarou|ya)
-                    // riyuu(ichi|ki|ta|ma|saku|sei|shi|zou)
-                    $replace = array(
-                        'kiyou'  => 'kyou',
-                        'shiyou' => 'shou', 'jiyou' => 'jou',
-                        'shiyuu' => 'shuu', 'jiyuu' => 'juu',
-                        'shiyun' => 'shun', 'jiyun' => 'jun',
-                        'riyou'  => 'ryou', 'riyuu' => 'ryuu',
-                    );
-                } else {
-                    // gasshiyou (GASSHŌ)
-                    // mukaijiyou (MUKAIJŌ)
-                    // chiya(da|ta)ani (not UCHIYAMA or TSUCHIYA)
-                    $replace = array(
-                        'shiyou'    => 'shou',
-                        'jiyou'     => 'jou',
-                        'chiyatani' => 'chatani',
-                        'chiyadani' => 'chadani'
-                    );
-                }
-                $name = strtr($name, $replace);
-            }
-
-            // what to do with these names:
-            // ooizumi, ooie, ooba, oohama, tooru, iita (井板), fujii (藤井)
-            // takaaki, maako, kousuke, koura, inoue, matsuura, yuuki
-            // nanba, junpei, junichirou, shinya, shinnosuke, gonnokami, shinnou
-
-            if ($fix_macrons) {
-                $replace = array(
-                    'noue' => 'noue', 'kaaki' => 'kaaki',
-                    'aa' => 'ā', 'ii' => 'ī', 'uu' => 'ū', 'ee' => 'ē', 'oo' => 'ō', 'ou' => 'ō'
-                );
-            } else {
-                $replace = array(
-                    'ooa' => "oh'a", 'ooi' => "oh'i", 'oou' => "oh'u", 'ooe' => "oh'e", 'ooo' => "oh'o",
-                    'too' => 'to', 'oo' => 'oh', 'ou' => 'o', 'uu' => 'u'
-                );
-            }
-            $name = strtr($name, $replace);
+        if (is_numeric(strpos($field, 'firstname'))) {
+            // kiyou(hei)
+            // shiyou(go|hei|ta|tarou)
+            // shiyun(suke|ya), shiyuu(ji|ta|tarou|ya)
+            // riyou(ga|ki|suke|ta|tarou|ya)
+            // riyuu(ichi|ki|ta|ma|saku|sei|shi|zou)
+            $replace = array(
+                'kiyou'  => 'kyou',
+                'shiyou' => 'shou', 'jiyou' => 'jou',
+                'shiyuu' => 'shuu', 'jiyuu' => 'juu',
+                'shiyun' => 'shun', 'jiyun' => 'jun',
+                'riyou'  => 'ryou', 'riyuu' => 'ryuu'
+            );
+        } else {
+            // gasshiyou (GASSHŌ)
+            // mukaijiyou (MUKAIJŌ)
+            // chiya(da|ta)ani (not UCHIYAMA or TSUCHIYA)
+            $replace = array(
+                'shiyou'    => 'shou',
+                'jiyou'     => 'jou',
+                'chiyatani' => 'chatani',
+                'chiyadani' => 'chadani'
+            );
         }
-        return $name;
 
+        return self::romanize($name, '', $replace);
     }
 
     /**
-     * fix_romanization_hiragana
+     * romanize_hiragana
      *
-     * @param string $str
-     * @return string $str
+     * @param string $name
+     * @return string $name
      */
-    static public function fix_romanization_hiragana($str) {
-        return strtr($str, array(
+    static public function romanize_hiragana($name) {
+        return self::romanize($name, 'っ', array(
             // space
             '　' => ' ',
 
@@ -2244,22 +2247,22 @@ class assign_feedback_points extends assign_feedback_plugin {
             'ま' => 'ma', 'み' => 'mi', 'む' => 'mu', 'め' => 'me', 'も' => 'mo',
             'や' => 'ya', 'ゆ' => 'yu', 'よ' => 'yo',
             'ら' => 'ra', 'り' => 'ri', 'る' => 'ru', 'れ' => 're', 'ろ' => 'ro',
-            'わ' => 'wa', 'を' => 'o', 'ん' => 'n',
+            'わ' => 'wa', 'を' => 'o', 'ん' => 'n'
         ));
     }
 
     /**
-     * fix_romanization_katakana
+     * romanize_katakana_full
      *
-     * @param string $str
-     * @return string $str
+     * @param string $name
+     * @return string $name
      */
-    static public function fix_romanization_katakana($str) {
-        return strtr($str, array(
+    static public function romanize_katakana_full($name) {
+        return self::romanize($name, 'ッ', array(
             // space
             '　' => ' ',
 
-            // two-char (double-byte katakana)
+            // two-char (full-width katakana)
             'キャ' => 'kya', 'ギャ' => 'gya', 'シャ' => 'sha', 'ジャ' => 'ja',
             'チャ' => 'cha', 'ニャ' => 'nya', 'ヒャ' => 'hya', 'リャ' => 'rya',
 
@@ -2272,7 +2275,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             'ンア' => "n'a", 'ンイ' => "n'i", 'ンウ' => "n'u", 'ンエ' => "n'e", 'ンオ' => "n'o",
             'ンヤ' => "n'ya", 'ンユ' => "n'yu", 'ンヨ' => "n'yo",
 
-            // one-char (double-byte katakana)
+            // one-char (full-width katakana)
             'ア' => 'a', 'イ' => 'i', 'ウ' => 'u', 'エ' => 'e', 'オ' => 'o',
             'カ' => 'ka', 'キ' => 'ki', 'ク' => 'ku', 'ケ' => 'ke', 'コ' => 'ko',
             'ガ' => 'ga', 'ギ' => 'gi', 'グ' => 'gu', 'ゲ' => 'ge', 'ゴ' => 'go',
@@ -2287,9 +2290,22 @@ class assign_feedback_points extends assign_feedback_plugin {
             'マ' => 'ma', 'ミ' => 'mi', 'ム' => 'mu', 'メ' => 'me', 'モ' => 'mo',
             'ヤ' => 'ya', 'ユ' => 'yu', 'ヨ' => 'yo',
             'ラ' => 'ra', 'リ' => 'ri', 'ル' => 'ru', 'レ' => 're', 'ロ' => 'ro',
-            'ワ' => 'wa', 'ヲ' => 'o', 'ン' => 'n',
+            'ワ' => 'wa', 'ヲ' => 'o', 'ン' => 'n'
+        ));
+    }
 
-            // two-char (single-byte katakana)
+    /**
+     * romanize_katakana_full
+     *
+     * @param string $name
+     * @return string $name
+     */
+    static public function romanize_katakana_half($name) {
+        return self::romanize($name, 'ｯ', array(
+            // space
+            '　' => ' ',
+
+            // two-char (half-width katakana)
             'ｷｬ' => 'kya', 'ｷﾞｬ' => 'gya', 'ｼｬ' => 'sha', 'ｼﾞｬ' => 'ja',
             'ﾁｬ' => 'cha', 'ﾆｬ' => 'nya', 'ﾋｬ' => 'hya', 'ﾘｬ' => 'rya',
 
@@ -2308,7 +2324,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             'ﾝｱ' => "n'a", 'ﾝｲ' => "n'i", 'ﾝｳ' => "n'u", 'ﾝｴ' => "n'e", 'ﾝｵ' => "n'o",
             'ﾝﾔ' => "n'ya", 'ﾝﾕ' => "n'yu", 'ﾝﾖ' => "n'yo",
 
-            // one-char (single-byte katakana)
+            // one-char (half-width katakana)
             'ｱ' => 'a', 'ｲ' => 'i', 'ｳ' => 'u', 'ｴ' => 'e', 'ｵ' => 'o',
             'ｶ' => 'ka', 'ｷ' => 'ki', 'ｸ' => 'ku', 'ｹ' => 'ke', 'ｺ' => 'ko',
             'ｻ' => 'sa', 'ｼ' => 'shi', 'ｽ' => 'su', 'ｾ' => 'se', 'ｿ' => 'so',
@@ -2320,6 +2336,19 @@ class assign_feedback_points extends assign_feedback_plugin {
             'ﾗ' => 'ra', 'ﾘ' => 'ri', 'ﾙ' => 'ru', 'ﾚ' => 're', 'ﾛ' => 'ro',
             'ﾜ' => 'wa', 'ｦ' => 'o', 'ﾝ' => 'n'
         ));
+    }
+
+    /**
+     * romanize
+     */
+    static public function romanize($name, $tsu='', $replace=null) {
+        if ($replace) {
+            $name = strtr($name, $replace);
+        }
+        if ($tsu) {
+            $name = preg_replace('/'.$tsu.'(.)/u', '$1$1', $name);
+        }
+        return str_replace('nb', 'mb', $name);
     }
 
     /**
@@ -2362,18 +2391,19 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array($name => $paramtype)
      */
     static function get_nametoken_setting_types() {
-        return array('token'    => PARAM_TEXT,
-                     'field'    => PARAM_ALPHANUM,
-                     'split'    => PARAM_TEXT,
-                     'start'    => PARAM_INT,
-                     'count'    => PARAM_INT,
-                     'length'   => PARAM_INT,
-                     'head'     => PARAM_INT,
-                     'join'     => PARAM_TEXT,
-                     'tail'     => PARAM_INT,
-                     'style'    => PARAM_ALPHA,
-                     'case'     => PARAM_INT,
-                     'romanize' => PARAM_INT);
+        return array('token'     => PARAM_TEXT,
+                     'field'     => PARAM_ALPHANUM,
+                     'split'     => PARAM_TEXT,
+                     'start'     => PARAM_INT,
+                     'count'     => PARAM_INT,
+                     'romanize'  => PARAM_INT,
+                     'fixvowels' => PARAM_INT,
+                     'length'    => PARAM_INT,
+                     'head'      => PARAM_INT,
+                     'join'      => PARAM_TEXT,
+                     'tail'      => PARAM_INT,
+                     'style'     => PARAM_ALPHA,
+                     'case'      => PARAM_INT);
     }
 
     /**
@@ -2517,8 +2547,25 @@ class assign_feedback_points extends assign_feedback_plugin {
     static public function get_nametoken_romanize_options() {
         $plugin = 'assignfeedback_points';
         return array(self::ROMANIZE_NO  => get_string('no'),
-                     self::ROMANIZE_YES => get_string('yes'),
-                     self::ROMANIZE_FIX => get_string('fix', $plugin));
+                     self::ROMANIZE_ROMAJI => get_string('romanizeromaji', $plugin),
+                     self::ROMANIZE_HIRAGANA => get_string('romanizehiragana', $plugin),
+                     self::ROMANIZE_KATAKANA_FULL => get_string('romanizekatakanafull', $plugin),
+                     self::ROMANIZE_KATAKANA_HALF => get_string('romanizekatakanahalf', $plugin));
+    }
+
+    /**
+     * get_nameromanize_options
+     *
+     * return an array of formatted romanization options
+     * suitable for use in a Moodle form
+     *
+     * @return array of field names
+     */
+    static public function get_nametoken_fixvowels_options() {
+        $plugin = 'assignfeedback_points';
+        return array(self::FIXVOWELS_NO  => get_string('no'),
+                     self::FIXVOWELS_MACRONS => get_string('fixvowelsmacrons', $plugin),
+                     self::FIXVOWELS_SHORTEN => get_string('fixvowelsshorten', $plugin));
     }
 
     /**
