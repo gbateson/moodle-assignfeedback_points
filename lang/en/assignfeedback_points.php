@@ -55,12 +55,33 @@ $string['enabled_help'] = 'If enabled, the marker can award points to other user
 $string['enabled'] = 'Enabled';
 $string['feedback_help'] = 'Messages will be displayed here regarding the transfer, via AJAX to the Moodle server, of data about points awarded.
 
-You can control whether this item is visible or hidden using the the "Show AJAX feedback" item in the "Settings" section at the bottom of this page.';
+You can control whether this item is visible or hidden using the "Show AJAX feedback" item in the "Settings" section at the bottom of this page.';
 $string['feedback'] = 'Feedback';
-$string['fixvowels_help'] = 'This setting specifies how to treat long vowels in romanized Japanese.';
+$string['fixvowels_help'] = 'This setting specifies how to treat long vowels, specifically "ou", "aa", "ii", "uu", "ee", "oo", in romanized Japanese.
+
+**No**
+: The vowels in romanized names will not be altered.
+
+**Shorten long vowels to single letters**
+: Long vowels will be shortened to single vowel letters
+: aa => a, ii => i, uu => u, ee => e, oo => oh, ou => o
+
+**Display long vowels using macrons**
+: Long vowels will be converted to macron letters 
+: aa => ā, ii => ī, uu => ū, ee => ē, oo => ō, ou => ō
+
+Here are some examples of names with long vowels:
+
+* Kousuke (康介), Maako (真亜子), Taro (太郎), Tooru (徹), Yuuki (優希)
+* Ooizumi (大泉), Satou (佐藤), Niitsu (新津)
+
+In some cases, consecutive vowels are not altered because they represent distinct characters in the original Japanese. Consider the following examples:
+
+* Takaaki (貴明), Keiichi (圭一)
+* Iita (井板), Fujii (藤井), Koura (小浦), Inoue (井上), Matsuura (松浦)';
 $string['fixvowels'] = 'Fix vowels';
-$string['fixvowelsshorten'] = 'Shorten long vowels to single vowels';
-$string['fixvowelsmacrons'] = 'Display long vowels using macrons';
+$string['fixvowelsshorten'] = 'Shorten long vowels to single letters, aiueo';
+$string['fixvowelsmacrons'] = 'Display long vowels using macrons, āīūēō';
 $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
 $string['head'] = 'Head';
@@ -208,16 +229,29 @@ $string['pointstypesum'] = 'sum';
 $string['propercase'] = 'Proper Case';
 $string['reset'] = 'Reset';
 $string['resize'] = 'Resize';
-$string['romanize_help'] = 'Specify whether this name field should be romainzed.
+$string['romanize_help'] = 'Specify whether this name field should be romanized.
 
 **No**
 : The name will not be romanized.
 
-**Yes**
-: The name will be romanized.
+**Standardize romaji**
+: Romanized strings will be converted to standard Hepburn romanization, including the following transformations:
+: si => shi, ti => chi, tu => tsu, nb => mb
+: jya => ja, jyu => ju, jyo => jo
+: sya => sha, syu => shu, syo => sho
+: kiyou => kyou
+: riyou => ryou, riyuu => ryuu
+: jiyou => jou, jiyuu => juu, jiyun => jun
+: shiyou => shou, shiyuu => shuu, shiyun => shun, 
 
-**Fix**
-: The name will be romanized and furthermore will be converted to Hepburn romanization in which long vowels are displayed using macrons, i.e. āēīōū';
+**Romanize hiragana**
+: Any hiragana characters, e.g. ひらがな, will be converted to their romaji equivalents.
+
+**Romanize full-width katakana**
+: Any full-width katakana characters, e.g. カタカナ, will be converted to their romaji equivalents.
+
+**Romanize half-width katakana**
+: Any half-width katakana characters, e.g. ｶﾀｶﾅ, will be converted to their romaji equivalents.';
 $string['romanize'] = 'Romanize';
 $string['romanizehiragana'] = 'Romanize hiragana';
 $string['romanizekatakanafull'] = 'Romanize full-width katakana';
@@ -277,20 +311,20 @@ $string['showrubricscores_help'] = 'If this setting is enabled, the total Rubric
 $string['showrubricscores'] = 'Show Rubric scores';
 $string['shuffle'] = 'Shuffle';
 $string['singlespace'] = '(single white space)';
-$string['split_help'] = 'These settings are optional. They specify how to extract a part of this user name field.
+$string['split_help'] = 'These settings are optional. They specify how to extract part of a user name field.
 
-If a "Delimiter" character is specified, the name field will be split into parts on this character. The name parts are indexed starting at "1". The START and COUNT settings specify the range of name parts that will be extracted for display.
+If a "Delimiter" character is specified, the name field will be split into parts on this character. The parts are indexed starting at "1". The START and COUNT settings specify the range of parts that will be extracted for display.
 
 **Start**
-: If the START setting is zero, it will have the same effect as if it is "1".
 : If the START setting is positive, it specifies the starting part counting forward from the ***beginning*** of this name field.
-: If the START setting is negative, it specifies the starting part counting back from the the ***end*** of this name field.
+: If the START setting is negative, it specifies the starting part counting back from the ***end*** of this name field.
+: If the START setting is zero or blank, the selected range will start at the first part of this name field.
 
 
 **Count**
-: If the COUNT setting is zero, it will have the same effect as if it is "-1".
 : If the COUNT setting is positive, it specifies the final part counting ***forward*** from the START part.
-: If the COUNT setting is negative, it specifies the final part counting back from the ***end*** of this name field.';
+: If the COUNT setting is negative, it specifies the final part counting back from the ***end*** of this name field.
+: If the COUNT setting is zero or blank, the selected range will finish at the last part of this name field.';
 $string['split'] = 'Delimiter';
 $string['square'] = 'Square';
 $string['start'] = 'Start';

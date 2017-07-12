@@ -47,7 +47,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     // 3040 - 309F hiragana
     // 30A0 - 30FF katakana
     // 31F0 - 31FF katakana phonetic extensions
-    const ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((by|t?ch|hy|jy|k?ky|py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
+    const ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((b?by|t?ch|hy|jy|k?ky|p?py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
 
     const ROMANIZE_NO = 0;
     const ROMANIZE_ROMAJI = 1;
@@ -165,8 +165,51 @@ class assign_feedback_points extends assign_feedback_plugin {
     public function get_settings(MoodleQuickForm $mform) {
         $plugin = 'assignfeedback_points';
         $config = $this->get_all_config($plugin);
-        self::add_settings($mform, $plugin, $config);
+
+        // on the main Assign(ment) settings form,
+        // we add config settings as hidden fields
+        // because there are quite a few of them
+        foreach ($config as $name => $value) {
+            if ($name=='version') {
+                continue;
+            }
+            if (substr($name, -4)=='_adv') {
+                continue;
+            }
+            if (substr($name, -7)=='_locked') {
+                continue;
+            }
+            if (is_scalar($value)) {
+                self::get_setting($mform, $name, $value);
+            } else if (is_array($value)) {
+                foreach ($value as $i => $settings) {
+                    foreach (array_keys($settings) as $setting) {
+                        self::get_setting($mform, $name."[$i][$setting]", $settings[$setting]);
+                    }
+                }
+            }
+        }
+        //self::add_settings($mform, $plugin, $config);
    }
+
+    /**
+     * get_setting
+     *
+     * @param object $mform
+     * @param string $name
+     * @param mixed  $value
+     * @todo Finish documenting this function
+     */
+    static public function get_setting($mform, $name, $value) {
+        $mform->addElement('hidden', $name, $value);
+        if (is_numeric($value)) {
+            $mform->setType($name, PARAM_INT);
+        } else if (preg_match('/^\w+$/', $value)) {
+            $mform->setType($name, PARAM_ALPHANUM);
+        } else {
+            $mform->setType($name, PARAM_TEXT);
+        }
+    }
 
     /**
      * add_settings
@@ -174,14 +217,13 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param object $mform
      * @param string $plugin
      * @param object $config
-     * @param object $custom (optional, default=null
+     * @param object $custom (optional, default=null)
      * @todo Finish documenting this function
      */
     static public function add_settings($mform, $plugin, $config, $custom=null) {
         global $OUTPUT;
 
         // add header for new section
-        // (because there are quite a few settings)
         if ($custom==null) {
             self::add_heading($mform, 'settings', $plugin, false);
         }
@@ -945,7 +987,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 } else if ($field=='default') {
                     $text = $defaultname;
                 } else {
-                    continue; // shoudln't happen !!
+                    continue; // shouldn't happen !!
                 }
 
                 if ($nametoken->split) {
