@@ -1559,4 +1559,86 @@ $(document).ready(function() {
 
     // and remove the "report" section header
     $("#id_report_hdr").remove();
+
+    // adjust width of newline token text input elements
+    var input = $("input[name=newlinetoken], input[name^=nametokens][name$='[token]']");
+    input.each(function(){
+
+        // get auto width of an INPUT text box with this size
+        var elm = document.createElement("INPUT");
+        $(elm).attr("size", $(this).attr("size"));
+        $(elm).css("width", "auto");
+        $(elm).hide().appendTo("BODY");
+        $(this).data("autowidth", $(elm).outerWidth());
+        $(elm).remove();
+
+        $(this).keyup(function(){
+            var value = $(this).val();
+            var txt = document.createTextNode(value);
+            var elm = document.createElement("SPAN");
+            $(elm).append(txt).hide().appendTo("BODY");
+            var w = $(elm).width();
+            $(elm).remove();
+            var autowidth = $(this).data("autowidth");
+            if (w < autowidth) {
+                w = autowidth
+            }
+            $(this).width(w);
+        });
+        $(this).triggerHandler("keyup");
+    });
+
+    var input = $("#id_names_hdr [name^=nametokens]");
+    input = input.not("[name$='[token]']");
+    input = input.not("[name$='[field]']");
+    input = input.not("[name$=add]");
+    input.each(function(){
+        $(this).change(function(){
+            var v = $(this).val();
+            if (v===null || v===false || v===0 || v==="" || v==="0") {
+                $(this).addClass("inactive").removeClass("active");
+            } else {
+                $(this).addClass("active").removeClass("inactive");
+            }
+        });
+        $(this).triggerHandler("change");
+    });
+
+    if (PTS.moodletheme=="essential") {
+        $("#assignfeedback_points_award_points_form #fgroup_id_buttonar").css("position", "static");
+    }
+
+    if ("ontouchstart" in document.documentElement) {
+        $("div.ui-resizable-n").css({
+            "margin-left-width"   : "-9px",
+            "border-left-width"   :  "9px",
+            "border-right-width"  :  "9px",
+            "border-bottom-width" : "15px"
+        });
+        $("div.ui-resizable-e").css({
+            "margin-top-width"    : "-9px",
+            "border-top-width"    :  "9px",
+            "border-bottom-width" :  "9px",
+            "border-left-width"   : "15px"
+        });
+        $("div.ui-resizable-s").css({
+            "margin-left-width"   : "-9px",
+            "border-left-width"   :  "9px",
+            "border-right-width"  :  "9px",
+            "border-top-width"    : "15px"
+        });
+        $("div.ui-resizable-w").css({
+            "margin-top-width"    : "-9px",
+            "border-top-width"    :  "9px",
+            "border-bottom-width" :  "9px",
+            "border-right-width"  : "15px"
+        });
+        $("div.ui-resizable-nw, " + 
+          "div.ui-resizable-ne, " + 
+          "div.ui-resizable-sw, " + 
+          "div.ui-resizable-se").css({
+            "height" : "15px",
+            "width"  : "15px"
+        });
+    }
 });

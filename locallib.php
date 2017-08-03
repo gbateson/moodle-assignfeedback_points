@@ -584,6 +584,8 @@ class assign_feedback_points extends assign_feedback_plugin {
         $js .= '        window.PTS = {};'."\n";
         $js .= '    }'."\n";
 
+        $js .= '    PTS.moodletheme           = "'.self::js_safe($CFG->theme).'";'."\n";
+
         $js .= '    PTS.str = {};'."\n";
         $js .= '    PTS.str.showless         = "'.self::js_safe(get_string('showless', 'form')).'";'."\n";
         $js .= '    PTS.str.showmore         = "'.self::js_safe(get_string('showmore', 'form')).'";'."\n";
@@ -2524,17 +2526,50 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array of field names
      */
     static public function get_nametoken_field_options() {
+
         $fields = array('' => '', 'default' => '');
         $fields += self::get_all_user_name_fields();
         $fields['username'] = '';
+
+        $default = array_filter(array_keys($fields));
+        $default = array_combine($default, $default);
+        $default = fullname((object)$default);
+
+        $space = '/[[:space:]]/u';
+        $punct = '/[[:punct:]]/u';
+        $ascii = '/^[\x00-\xff]*$/u';
+
+        $has_space = preg_match($space, $default);
+        $is_ascii = ($has_space ? true : false);
+
+        $char = ''; // a punctuation char
         foreach (array_keys($fields) as $field) {
             if ($field) {
-                $fields[$field] = get_string($field);
+                $string = get_string($field);
+                if ($is_ascii) {
+                    $is_ascii = preg_match($ascii, $string);
+                }
+                if ($is_ascii && $char=='' && preg_match($punct, $string, $chars)) {
+                    $char = $chars[0];
+                }
+                $fields[$field] = $string;
             }
         }
-        $defaultnames = (object)$fields;
-        $defaultnames = fullname($defaultnames);
-        $fields['default'] .= " ($defaultnames)";
+
+        if ($has_space) {
+            $search = '/[[:punct:][:space:]]+/u';
+            $replace = ($is_ascii ? $char : '');
+            foreach (array_keys($fields) as $field) {
+                if ($field) {
+                    $fields[$field] = preg_replace($search, $replace, $fields[$field]);
+                }
+            }
+        }
+
+        if ($default = fullname((object)$fields)) {
+            $fields['default'] .= ": $default";
+        }
+
         return $fields;
     }
 

@@ -416,6 +416,9 @@ body.path-mod-assign #id_settings_hdr .settingtitle.thin,
     min-width   :  50px;
 }
 
+body.path-mod-assign #id_names_hdr [name^=nametokens].active:not([disabled]) {
+    border: 2px solid #65d065;
+}
 
 /***********************************
 ** Points report dialog box
@@ -473,3 +476,4 @@ body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.
 
 body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span.comment,
 body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.comment {font-style: italic;}
+
