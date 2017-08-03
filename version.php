@@ -26,5 +26,5 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'assignfeedback_points';
 $plugin->requires  = 2012062500; // Moodle 2.3
-$plugin->version   = 2017080317;
-$plugin->release   = '2017-08-03 (17)';
+$plugin->version   = 2017080418;
+$plugin->release   = '2017-08-04 (18)';

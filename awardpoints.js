@@ -1560,17 +1560,26 @@ $(document).ready(function() {
     // and remove the "report" section header
     $("#id_report_hdr").remove();
 
+    // cache for auto width of TEXT input elements
+    window.autowidths = new Array();
+
     // adjust width of newline token text input elements
-    var input = $("input[name=newlinetoken], input[name^=nametokens][name$='[token]']");
+    var input = $("input[name=nameformat], " +
+                  "input[name=newlinetoken], " +
+                  "input[name^=nametokens][name$='[token]']");
     input.each(function(){
 
         // get auto width of an INPUT text box with this size
-        var elm = document.createElement("INPUT");
-        $(elm).attr("size", $(this).attr("size"));
-        $(elm).css("width", "auto");
-        $(elm).hide().appendTo("BODY");
-        $(this).data("autowidth", $(elm).outerWidth());
-        $(elm).remove();
+        var size = $(this).attr("size");
+        if (! (size in autowidths)) {
+            var elm = document.createElement("INPUT");
+            $(elm).attr("size", size);
+            $(elm).css("width", "auto");
+            $(elm).hide().appendTo("BODY");
+            autowidths[size] = $(elm).outerWidth();
+            $(elm).remove();
+        }
+        $(this).data("autowidth", autowidths[size]);
 
         $(this).keyup(function(){
             var value = $(this).val();
@@ -1587,6 +1596,9 @@ $(document).ready(function() {
         });
         $(this).triggerHandler("keyup");
     });
+
+    // remove cache of autowidths
+    delete(window.autowidths);
 
     var input = $("#id_names_hdr [name^=nametokens]");
     input = input.not("[name$='[token]']");
@@ -1633,9 +1645,9 @@ $(document).ready(function() {
             "border-bottom-width" :  "9px",
             "border-right-width"  : "15px"
         });
-        $("div.ui-resizable-nw, " + 
-          "div.ui-resizable-ne, " + 
-          "div.ui-resizable-sw, " + 
+        $("div.ui-resizable-nw, " +
+          "div.ui-resizable-ne, " +
+          "div.ui-resizable-sw, " +
           "div.ui-resizable-se").css({
             "height" : "15px",
             "width"  : "15px"
