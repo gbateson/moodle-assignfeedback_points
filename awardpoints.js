@@ -32,7 +32,7 @@ PTS.selected = $([]);
 
 // current offset of element being dragged
 // this will be added to all selected elements
-PTS.offset = {top: 0, left: 0};
+PTS.offset = {"top" : 0, "left" : 0};
 
 // a unique number for debugging purposes
 // console.log((PTS.i++) + ": some message");
@@ -188,8 +188,8 @@ PTS.do_map_reset = function() {
  */
 PTS.do_map_cleanup = function() {
     var separate = false;
-    var grid = {x : $("#id_userwidth").val(),
-                y : $("#id_userheight").val()}
+    var grid = {"x" : $("#id_userwidth").val(),
+                "y" : $("#id_userheight").val()}
     $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
         if ($(this).hasClass("ui-draggable")) {
             var css = {};
@@ -350,17 +350,17 @@ PTS.do_map_separate = function(resize) {
 }
 
 PTS.positions = {
-    p : [], // array of (x, y) coordinates
+    "p" : [], // array of (x, y) coordinates
             // denoting which are available (=TRUE)
             // and which are NOT available (=FALSE)
 
-    grid : {}, // the x, y spacing of the position grid
+    "grid" : {}, // the x, y spacing of the position grid
 
-    setup : function(elm) {
+    "setup" : function(elm) {
         // mark all positions as available (=TRUE)
         this.p = [];
-        this.grid = {x : parseInt($("#id_userwidth").val()),
-                     y : parseInt($("#id_userheight").val())};
+        this.grid = {"x" : parseInt($("#id_userwidth").val()),
+                     "y" : parseInt($("#id_userheight").val())};
         var x_max = $(PTS.user_container).width() - this.grid.x;
         var y_max = $(PTS.user_container).height() - this.grid.y;
         for (var x=0; x<x_max; x += this.grid.x) {
@@ -371,7 +371,7 @@ PTS.positions = {
         }
     },
 
-    fix : function(elm, x, y) {
+    "fix" : function(elm, x, y) {
         // mark any positions that are covered
         // by this elm as NOT available (=FALSE)
         if (typeof(x)=="undefined" || typeof(y)=="undefined") {
@@ -396,7 +396,7 @@ PTS.positions = {
         }
     },
 
-    check : function(x, y, w, h) {
+    "check" : function(x, y, w, h) {
         // if a elm of width "w" and height "h"
         // can be be positioned at coordinate (x, y)
         // then return TRUE; otherwise return FALSE
@@ -420,7 +420,7 @@ PTS.positions = {
         return true; // all required positions were available - YAY
     },
 
-    add : function(elm) {
+    "add" : function(elm) {
         // add this elm at the nearest available position
         var w = $(elm).outerWidth(true);
         var h = $(elm).outerHeight(true);
@@ -469,7 +469,7 @@ PTS.positions = {
     },
 
     // this method may be useful for debugging
-    print : function(title) {
+    "print" : function(title) {
         if (title) {
             console.log(title);
         }
@@ -694,15 +694,15 @@ PTS.update_usermap_via_ajax = function() {
 
         PTS.set_feedback(PTS.str.contactingserver);
         var data = {
-            ajax        : 1,
-            group       : PTS.groupid,
-            groupid     : PTS.groupid,
-            sesskey     : PTS.sesskey,
-            mapid       : $("#id_mapid").val(),
-            mapwidth    : $("#id_mapwidth").val(),
-            mapheight   : $("#id_mapheight").val(),
-            userwidth   : $("#id_userwidth").val(),
-            userheight  : $("#id_userheight").val()
+            "ajax"        : 1,
+            "group"       : PTS.groupid,
+            "groupid"     : PTS.groupid,
+            "sesskey"     : PTS.sesskey,
+            "mapid"       : $("#id_mapid").val(),
+            "mapwidth"    : $("#id_mapwidth").val(),
+            "mapheight"   : $("#id_mapheight").val(),
+            "userwidth"   : $("#id_userwidth").val(),
+            "userheight"  : $("#id_userheight").val()
         };
         $("input[name^=awardtox]").each(function(){
             data[$(this).prop("name")] = $(this).val();
@@ -711,11 +711,11 @@ PTS.update_usermap_via_ajax = function() {
             data[$(this).prop("name")] = $(this).val();
         });
         $.ajax({
-            cache   : false,
-            data    : data,
-            datatype: "html",
-            method  : "post",
-            url     : PTS.awardpoints_ajax_php
+            "cache"    : false,
+            "data"     : data,
+            "datatype" : "html",
+            "method"   : "post",
+            "url"      : PTS.awardpoints_ajax_php
         }).done(function(feedback){
             PTS.set_ajax_feedback(feedback);
         });
@@ -804,13 +804,13 @@ PTS.send_points_via_ajax = function(input) {
 
     if (userid) {
         var data = {
-            ajax    : 1,
-            group   : PTS.groupid,
-            groupid : PTS.groupid,
-            sesskey : PTS.sesskey,
-            awardto : userid,
-            points  : points,
-            commenttext: commenttext
+            "ajax"    : 1,
+            "group"   : PTS.groupid,
+            "groupid" : PTS.groupid,
+            "sesskey" : PTS.sesskey,
+            "awardto" : userid,
+            "points"  : points,
+            "commenttext": commenttext
         };
         if (advancedgrading) {
             for (var name in advancedgrading) {
@@ -824,11 +824,11 @@ PTS.send_points_via_ajax = function(input) {
         }
         PTS.set_feedback(PTS.contacting_server_msg);
         $.ajax({
-            cache    : false,
-            data     : data,
-            datatype : "html",
-            method   : "post",
-            url      : PTS.awardpoints_ajax_php
+            "cache"    : false,
+            "data"     : data,
+            "datatype" : "html",
+            "method"   : "post",
+            "url"      : PTS.awardpoints_ajax_php
         }).done(function(feedback){
             PTS.set_ajax_feedback(feedback);
             if (PTS.showpointstoday && PTS.gradingmethod=="") {
@@ -837,11 +837,11 @@ PTS.send_points_via_ajax = function(input) {
             if (PTS.showpointstotal && PTS.gradingmethod=="") {
                 PTS.update_points_html(input, "pointstotal", points);
             }
-            if (PTS.showrubricscores && PTS.gradingmethod=="rubric") {
-                PTS.update_points_html(input, "rubricscore", points);
+            if (PTS.showrubrictotal && PTS.gradingmethod=="rubric") {
+                PTS.update_points_html(input, "rubrictotal", points);
             }
-            if (PTS.showguidescores && PTS.gradingmethod=="guide") {
-                PTS.update_points_html(input, "guidescore", points);
+            if (PTS.showguidetotal && PTS.gradingmethod=="guide") {
+                PTS.update_points_html(input, "guidetotal", points);
             }
             input.parent().removeClass("checked");
             input.prop("checked", false);
@@ -1279,13 +1279,13 @@ PTS.do_user_click = function(event, input) {
             if (userid) {
                 PTS.set_feedback(PTS.contacting_server_msg);
                 $.ajax({
-                    cache   : false,
-                    data    : {ajax    : 1,
-                               userid  : userid,
-                               sesskey : PTS.sesskey},
-                    datatype: "html",
-                    method  : "post",
-                    url     : PTS.reportpoints_ajax_php
+                    "cache"   : false,
+                    "data"    : {"ajax"    : 1,
+                                 "userid"  : userid,
+                                 "sesskey" : PTS.sesskey},
+                    "datatype": "html",
+                    "method"  : "post",
+                    "url"     : PTS.reportpoints_ajax_php
                 }).done(function(report_content){
                     PTS.set_feedback("");
 
@@ -1301,9 +1301,9 @@ PTS.do_user_click = function(event, input) {
                     report.html(report_content);
 
                     // position the report at top left of user tile
-                    report.dialog("option", "position", {my: "left top",
-                                                         at: "left top",
-                                                         of: elm});
+                    report.dialog("option", "position", {"my" : "left top",
+                                                         "at" : "left top",
+                                                         "of" : elm});
 
                     // get clean user's name
                     var name = elm.find("em.name").html();
@@ -1456,10 +1456,10 @@ $(document).ready(function() {
     });
 
     user_elements.draggable({
-        containment: PTS.user_container,
-        scroll: true,
-        stack: PTS.group_element_tag,
-        start: function(event, ui) {
+        "containment" : PTS.user_container,
+        "scroll" : true,
+        "stack" : PTS.group_element_tag,
+        "start" : function(event, ui) {
             $(this).addClass("ui-dragging");
             if ($(this).hasClass("ui-selected")){
                 PTS.selected = $(PTS.group_element_tag + ".ui-selected").each(function(){
@@ -1471,18 +1471,18 @@ $(document).ready(function() {
             }
             PTS.offset = $(this).offset();
         },
-        drag: function(event, ui) {
+        "drag" : function(event, ui) {
             var dt = (ui.position.top - PTS.offset.top);
             var dl = (ui.position.left - PTS.offset.left);
             // adjust the offset of all selected elements
             // except $(this) - the element being dragged
             PTS.selected.not(this).each(function(){
                 var offset = $(this).data("offset");
-                $(this).css({top : offset.top + dt,
-                             left: offset.left + dl});
+                $(this).css({"top"  : offset.top + dt,
+                             "left" : offset.left + dl});
             });
         },
-        stop: function(event, ui) {
+        "stop" : function(event, ui) {
             PTS.selected.not(this).each(function(){
                 PTS.set_awardto_xy(this);
             });
@@ -1493,25 +1493,26 @@ $(document).ready(function() {
 
     // make the user container selectable
     user_container.selectable({
-        cancel: "div.ui-resizable-handle,input",
-        disabled: (PTS.allowselectable ? false : true),
-        filter: PTS.group_element_tag
+        "cancel"   : "div.ui-resizable-handle,input",
+        "disabled" : (PTS.allowselectable ? false : true),
+        "filter"   : PTS.group_element_tag
     });
 
-    var handles = {"e":"egrip", "se":"segrip", "s":"sgrip"};
-    var h = null;
-    for (h in handles) {
+    var handles = {"e" : "egrip",
+                   "se": "segrip",
+                   "s" : "sgrip"};
+    for (var h in handles) {
         var options = {
-            class: "ui-resizable-handle ui-resizable-" + h,
-            id: handles[h]
+            "class": "ui-resizable-handle ui-resizable-" + h,
+            "id": handles[h]
         };
         $("<div/>", options).appendTo(PTS.user_container);
         handles[h] = "#" + handles[h];
     }
 
     user_container.resizable({
-        handles: handles,
-        create: function(event, ui) {
+        "handles" : handles,
+        "create"  : function(event, ui) {
             var w = $("#id_mapwidth").val();
             var h = $("#id_mapheight").val();
             user_container.css("width", w);
@@ -1529,7 +1530,7 @@ $(document).ready(function() {
         //    $(this).resizable("option", "minWidth", w + 24);
         //    $(this).resizable("option", "minHeight", h + 14);
         //},
-        stop: function(event, ui) {
+        "stop" : function(event, ui) {
             var w = parseInt(user_container.css("width"));
             if (w != $("#id_mapwidth").val()) {
                 $("#id_mapwidth").val(w);
@@ -1553,8 +1554,8 @@ $(document).ready(function() {
 
     // create the report.dialog()
     $(PTS.report_container).dialog({
-        autoOpen : false,
-        width    : 'auto'
+        "autoOpen" : false,
+        "width"    : "auto"
     });
 
     // and remove the "report" section header

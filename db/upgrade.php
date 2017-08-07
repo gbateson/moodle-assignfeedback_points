@@ -342,6 +342,16 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2017070607;
+    if ($result && $oldversion < $newversion) {
+        $fields = array('showrubricscores'   => 'showrubrictotal',
+                        'showrubriccriteria' => 'showrubricscores',
+                        'showguidescores'    => 'showguidetotal',
+                        'showguidecriteria'  => 'showguidescores');
+        xmldb_assignfeedback_points_rename($fields);
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
     $newversion = 2017070813;
     if ($result && $oldversion < $newversion) {
         // add fixvowels setting to each name token

@@ -351,6 +351,56 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         // get total rubric points for each user, if required
         if ($usersfound && $custom->config->showrubricscores) {
+            $select = $DB->sql_concat('grf.id', "'_'", 'ag.userid');
+            $select = "$select as id, ag.userid AS $name, ".
+                      'grf.criterionid, grc.sortorder, grc.description, grc.descriptionformat, '.
+                      'grf.levelid, grl.score, grl.definition, grl.definitionformat, '.
+                      'grf.remark, grf.remarkformat';
+            $from   = '{gradingform_rubric_fillings} grf'.
+                      ' JOIN {gradingform_rubric_criteria} grc ON grc.id = grf.criterionid'.
+                      ' JOIN {gradingform_rubric_levels} grl ON grl.id = grf.levelid'.
+                      ' JOIN {grading_instances} gi ON gi.id = grf.instanceid'.
+                      ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
+            $order  = 'ag.userid, grc.sortorder';
+            list($where, $params) = $DB->get_in_or_equal($userids);
+            $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where ORDER BY $order";
+            array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
+            if ($rubriccriteria = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
+                $ids = array_keys($rubriccriteria);
+                foreach ($ids as $id) {
+                    $userid = substr($id, strpos($id, '_') + 1);
+                    if (empty($rubriccriteria[$userid])) {
+                        $rubriccriteria[$userid] = array();
+                    }
+                    $rubriccriteria[$userid][] = (object)array(
+                        'criterionid' => $rubriccriteria[$id]->criterionid,
+                        'levelid' => $rubriccriteria[$id]->levelid,
+                        'score' => $rubriccriteria[$id]->score,
+                        // feedback remark
+                        'remark' => html_to_text(format_text(
+                            $rubriccriteria[$id]->remark,
+                            $rubriccriteria[$id]->remarkformat)),
+                        // level description
+                        'definition' => html_to_text(format_text(
+                            $rubriccriteria[$id]->definition,
+                            $rubriccriteria[$id]->definitionformat)),
+                        // criteria description
+                        'description' => html_to_text(format_text(
+                            $rubriccriteria[$id]->description,
+                            $rubriccriteria[$id]->descriptionformat)),
+                    );
+                    unset($rubriccriteria[$id]);
+                }
+            }
+        } else {
+            $rubriccriteria = false;
+        }
+        if ($rubriccriteria===false) {
+            $rubriccriteria = array();
+        }
+
+        // get total rubric points for each user, if required
+        if ($usersfound && $custom->config->showrubrictotal) {
             $select = "ag.userid AS $name, ROUND(SUM(grl.score),0) AS pointstotal";
             $from   = '{gradingform_rubric_levels} grl'.
                       ' JOIN {gradingform_rubric_fillings} grf ON grl.id = grf.levelid'.
@@ -360,16 +410,16 @@ class assignfeedback_points_award_points_form extends moodleform {
             $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where";
             array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
             $group  = 'ag.userid';
-            $rubricscore = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
+            $rubrictotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
         } else {
-            $rubricscore = false;
+            $rubrictotal = false;
         }
-        if ($rubricscore===false) {
-            $rubricscore = array();
+        if ($rubrictotal===false) {
+            $rubrictotal = array();
         }
 
         // get total marking guide points for each user, if required
-        if ($usersfound && $custom->config->showguidescores) {
+        if ($usersfound && $custom->config->showguidetotal) {
             $select = "ag.userid AS $name, ROUND(SUM(ggf.score),0) AS pointstotal";
             $from   = '{gradingform_guide_fillings} ggf'.
                       ' JOIN {grading_instances} gi ON ggf.instanceid = gi.id'.
@@ -378,12 +428,12 @@ class assignfeedback_points_award_points_form extends moodleform {
             $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where";
             array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
             $group  = 'ag.userid';
-            $guidescore = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
+            $guidetotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
         } else {
-            $guidescore = false;
+            $guidetotal = false;
         }
-        if ($guidescore===false) {
-            $guidescore = array();
+        if ($guidetotal===false) {
+            $guidetotal = array();
         }
 
         // get assignment grades, if required
@@ -444,14 +494,22 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $text[] = html_writer::tag('em', $value, array('class' => 'pointstoday'));
             }
             if ($custom->gradingmethod=='rubric' && $custom->config->showrubricscores) {
-                $value = (isset($rubricscore[$userid]) ? $rubricscore[$userid] : 0);
-                $value = get_string('rubricscore', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'rubricscore'));
+                if (isset($rubriccriteria[$userid])) {
+                    foreach ($rubriccriteria[$userid] as $value) {
+                        $value = $value->description.': '.round($value->score, $gradeprecision);
+                        $text[] = html_writer::tag('em', $value, array('class' => 'rubriccriteria'));
+                    }
+                }
             }
-            if ($custom->gradingmethod=='guide' && $custom->config->showguidescores) {
-                $value = (isset($guidescore[$userid]) ? $guidescore[$userid] : 0);
-                $value = get_string('guidescore', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'guidescore'));
+            if ($custom->gradingmethod=='rubric' && $custom->config->showrubrictotal) {
+                $value = (isset($rubrictotal[$userid]) ? $rubrictotal[$userid] : 0);
+                $value = get_string('rubrictotal', $plugin, $value);
+                $text[] = html_writer::tag('em', $value, array('class' => 'rubrictotal'));
+            }
+            if ($custom->gradingmethod=='guide' && $custom->config->showguidetotal) {
+                $value = (isset($guidetotal[$userid]) ? $guidetotal[$userid] : 0);
+                $value = get_string('guidetotal', $plugin, $value);
+                $text[] = html_writer::tag('em', $value, array('class' => 'guidetotal'));
             }
             if ($custom->config->showassigngrade) {
                 $value = (isset($gradeassign[$userid]) ? $gradeassign[$userid] : 0);
@@ -463,7 +521,11 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $value = get_string('gradecourse', $plugin, round($value, $gradeprecision));
                 $text[] = html_writer::tag('em', $value, array('class' => 'gradecourse'));
             }
-            $text = implode(html_writer::empty_tag('br'), $text);
+
+            // convert the $text array to a string and append a space to prevent &nbsp;
+            // being added by "HTML_QuickForm_Renderer_Tableless->finishForm()"
+            // in "lib/pear/HTML/QuickForm/Renderer/Tableless.php" (line 267)
+            $text = implode(html_writer::empty_tag('br'), $text).' ';
 
             if ($custom->config->multipleusers) {
                 $elements[] = $mform->createElement('checkbox', $name.'['.$userid.']', $userid, $text);

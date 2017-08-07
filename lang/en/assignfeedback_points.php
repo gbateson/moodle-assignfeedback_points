@@ -67,7 +67,7 @@ $string['fixvowels_help'] = 'This setting specifies how to treat long vowels, sp
 : aa => a, ii => i, uu => u, ee => e, oo => oh, ou => o
 
 **Display long vowels using macrons**
-: Long vowels will be converted to macron letters 
+: Long vowels will be converted to macron letters
 : aa => ā, ii => ī, uu => ū, ee => ē, oo => ō, ou => ō
 
 Here are some examples of names with long vowels:
@@ -84,6 +84,7 @@ $string['fixvowelsshorten'] = 'Shorten long vowels to single letters, aiueo';
 $string['fixvowelsmacrons'] = 'Display long vowels using macrons, āīūēō';
 $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
+$string['guidetotal'] = 'Guide total: {$a}';
 $string['head'] = 'Head';
 $string['horizontal'] = 'Horizontal';
 $string['increment_help'] = 'the incremental difference, in points, between successive "Points" buttons';
@@ -242,7 +243,7 @@ $string['romanize_help'] = 'Specify whether this name field should be romanized.
 : kiyou => kyou
 : riyou => ryou, riyuu => ryuu
 : jiyou => jou, jiyuu => juu, jiyun => jun
-: shiyou => shou, shiyuu => shuu, shiyun => shun, 
+: shiyou => shou, shiyuu => shuu, shiyun => shun,
 
 **Romanize hiragana**
 : Any hiragana characters, e.g. ひらがな, will be converted to their romaji equivalents.
@@ -258,9 +259,8 @@ $string['romanizekatakanafull'] = 'Romanize full-width katakana';
 $string['romanizekatakanahalf'] = 'Romanize half-width katakana';
 $string['romanizeromaji'] = 'Standardize romaji';
 $string['rotate'] = 'Rotate';
+$string['rubrictotal'] = 'Rubric total: {$a}';
 $string['save'] = 'Save';
-$string['guidescore'] = 'Guide score: {$a}';
-$string['rubricscore'] = 'Rubric score: {$a}';
 $string['sendimmediately_help'] = 'If this setting is enabled, points will be awarded and sent to Moodle (via AJAX) as soon as the teacher clicks or taps a student\'s name or image. Otherwise, points will be sent to Moodle when the teacher clicks the "Award points" button at the bottom of this page.';
 $string['sendimmediately'] = 'Send points immediately';
 $string['separate'] = 'Separate';
@@ -285,12 +285,12 @@ $string['showfeedback_help'] = 'This setting controls whether feedback about AJA
 **Automatic**
 : Feedback about AJAX operations appears only when an AJAX operation is in progress. Otherwise, it is hidden.';
 $string['showfeedback'] = 'Show AJAX feedback';
-$string['showguidecriteria_help'] = 'If this setting is enabled, the individual scores for each Marking Guide criteria will be displayed.';
-$string['showguidecriteria'] = 'Show Marking Guide criteria';
-$string['showguideremarks_help'] = 'If this setting is enabled, the remarks for each Marking Guide criteria score will be displayed.';
+$string['showguideremarks_help'] = 'If this setting is enabled, the feeback remarks for each Marking Guide criteria score for each student will be displayed.';
 $string['showguideremarks'] = 'Show Marking Guide remarks';
-$string['showguidescores_help'] = 'If this setting is enabled, the total Marking Guide score for each student will be displayed.';
+$string['showguidescores_help'] = 'If this setting is enabled, the individual scores for each Marking Guide criteria for each student will be displayed.';
 $string['showguidescores'] = 'Show Marking Guide scores';
+$string['showguidetotal_help'] = 'If this setting is enabled, the total Marking Guide score for each student will be displayed.';
+$string['showguidetotal'] = 'Show Marking Guide total';
 $string['showlink_help'] = 'If this setting is enabled, a link that goes directly to this page for awarding points will be added on the teacher\'s main view page for this assignment.';
 $string['showlink'] = 'Show link from view page';
 $string['showpicture_help'] = 'If this setting is enabled, the students\' pictures will be shown in the list of students to whom points are awarded.';
@@ -303,12 +303,12 @@ $string['showpointstotal_help'] = 'If this setting is enabled, the total number 
 
 Usually, this setting is only required when using Simple Direct Grading method, but it may also be useful after switching from the using Simple Direct Grading to using another grading method.';
 $string['showpointstotal'] = 'Show points (total)';
-$string['showrubriccriteria_help'] = 'If this setting is enabled, the individual scores for each Rubric criteria will be displayed.';
-$string['showrubriccriteria'] = 'Show Rubric criteria';
-$string['showrubricremarks_help'] = 'If this setting is enabled, the remarks for each Rubric criteria will be displayed.';
+$string['showrubricremarks_help'] = 'If this setting is enabled, the feedback remarks for each Rubric criteria for each student will be displayed.';
 $string['showrubricremarks'] = 'Show Rubric remarks';
-$string['showrubricscores_help'] = 'If this setting is enabled, the total Rubric score for each student will be displayed.';
+$string['showrubricscores_help'] = 'If this setting is enabled, the individual scores for each Rubric criteria for each student will be displayed.';
 $string['showrubricscores'] = 'Show Rubric scores';
+$string['showrubrictotal_help'] = 'If this setting is enabled, the total Rubric score for each student will be displayed.';
+$string['showrubrictotal'] = 'Show Rubric totals';
 $string['shuffle'] = 'Shuffle';
 $string['singlespace'] = '(single white space)';
 $string['split_help'] = 'These settings are optional. They specify how to extract part of a user name field.

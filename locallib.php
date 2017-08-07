@@ -296,7 +296,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $names[] = $name;
         }
 
-        $name = 'showrubricscores';
+        $name = 'showrubrictotal';
         if ($custom==null || $custom->gradingmethod=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
@@ -304,7 +304,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $names[] = $name;
         }
 
-        $name = 'showrubriccriteria';
+        $name = 'showrubricscores';
         if ($custom==null || $custom->gradingmethod=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
@@ -320,7 +320,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $names[] = $name;
         }
 
-        $name = 'showguidescores';
+        $name = 'showguidetotal';
         if ($custom==null || $custom->gradingmethod=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
@@ -328,7 +328,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $names[] = $name;
         }
 
-        $name = 'showguidecriteria';
+        $name = 'showguidescores';
         if ($custom==null || $custom->gradingmethod=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
@@ -632,13 +632,13 @@ class assign_feedback_points extends assign_feedback_plugin {
             $showpointstoday = 0;
             $showpointstotal = 0;
 
-            $showguidecriteria = 0;
-            $showguideremarks = 0;
             $showguidescores = 0;
+            $showguideremarks = 0;
+            $showguidetotal = 0;
 
-            $showrubriccriteria = 0;
-            $showrubricremarks = 0;
             $showrubricscores = 0;
+            $showrubricremarks = 0;
+            $showrubrictotal = 0;
 
             switch ($custom->gradingmethod) {
                 case '':
@@ -646,14 +646,14 @@ class assign_feedback_points extends assign_feedback_plugin {
                     $showpointstotal = intval($custom->config->showpointstotal);
                     break;
                 case 'guide':
-                    $showguidecriteria = intval($custom->config->showguidecriteria);
-                    $showguideremarks = intval($custom->config->showguideremarks);
                     $showguidescores = intval($custom->config->showguidescores);
+                    $showguideremarks = intval($custom->config->showguideremarks);
+                    $showguidetotal = intval($custom->config->showguidetotal);
                     break;
                 case 'rubric':
-                    $showrubriccriteria = intval($custom->config->showrubriccriteria);
-                    $showrubricremarks = intval($custom->config->showrubricremarks);
                     $showrubricscores = intval($custom->config->showrubricscores);
+                    $showrubricremarks = intval($custom->config->showrubricremarks);
+                    $showrubrictotal = intval($custom->config->showrubrictotal);
                     break;
             }
 
@@ -671,13 +671,13 @@ class assign_feedback_points extends assign_feedback_plugin {
             $js .= '    PTS.showpointstoday       = '.$showpointstoday.";\n";
             $js .= '    PTS.showpointstotal       = '.$showpointstotal.";\n";
 
-            $js .= '    PTS.showrubriccriteria    = '.$showrubriccriteria.";\n";
+            $js .= '    PTS.showrubricscores    = '.$showrubricscores.";\n";
             $js .= '    PTS.showrubricremarks     = '.$showrubricremarks.";\n";
-            $js .= '    PTS.showrubricscores      = '.$showrubricscores.";\n";
+            $js .= '    PTS.showrubrictotal      = '.$showrubrictotal.";\n";
 
-            $js .= '    PTS.showguidecriteria     = '.$showguidecriteria.";\n";
+            $js .= '    PTS.showguidescores     = '.$showguidescores.";\n";
             $js .= '    PTS.showguideremarks      = '.$showguideremarks.";\n";
-            $js .= '    PTS.showguidescores       = '.$showguidescores.";\n";
+            $js .= '    PTS.showguidetotal       = '.$showguidetotal.";\n";
 
             $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
             $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
@@ -946,6 +946,8 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // feedback string
         $feedback = null;
+        $br = html_writer::empty_tag('br');
+
 
         // get multipleusers setting that was used to create incoming form data
         if ($ajax) {
@@ -973,7 +975,10 @@ class assign_feedback_points extends assign_feedback_plugin {
         // format the display names for these users
         foreach ($userlist as $id => $user) {
 
-            $defaultname = fullname($user);
+            // $defaultname will be fetched only if needed
+            $defaultname = null;
+
+            // $displayname starts as nameformat string
             $displayname = $config->nameformat;
 
             foreach ($config->nametokens as $i => $nametoken) {
@@ -987,6 +992,9 @@ class assign_feedback_points extends assign_feedback_plugin {
                 if (array_key_exists($field, $user_name_fields) && property_exists($user, $field)) {
                     $text = $user->$field;
                 } else if ($field=='default') {
+                    if ($defaultname===null) {
+                        $defaultname = fullname($user);
+                    }
                     $text = $defaultname;
                 } else {
                     continue; // shouldn't happen !!
@@ -1068,14 +1076,17 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
             }
 
+            // use plain text $displayname as $feedbackname
+            $feedbackname = strip_tags($displayname);
+
             if ($config->newlinetoken) {
                 // https://pureform.wordpress.com/2008/01/04/matching-a-word-characters-outside-of-html-tags/
                 $search = '/('.preg_quote($config->newlinetoken, '/').')+(?!([^<]+)?>)/u';
-                $displayname = preg_replace($search, html_writer::empty_tag('br'), $displayname);
+                $displayname = preg_replace($search, $br, $displayname);
             }
 
-            $userlist[$id]->defaultname = $defaultname;
             $userlist[$id]->displayname = $displayname;
+            $userlist[$id]->feedbackname = $feedbackname;
         }
 
         if ($undo) {
@@ -1108,7 +1119,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     // append "feedback" details
                     if (array_key_exists($points->awardto, $userlist)) {
                         $feedback->points = $points->points;
-                        $feedback->userlist[] = $userlist[$points->awardto]->displayname;
+                        $feedback->userlist[] = $userlist[$points->awardto]->feedbackname;
                     }
                 }
             }
@@ -1711,7 +1722,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
 
                 // append this user to "feedback" details
-                $feedback->userlist[] = $userlist[$userid]->displayname;
+                $feedback->userlist[] = $userlist[$userid]->feedbackname;
 
                 if ($pointstype==self::POINTSTYPE_SUM) { // incremental points
                     $params = array('assignid'   => $instance->id,
@@ -2413,12 +2424,12 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'showpicture'        => 0,
                      'showpointstoday'    => 1,
                      'showpointstotal'    => 1,
-                     'showrubriccriteria' => 0,
+                     'showrubricscores' => 0,
                      'showrubricremarks'  => 0,
-                     'showrubricscores'   => 1,
-                     'showguidecriteria'  => 0,
+                     'showrubrictotal'   => 1,
+                     'showguidescores'  => 0,
                      'showguideremarks'   => 0,
-                     'showguidescores'    => 1,
+                     'showguidetotal'    => 1,
                      'showassigngrade'    => 0,
                      'showcoursegrade'    => 0,
                      'showfeedback'       => 0,
