@@ -732,24 +732,13 @@ PTS.send_points_via_ajax = function(input) {
 
     if (PTS.gradingmethod=="") {
         // simple direct grading
-
         var points = $(PTS.points_container + " > " + PTS.group_element_tag + " > input[name=points]:checked").val();
         var advancedgrading = false;
 
     } else {
         // advanced grading e.g. "rubric" or "guide"
-
         var points = 0;
-        var advancedgrading = [];
-
-        // a RegExp to parse the name of an advanced grading element (radio or textarea)
-        // e.g. advancedgrading[criteria][1][levelid]
-        var regexp = new RegExp("^[a-z]+\\[([a-z]+)\\]\\[([0-9]+)\\]\\[([a-z]+)\\]$");
-        // [0] : the full element name, starting with "advancedgrading"
-        // [1] : "criteria"
-        // [2] : integer (a criteria id)
-        // [3] : RUBRIC radio: "levelid", textarea: "remark"
-        //       GUIDE  text: "score", textarea: "remark"
+        var advancedgrading = {};
 
         // select all radio and textarea elements within the rubric table
         var selector = PTS.gradingcontainer + " input[type=radio][name^=advancedgrading]:checked,"
@@ -761,21 +750,6 @@ PTS.send_points_via_ajax = function(input) {
             var type = $(this).prop("type");
             var value = $(this).val();
             advancedgrading[name] = value;
-            var m = name.match(regexp);
-            if (m) {
-                if (PTS.gradingmethod=="rubric" && type=="radio" && m[3]=="levelid") {
-                    // the selector for the SPAN element containing the score for this criteria level
-                    // e.g. <span id="advancedgrading-criteria-2-levels-7-score" ...>
-                    var selector = "#advancedgrading-" + m[1] + "-" + m[2] + "-levels-" + value + "-score";
-                    points += parseInt($(selector).html());
-                    if (isNaN(points)) {
-                        points = 0;
-                    }
-                }
-                if (PTS.gradingmethod=="guide" && type=="text" && m[3]=="score") {
-                    points += parseInt(value);
-                }
-            }
         });
     }
 
@@ -799,7 +773,7 @@ PTS.send_points_via_ajax = function(input) {
             if (uid) {
                 userid[uid] = 1;
             }
-        })
+        });
     }
 
     if (userid) {
@@ -817,6 +791,20 @@ PTS.send_points_via_ajax = function(input) {
                 data[name] = advancedgrading[name];
             }
             data.advancedgradinginstanceid = $("input[type=hidden][name=advancedgradinginstanceid]").val();
+
+            // declare as an object, {}, so that numeric key
+            // do not force the creation of all intervening keys,
+            // as this would make the array potentially huge and we
+            // may exceed the server's limit on number of form items
+            var criterialevels = {};
+            if (typeof(userid)=="string") {
+                criterialevels[userid] = PTS.get_criteria_levels(userid);
+            } else {
+                for (var uid in userid) {
+                    criterialevels[uid] = PTS.get_criteria_levels(uid);
+                }
+            }
+            data.criterialevels = criterialevels;
         }
         if (PTS.gradingmethod=="guide") {
             data.showmarkerdesc = $(PTS.gradingcontainer + " input[type=radio][name=showmarkerdesc]:checked").val();
@@ -837,16 +825,131 @@ PTS.send_points_via_ajax = function(input) {
             if (PTS.showpointstotal && PTS.gradingmethod=="") {
                 PTS.update_points_html(input, "pointstotal", points);
             }
-            if (PTS.showrubrictotal && PTS.gradingmethod=="rubric") {
-                PTS.update_points_html(input, "rubrictotal", points);
-            }
-            if (PTS.showguidetotal && PTS.gradingmethod=="guide") {
-                PTS.update_points_html(input, "guidetotal", points);
-            }
             input.parent().removeClass("checked");
             input.prop("checked", false);
         });
     }
+}
+
+/**
+ * get_criteria_levels
+ *
+ * @param integer uid
+ * @param string  type: "rubric" or "guide"
+ * @return array of scores for each criterion id
+ */
+PTS.get_criteria_levels = function(uid) {
+
+    var input = $("#id_awardto_" + uid);
+    if (input.length==0) {
+        return false; // shouldn't happen !!
+    }
+
+    // RegExp to parse the html of a criterion score's DOM element
+    // e.g. Report 1: 3/5
+    // $1 : the criterion description
+    // $2 : the current score for this criterion
+    // $3 : the maximum score for this criterion
+    var regexp = new RegExp("^(.*): ([0-9.]+)/([0-9.]+)$");
+
+    var levels = {};
+    var total = null;
+    for (var cid in PTS.criterialevelscores) {
+
+        // em       : the <em> element used to display the criteria score
+        // oldhtml  : the inner html used to display the criteria score
+        // score    : the value of the rubric criteria score
+        var em = input.parent().find("em.criterion-" + cid);
+        var oldhtml = '';
+        if (em.length) {
+            em = em.first();
+            oldhtml = em.html();
+        }
+
+        // fetch score from criteria form, if possible
+        var score = PTS.get_criteria_form_score(cid);
+
+        // set/get score in criteria score display element
+        if (oldhtml) {
+            if (score===null) {
+                score = oldhtml.replace(regexp, "$2");
+            } else {
+                var newhtml = "$1: " + score + "/$3";
+                em.html(oldhtml.replace(regexp, newhtml));
+            }
+        } else if (score===null) {
+            // score was not set in criteria form
+            // nor was it available in the display <em>
+            // so get it from PTS.usercriteriascores
+            score = PTS.get_user_criteria_score(uid, cid);
+        }
+
+        if (total===null) {
+            total = 0;
+        }
+        total += parseFloat(score);
+        levels[cid] = PTS.get_criteria_level(cid, score);
+    }
+
+    // update total score for this user
+    if (total !== null) {
+        var em = input.parent().find("em." + PTS.gradingmethod + "total");
+        if (em.length) {
+            em = em.first();
+            var oldhtml = em.html();
+            var newhtml = "$1: " + total + "/$3";
+            em.html(oldhtml.replace(regexp, newhtml));
+        }
+    }
+
+    return levels;
+}
+
+/**
+ * get_criteria_form_score
+ *
+ * @param integer cid
+ * @return integer (or null)
+ */
+PTS.get_criteria_form_score = function(cid) {
+    for (var lid in PTS.criterialevelscores[cid]) {
+        var id = "advancedgrading-criteria-" + cid
+               + "-levels-" + lid + "-definition";
+        if ($("#" + id).first().prop("checked")) {                        
+            return PTS.criterialevelscores[cid][lid];
+        }
+    }
+    return null; // no level is selected in form
+}
+
+/**
+ * get_user_criteria_score
+ *
+ * @param integer cid
+ * @return integer (or null)
+ */
+PTS.get_user_criteria_score = function(uid, cid) {
+    if (uid in PTS.usercriteriascores) {
+        if (cid in PTS.usercriteriascores[uid]) {
+            return PTS.usercriteriascores[uid][cid];
+        }
+    }
+    return 0; // shouldn't happen !!
+}
+
+/**
+ * get_criteria_form_score
+ *
+ * @param integer cid
+ * @return integer (or null)
+ */
+PTS.get_criteria_level = function(cid, score) {
+    for (var lid in PTS.criterialevelscores[cid]) {
+        if (PTS.criterialevelscores[cid][lid]==score) {
+            return lid;
+        }
+    }
+    return 0; // shouldn't happen !!
 }
 
 /**
@@ -1031,6 +1134,47 @@ PTS.set_user_size = function(elms) {
     if (userheight != $("#id_userheight").val()) {
         $("#id_userheight").val(userheight);
         PTS.update_usermap = true;
+    }
+}
+
+/**
+ * set_map_handle_size
+ *
+ * @return void
+ */
+ PTS.set_map_handle_size = function() {
+    if ("ontouchstart" in document.documentElement) {
+        $("div.ui-resizable-n").css({
+            "margin-left-width"   : "-9px",
+            "border-left-width"   :  "9px",
+            "border-right-width"  :  "9px",
+            "border-bottom-width" : "15px"
+        });
+        $("div.ui-resizable-e").css({
+            "margin-top-width"    : "-9px",
+            "border-top-width"    :  "9px",
+            "border-bottom-width" :  "9px",
+            "border-left-width"   : "15px"
+        });
+        $("div.ui-resizable-s").css({
+            "margin-left-width"   : "-9px",
+            "border-left-width"   :  "9px",
+            "border-right-width"  :  "9px",
+            "border-top-width"    : "15px"
+        });
+        $("div.ui-resizable-w").css({
+            "margin-top-width"    : "-9px",
+            "border-top-width"    :  "9px",
+            "border-bottom-width" :  "9px",
+            "border-right-width"  : "15px"
+        });
+        $("div.ui-resizable-nw, " +
+          "div.ui-resizable-ne, " +
+          "div.ui-resizable-sw, " +
+          "div.ui-resizable-se").css({
+            "height" : "15px",
+            "width"  : "15px"
+        });
     }
 }
 
@@ -1544,6 +1688,7 @@ $(document).ready(function() {
             PTS.update_usermap_via_ajax();
         }
     });
+    PTS.set_map_handle_size();
 
     // adjust CSS for input elements in layouts_container
     var input = $(PTS.layouts_container + " input[class=indent]");
@@ -1621,37 +1766,23 @@ $(document).ready(function() {
         $("#assignfeedback_points_award_points_form #fgroup_id_buttonar").css("position", "static");
     }
 
-    if ("ontouchstart" in document.documentElement) {
-        $("div.ui-resizable-n").css({
-            "margin-left-width"   : "-9px",
-            "border-left-width"   :  "9px",
-            "border-right-width"  :  "9px",
-            "border-bottom-width" : "15px"
+    // add reset button to criteria form
+    $("#advancedgrading-criteria tr.criterion").each(function(){
+        var txt = document.createTextNode(PTS.str.reset);
+        var btn = document.createElement("BUTTON");
+        btn.appendChild(txt);
+        $(btn).click(function(event){
+            var tr = $(this).closest("tr");
+            tr.find("input[type=radio]:checked").prop("checked", false);
+            tr.find("td.checked").removeClass("checked");
+            tr.find("textarea").val("");
+            event.preventDefault();
+            event.stopPropagation();
         });
-        $("div.ui-resizable-e").css({
-            "margin-top-width"    : "-9px",
-            "border-top-width"    :  "9px",
-            "border-bottom-width" :  "9px",
-            "border-left-width"   : "15px"
-        });
-        $("div.ui-resizable-s").css({
-            "margin-left-width"   : "-9px",
-            "border-left-width"   :  "9px",
-            "border-right-width"  :  "9px",
-            "border-top-width"    : "15px"
-        });
-        $("div.ui-resizable-w").css({
-            "margin-top-width"    : "-9px",
-            "border-top-width"    :  "9px",
-            "border-bottom-width" :  "9px",
-            "border-right-width"  : "15px"
-        });
-        $("div.ui-resizable-nw, " +
-          "div.ui-resizable-ne, " +
-          "div.ui-resizable-sw, " +
-          "div.ui-resizable-se").css({
-            "height" : "15px",
-            "width"  : "15px"
-        });
-    }
+        $(btn).addClass("criteria-reset-button");
+        var td = document.createElement("TD");
+        $(td).addClass("criteria-reset-cell");
+        td.appendChild(btn);
+        this.appendChild(td);
+    });
 });

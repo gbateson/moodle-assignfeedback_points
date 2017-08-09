@@ -233,7 +233,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                        'maxpoints',
                        'increment',
                        'pointsperrow');
-        if ($custom && $custom->gradingmethod) {
+        if ($custom && $custom->grading->method) {
 
             // Advanced Grading (in awardpoints_form)
             array_push($names, 'pointstype',
@@ -280,7 +280,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $gradingmethod = 'advancedgradingmethod_submissions';
 
         $name = 'showpointstoday';
-        if ($custom==null || $custom->gradingmethod=='') {
+        if ($custom==null || $custom->grading->method=='') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', '');
             $mform->disabledIf($name, 'pointstype', 'ne', self::POINTSTYPE_SUM);
@@ -289,7 +289,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showpointstotal';
-        if ($custom==null || $custom->gradingmethod=='') {
+        if ($custom==null || $custom->grading->method=='') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', '');
         } else {
@@ -297,7 +297,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showrubrictotal';
-        if ($custom==null || $custom->gradingmethod=='rubric') {
+        if ($custom==null || $custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
@@ -305,7 +305,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showrubricscores';
-        if ($custom==null || $custom->gradingmethod=='rubric') {
+        if ($custom==null || $custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
@@ -313,7 +313,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showrubricremarks';
-        if ($custom==null || $custom->gradingmethod=='rubric') {
+        if ($custom==null || $custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
@@ -321,7 +321,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showguidetotal';
-        if ($custom==null || $custom->gradingmethod=='guide') {
+        if ($custom==null || $custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
@@ -329,7 +329,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showguidescores';
-        if ($custom==null || $custom->gradingmethod=='guide') {
+        if ($custom==null || $custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
@@ -337,7 +337,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showguideremarks';
-        if ($custom==null || $custom->gradingmethod=='guide') {
+        if ($custom==null || $custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
@@ -587,6 +587,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $js .= '    PTS.moodletheme           = "'.self::js_safe($CFG->theme).'";'."\n";
 
         $js .= '    PTS.str = {};'."\n";
+        $js .= '    PTS.str.reset            = "'.self::js_safe(get_string('reset')).'";'."\n";
         $js .= '    PTS.str.showless         = "'.self::js_safe(get_string('showless', 'form')).'";'."\n";
         $js .= '    PTS.str.showmore         = "'.self::js_safe(get_string('showmore', 'form')).'";'."\n";
         $js .= '    PTS.str.newlineempty     = "'.self::js_safe(get_string('newlineempty', $plugin)).'";'."\n";
@@ -640,24 +641,46 @@ class assign_feedback_points extends assign_feedback_plugin {
             $showrubricremarks = 0;
             $showrubrictotal = 0;
 
-            switch ($custom->gradingmethod) {
+            $usercriteriascores = array();
+            $criterialevelscores = array();
+            switch ($custom->grading->method) {
+
                 case '':
                     $showpointstoday = intval($custom->config->showpointstoday);
                     $showpointstotal = intval($custom->config->showpointstotal);
                     break;
+
                 case 'guide':
                     $showguidescores = intval($custom->config->showguidescores);
                     $showguideremarks = intval($custom->config->showguideremarks);
                     $showguidetotal = intval($custom->config->showguidetotal);
+                    foreach ($custom->grading->definition->guide_criteria as $criterionid => $criterion) {
+                        $scores = array();
+                        foreach ($criterion['levels'] as $levelid => $level) {
+                            $scores[] = $levelid.':'.$level['score'];
+                        }
+                        $criterialevelscores[] = $criterionid.':{'.implode(',', $scores).'}';
+                    }
                     break;
+
                 case 'rubric':
                     $showrubricscores = intval($custom->config->showrubricscores);
                     $showrubricremarks = intval($custom->config->showrubricremarks);
                     $showrubrictotal = intval($custom->config->showrubrictotal);
+                    foreach ($custom->grading->definition->rubric_criteria as $criterionid => $criterion) {
+                        $scores = array();
+                        foreach ($criterion['levels'] as $levelid => $level) {
+                            $scores[] = $levelid.':'.$level['score'];
+                        }
+                        $criterialevelscores[] = $criterionid.':{'.implode(',', $scores).'}';
+                    }
                     break;
             }
 
-            $js .= '    PTS.gradingmethod         = "'.$custom->gradingmethod.'";'."\n";
+            $usercriteriascores = '{'.implode(',', $usercriteriascores).'}';
+            $criterialevelscores = '{'.implode(',', $criterialevelscores).'}';
+
+            $js .= '    PTS.gradingmethod         = "'.$custom->grading->method.'";'."\n";
             $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
 
             $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
@@ -671,13 +694,16 @@ class assign_feedback_points extends assign_feedback_plugin {
             $js .= '    PTS.showpointstoday       = '.$showpointstoday.";\n";
             $js .= '    PTS.showpointstotal       = '.$showpointstotal.";\n";
 
-            $js .= '    PTS.showrubricscores    = '.$showrubricscores.";\n";
+            $js .= '    PTS.showrubricscores      = '.$showrubricscores.";\n";
             $js .= '    PTS.showrubricremarks     = '.$showrubricremarks.";\n";
-            $js .= '    PTS.showrubrictotal      = '.$showrubrictotal.";\n";
+            $js .= '    PTS.showrubrictotal       = '.$showrubrictotal.";\n";
 
-            $js .= '    PTS.showguidescores     = '.$showguidescores.";\n";
+            $js .= '    PTS.showguidescores       = '.$showguidescores.";\n";
             $js .= '    PTS.showguideremarks      = '.$showguideremarks.";\n";
-            $js .= '    PTS.showguidetotal       = '.$showguidetotal.";\n";
+            $js .= '    PTS.showguidetotal        = '.$showguidetotal.";\n";
+
+            $js .= '    PTS.usercriteriascores    = '.$usercriteriascores.";\n";
+            $js .= '    PTS.criterialevelscores   = '.$criterialevelscores.";\n";
 
             $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
             $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
@@ -780,27 +806,32 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return void
      */
     public function save_setting_allowmissing($data, $name, $default, $allowmissing) {
-        $isset = isset($data->$name);
-        if ($isset || $allowmissing) {
+        $value = null;
+
+        if (isset($data->$name)) {
             $class = get_class();
-            $value = $default;
-            if ($isset) {
-                $method = 'get_'.$name.'_options';
-                if (method_exists($class, $method)) {
-                    $options = call_user_func(array($class, $method));
-                    if (array_key_exists($data->$name, $options)) {
-                        $value = $data->$name;
-                    }
-                } else {
+            $method = 'get_'.$name.'_options';
+            if (method_exists($class, $method)) {
+                $options = call_user_func(array($class, $method));
+                if (array_key_exists($data->$name, $options)) {
                     $value = $data->$name;
                 }
+            } else {
+                $value = $data->$name;
             }
-            if (is_array($value)) {
-                $value = base64_encode(serialize($value));
+        }
+        if ($value===null) {
+            if ($allowmissing) {
+                $value = $default;
+            } else {
+                $value = (is_numeric($default) ? 0 : '');
             }
-            if (isset($value)) {
-                $this->set_config($name, $value);
-            }
+        }
+        if (is_array($value)) {
+            $value = base64_encode(serialize($value));
+        }
+        if (isset($value)) {
+            $this->set_config($name, $value);
         }
     }
 
@@ -895,8 +926,8 @@ class assign_feedback_points extends assign_feedback_plugin {
         $PAGE->set_url(new moodle_url('/mod/assign/view.php', $params));
 
         // process incoming formdata, and fetch output settings
-        // $multipleusers, $groupid, $map, $feedback, $userlist
-        list($multipleusers, $groupid, $map, $feedback, $userlist) = $this->process_formdata();
+        // $multipleusers, $groupid, $map, $feedback, $userlist, $grading
+        list($multipleusers, $groupid, $map, $feedback, $userlist, $grading) = $this->process_formdata();
 
         $custom = (object)array(
             'cm'         => $cm,
@@ -912,7 +943,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             'assignid'   => $instance->id,
             'config'     => $this->get_all_config($plugin),
             'awardto'    => $userlist,
-            'feedback'   => $feedback
+            'feedback'   => $feedback,
+            'grading'    => $grading
         );
         $mform = new assignfeedback_points_award_points_form(null, $custom);
 
@@ -933,6 +965,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         global $DB, $USER;
 
         $plugin   = 'assignfeedback_points';
+        $context  = $this->assignment->get_context();
         $instance = $this->assignment->get_instance();
         $cm       = $this->assignment->get_course_module();
 
@@ -940,13 +973,13 @@ class assign_feedback_points extends assign_feedback_plugin {
         $undo = optional_param('undo', 0, PARAM_INT);
 
         $config = $this->get_all_config($plugin);
+        $grading = self::get_grading_instance($context);
 
         // cache the current time
         $time = time();
 
         // feedback string
         $feedback = null;
-        $br = html_writer::empty_tag('br');
 
 
         // get multipleusers setting that was used to create incoming form data
@@ -968,9 +1001,135 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // get userlist for original $groupid
         $userlist = $this->assignment->list_participants($groupid, false);
+        $this->format_userlist_names($userlist, $config);
+
+        if ($undo) {
+            $feedback = $this->process_undo($userlist, $instance);
+        }
+
+        // process incoming POST $data, if any
+        if ($data = data_submitted()) {
+
+            if ($ajax || $undo) {
+                // don't save settings
+            } else {
+                $this->save_settings_allowmissing($data, false);
+            }
+
+            // get/update user map
+            $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id, true);
+            $mapid = $map->id;
+
+            // get (x, y) coordinates
+            $x = self::optional_param_array('awardtox', array(), PARAM_INT);
+            $y = self::optional_param_array('awardtoy', array(), PARAM_INT);
+
+            // register incoming points in assignfeedback_points table
+            $this->process_layouts($userlist, $instance, $plugin, $x, $y, $map, $mapid, $ajax);
+
+            // initialize "feedback" details
+            $feedback = (object)array('points'     => optional_param('points', 0, PARAM_INT),
+                                      'stringname' => '',
+                                      'usercount'  => 0,
+                                      'userlist'   => array());
+
+            // setup undo, if required
+            if ($undo==0) {
+                // initialize parameters for "undo" link
+                $undoparams = array('undo'          => 1,
+                                    'id'            => $cm->id,
+                                    'plugin'        => 'points',
+                                    'pluginsubtype' => 'assignfeedback',
+                                    'action'        => 'viewpluginpage',
+                                    'pluginaction'  => 'awardpoints',
+                                    'sesskey'       => sesskey(),
+                                    'group'         => $groupid,
+                                    'groupid'       => $groupid,
+                                    'mapid'         => $mapid,
+                                    'pointsid'      => array(),
+                                    'multipleusers' => $multipleusers,
+                                    'commenttext'   => get_string('undo', $plugin));
+            }
+
+            // award the points to selected users
+            $this->process_awardto($userlist, $instance, $time, $undo, $undoparams, $feedback, $grading);
+
+            if ($feedback->usercount = count($feedback->userlist)) {
+                $feedback->userlist = implode(', ', $feedback->userlist);
+                switch (true) {
+                    case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'awardonepointoneuser'; break;
+                    case ($feedback->points==1 && $feedback->usercount<>1): $feedback->stringname = 'awardonepointmanyusers'; break;
+                    case ($feedback->points<>1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
+                    case ($feedback->points<>1 && $feedback->usercount<>1): $feedback->stringname = 'awardmanypointsmanyusers'; break;
+                    default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
+                }
+                $feedback = get_string($feedback->stringname, $plugin, $feedback);
+                if ($undo==0 && count($undoparams['pointsid'])) {
+                    if (count($undoparams['pointsid'])==1) {
+                        $undoparams['pointsid'] = reset($undoparams['pointsid']);
+                    } else {
+                        foreach ($undoparams['pointsid'] as $i => $id) {
+                            $undoparams['pointsid['.$i.']'] = $id;
+                        }
+                        unset($undoparams['pointsid']);
+                    }
+                    $link = new moodle_url('/mod/assign/view.php', $undoparams);
+                    $link = html_writer::link($link, get_string('undo', $plugin), array('id' => 'undolink'));
+                    $feedback .= " $link";
+                }
+            } else {
+                $feedback = '';
+            }
+
+            // get latest groupid (it may have changed)
+            $groupid = groups_get_activity_group($cm, true);
+            if ($groupid===false) {
+                $groupid = 0;
+            }
+
+            if ($groupid != $map->groupid) {
+                $userlist = $this->assignment->list_participants($groupid, false);
+                $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
+                // it is necessary to adjust $_POST so that old map
+                // coordinates are not used for new user maps in
+                // _process_submission() in "lib/formslib.php"
+                unset($_POST['awardtox']);
+                unset($_POST['awardtoy']);
+                unset($_POST['groupid']);
+                unset($_POST['mapid']);
+                unset($_POST['mapwidth']);
+                unset($_POST['mapheight']);
+                unset($_POST['userwidth']);
+                unset($_POST['userheight']);
+                unset($_POST['mapprivacy']);
+            }
+        } else {
+            $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
+        }
+
+        if ($feedback===null) {
+            $feedback = '';
+        } else {
+            $feedback = html_writer::tag('span', $feedback, array('id' => 'feedback'));
+        }
+
+        return array($multipleusers, $groupid, $map, $feedback, $userlist, $grading);
+    }
+
+    /**
+     * format_userlist_names
+     *
+     * @param array  $userlist (passed by reference)
+     * @param object $config
+     * @return void, but may update $userlist
+     */
+    protected function format_userlist_names(&$userlist, $config) {
+
+        // cache the <br /> tag
+        $br = html_writer::empty_tag('br');
 
         // valid name fields in user object
-        $user_name_fields = self::get_all_user_name_fields();
+        $namefields = self::get_all_user_name_fields();
 
         // format the display names for these users
         foreach ($userlist as $id => $user) {
@@ -989,7 +1148,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
                 $field = $nametoken->field;
 
-                if (array_key_exists($field, $user_name_fields) && property_exists($user, $field)) {
+                if (array_key_exists($field, $namefields) && property_exists($user, $field)) {
                     $text = $user->$field;
                 } else if ($field=='default') {
                     if ($defaultname===null) {
@@ -1089,275 +1248,427 @@ class assign_feedback_points extends assign_feedback_plugin {
             $userlist[$id]->feedbackname = $feedbackname;
         }
 
-        if ($undo) {
+        return $userlist;
+    }
 
-            // get ids from incoming data
-            $name = 'pointsid';
-            $ids = self::optional_param_array($name, 0, PARAM_INT);
-            if (is_scalar($ids)) {
-                $ids = array($ids);
-            }
-            $ids = array_filter($ids);
+    /**
+     * process_undo
+     *
+     * @param  array  $userlist (passed by reference)
+     * @return string $feedback, if any
+     */
+    protected function process_undo(&$userlist, $instance) {
+        global $DB, $USER;
 
-            // initialize "feedback" details
-            $feedback = (object)array('points'     => 0,
-                                      'stringname' => '',
-                                      'usercount'  => 0,
-                                      'userlist'   => array());
+        // get ids from incoming data
+        $name = 'pointsid';
+        $ids = self::optional_param_array($name, 0, PARAM_INT);
+        if (is_scalar($ids)) {
+            $ids = array($ids);
+        }
+        $ids = array_filter($ids);
 
-            // undo the points
-            foreach($ids as $id) {
-                $params = array('id' => $id, 'assignid' => $instance->id);
-                if ($points = $DB->get_record('assignfeedback_points', $params)) {
+        // initialize "feedback" details
+        $feedback = (object)array('points'     => 0,
+                                  'stringname' => '',
+                                  'usercount'  => 0,
+                                  'userlist'   => array());
 
-                    // cancel these $points
-                    $points->cancelby = $USER->id;
-                    $points->timemodified = $time;
-                    $points->timecancelled = $time;
-                    $DB->update_record('assignfeedback_points', $points);
+        // undo the points
+        foreach($ids as $id) {
+            $params = array('id' => $id, 'assignid' => $instance->id);
+            if ($points = $DB->get_record('assignfeedback_points', $params)) {
 
-                    // append "feedback" details
-                    if (array_key_exists($points->awardto, $userlist)) {
-                        $feedback->points = $points->points;
-                        $feedback->userlist[] = $userlist[$points->awardto]->feedbackname;
-                    }
+                // cancel these $points
+                $points->cancelby = $USER->id;
+                $points->timemodified = $time;
+                $points->timecancelled = $time;
+                $DB->update_record('assignfeedback_points', $points);
+
+                // append "feedback" details
+                if (array_key_exists($points->awardto, $userlist)) {
+                    $feedback->points = $points->points;
+                    $feedback->userlist[] = $userlist[$points->awardto]->feedbackname;
                 }
-            }
-
-            // set up feedback
-            if ($feedback->usercount = count($feedback->userlist)) {
-                $feedback->userlist = implode(', ', $feedback->userlist);
-                switch (true) {
-                    case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'undoonepointoneuser'; break;
-                    case ($feedback->points==1 && $feedback->usercount<>1): $feedback->stringname = 'undoonepointmanyusers'; break;
-                    case ($feedback->points<>1 && $feedback->usercount==1): $feedback->stringname = 'undomanypointsoneuser'; break;
-                    case ($feedback->points<>1 && $feedback->usercount<>1): $feedback->stringname = 'undomanypointsmanyusers'; break;
-                    default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
-                }
-                $feedback = get_string($feedback->stringname, $plugin, $feedback);
-            } else {
-                $feedback = null;
             }
         }
 
-        // process incoming POST $data, if any
-        if ($data = data_submitted()) {
-
-            if ($ajax || $undo) {
-                // don't save settings
-            } else {
-                $this->save_settings_allowmissing($data, true);
+        // set up feedback
+        if ($feedback->usercount = count($feedback->userlist)) {
+            $feedback->userlist = implode(', ', $feedback->userlist);
+            switch (true) {
+                case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'undoonepointoneuser'; break;
+                case ($feedback->points==1 && $feedback->usercount<>1): $feedback->stringname = 'undoonepointmanyusers'; break;
+                case ($feedback->points<>1 && $feedback->usercount==1): $feedback->stringname = 'undomanypointsoneuser'; break;
+                case ($feedback->points<>1 && $feedback->usercount<>1): $feedback->stringname = 'undomanypointsmanyusers'; break;
+                default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
             }
+            $feedback = get_string($feedback->stringname, $plugin, $feedback);
+        } else {
+            $feedback = null;
+        }
 
-            // get/update user map
-            $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id, true);
-            $mapid = $map->id;
+        return $feedback;
+    }
 
-            // get (x, y) coordinates
-            $x = self::optional_param_array('awardtox', array(), PARAM_INT);
-            $y = self::optional_param_array('awardtoy', array(), PARAM_INT);
+    /**
+     * process_layouts
+     *
+     * @param  array   $userlist
+     * @param  object  $instance assign(ment) record from DB
+     * @param  string  $plugin
+     * @param  array   $x
+     * @param  array   $y
+     * @param  object  $map
+     * @param  integer $mapid
+     * @param  integer $ajax
+     * @return void
+     */
+    protected function process_layouts(&$userlist, $instance, $plugin, $x, $y, $map, $mapid, $ajax) {
+        global $DB, $USER;
 
-            // register incoming points in assignfeedback_points table
-            $mapaction     = optional_param('mapaction',       '', PARAM_ALPHA);
-            $points        = optional_param('points',           0,   PARAM_INT);
-            $commenttext   = optional_param('commenttextmenu', '',  PARAM_TEXT);
-            $commentformat = optional_param('commentformat',    0,   PARAM_INT);
+        // set up layouts, if required
+        $update_form_values = false;
+        $update_dimensions  = false;
+        $update_coordinates = false;
 
-            // if commenttext was not selected from the drop down menu
-            // try to get it from the text input element
-            if ($commenttext=='') {
-                $commenttext = optional_param('commenttext',   '', PARAM_TEXT);
-            }
+        $name = 'layouts';
+        switch (optional_param($name, '', PARAM_ALPHA)) {
 
-            // set up layouts, if required
-            $name = 'layouts';
-            $update_form_values = false;
-            $update_dimensions  = false;
-            $update_coordinates = false;
-            switch (optional_param($name, '', PARAM_ALPHA)) {
+            case 'load':
+                $this->update_coordinates($plugin, $map, $x, $y);
+                $table = $plugin.'_maps';
+                if ($loadid = optional_param($name.'loadid', 0, PARAM_INT)) {
+                    if ($loadid==$mapid) {
+                        // do nothing - this is the current map
+                    } else {
+                        $params = array('id' => $loadid, 'assignid' => $instance->id, 'userid' => $USER->id);
+                        if ($DB->record_exists($table, $params)) {
+                            $map = $DB->get_record($table, $params);
+                            $mapid = $map->id;
+                            $update_form_values = true;
+                        }
+                    }
+                }
+                break;
 
-                case 'load':
-                    $this->update_coordinates($plugin, $map, $x, $y);
-                    $table = $plugin.'_maps';
-                    if ($loadid = optional_param($name.'loadid', 0, PARAM_INT)) {
-                        if ($loadid==$mapid) {
-                            // do nothing - this is the current map
+            case 'setup':
+                $update_form_values = true;
+                $update_dimensions  = true;
+
+                $mapwidth = 0;
+                $mapheight = 0;
+                $userwidth = $map->userwidth;
+                $userheight = $map->userheight;
+
+                $user_container_padding = 8;
+
+                $table = $plugin.'_coords';
+                if ($coords = $DB->get_records($table, array('mapid' => $mapid))) {
+
+                    // remove any $coords for users that are
+                    // no longer in the group using this map
+                    $userids = array();
+                    foreach ($coords as $coord) {
+                        $userid = $coord->userid;
+                        if (array_key_exists($userid, $userlist)) {
+                            $userids[$userid] = true; // keep this $userid
                         } else {
-                            $params = array('id' => $loadid, 'assignid' => $instance->id, 'userid' => $USER->id);
-                            if ($DB->record_exists($table, $params)) {
-                                $map = $DB->get_record($table, $params);
-                                $mapid = $map->id;
-                                $update_form_values = true;
-                            }
+                            $DB->delete_records($table, array('id' => $coord->id));
+                            unset($coords[$coord->id]);
                         }
                     }
-                    break;
 
-                case 'setup':
-                    $update_form_values = true;
-                    $update_dimensions  = true;
-
-                    $mapwidth = 0;
-                    $mapheight = 0;
-                    $userwidth = $map->userwidth;
-                    $userheight = $map->userheight;
-
-                    $user_container_padding = 8;
-
-                    $table = $plugin.'_coords';
-                    if ($coords = $DB->get_records($table, array('mapid' => $mapid))) {
-
-                        // remove any $coords for users that are
-                        // no longer in the group using this map
-                        $userids = array();
-                        foreach ($coords as $coord) {
-                            $userid = $coord->userid;
-                            if (array_key_exists($userid, $userlist)) {
-                                $userids[$userid] = true; // keep this $userid
-                            } else {
-                                $DB->delete_records($table, array('id' => $coord->id));
-                                unset($coords[$coord->id]);
-                            }
-                        }
-
-                        // add any users that are missing from $coords
-                        $userids = array_diff_key($userlist, $userids);
-                        foreach (array_keys($userids) as $userid) {
-                            $coord = (object)array(
-                                'mapid' => $map->id,
-                                'userid' => $userid,
-                                'x' => 0,
-                                'y' => 0
-                            );
-                            $coord->id = $DB->insert_record($table, $coords);
-                            $coords[$coord->id] = $coord;
-                        }
-
-                        // tidy up
-                        unset($userids, $userid);
+                    // add any users that are missing from $coords
+                    $userids = array_diff_key($userlist, $userids);
+                    foreach (array_keys($userids) as $userid) {
+                        $coord = (object)array(
+                            'mapid' => $map->id,
+                            'userid' => $userid,
+                            'x' => 0,
+                            'y' => 0
+                        );
+                        $coord->id = $DB->insert_record($table, $coords);
+                        $coords[$coord->id] = $coord;
                     }
 
-                    if ($count = count($coords)) {
+                    // tidy up
+                    unset($userids, $userid);
+                }
 
-                        switch (optional_param($name.'setup', '', PARAM_ALPHA)) {
+                if ($count = count($coords)) {
 
-                            case 'square':
+                    switch (optional_param($name.'setup', '', PARAM_ALPHA)) {
 
-                                switch (optional_param($name.'square', '', PARAM_ALPHANUM)) {
-                                    case '100'    : $percent = 100; break;
-                                    case  '75'    : $percent =  75; break;
-                                    case  '50'    : $percent =  50; break;
-                                    case  '25'    : $percent =  25; break;
-                                    case 'percent': $percent = optional_param($name.'squarepercent', '', PARAM_INT); break;
-                                    default       : $percent = 0;
+                        case 'square':
+
+                            switch (optional_param($name.'square', '', PARAM_ALPHANUM)) {
+                                case '100'    : $percent = 100; break;
+                                case  '75'    : $percent =  75; break;
+                                case  '50'    : $percent =  50; break;
+                                case  '25'    : $percent =  25; break;
+                                case 'percent': $percent = optional_param($name.'squarepercent', '', PARAM_INT); break;
+                                default       : $percent = 0;
+                            }
+
+                            // sanity check on $percent value
+                            $percent = min(100, max(1, $percent));
+
+                            // the number of users in a full square
+                            $fullcount = ceil($count * (100 / $percent));
+
+                            // set number of sides, $i_max
+                            switch (true) {
+                                case ($percent > 75): $i_max = 4; break;
+                                case ($percent > 25): $i_max = 3; break;
+                                case ($percent >  0): $i_max = 1; break;
+                                default: $i_max = 0; // shouldn't happen !!
+                            }
+
+                            // calculate how many students on each side of the square
+                            //     [0] : top side    (the most number of students)
+                            //     [1] : left side   (a similar number to right side)
+                            //     [2] : right side  (a similar number to left side)
+                            //     [3] : bottom side (the remaining number of students)
+                            $i = 0;
+                            $counts = array();
+                            for ($i=0; $i<$i_max; $i++) {
+                                if ($i==0) {
+                                    $counts[$i] = min($count, floor($fullcount / $i_max));
+                                } else {
+                                    $counts[$i] = ceil($count / ($i_max - $i));
                                 }
+                                $count -= $counts[$i];
+                            }
 
-                                // sanity check on $percent value
-                                $percent = min(100, max(1, $percent));
+                            // switch sides so students can be seated sequentially
+                            //     [0] : left side   (a similar number to right side)
+                            //     [1] : top side    (the most number of students)
+                            //     [2] : right side  (a similar number to left side)
+                            //     [3] : bottom side (the remaining number of students)
+                            if ($i_max==1) {
+                                $counts[1] = 0;
+                            }
+                            $i = $counts[1];
+                            $counts[1] = $counts[0];
+                            $counts[0] = $i;
 
-                                // the number of users in a full square
-                                $fullcount = ceil($count * (100 / $percent));
-
-                                // set number of sides, $i_max
-                                switch (true) {
-                                    case ($percent > 75): $i_max = 4; break;
-                                    case ($percent > 25): $i_max = 3; break;
-                                    case ($percent >  0): $i_max = 1; break;
-                                    default: $i_max = 0; // shouldn't happen !!
+                            // adjust the coordinates for each student
+                            for ($i=0; $i<$i_max; $i++) {
+                                $usercount = $counts[$i];
+                                if ($i==0) {
+                                    $x = 0;
+                                    $y = $usercount * $userheight;
+                                    $mapwidth = $x;
+                                    $mapheight = $y;
                                 }
-
-                                // calculate how many students on each side of the square
-                                //     [0] : top side    (the most number of students)
-                                //     [1] : left side   (a similar number to right side)
-                                //     [2] : right side  (a similar number to left side)
-                                //     [3] : bottom side (the remaining number of students)
-                                $i = 0;
-                                $counts = array();
-                                for ($i=0; $i<$i_max; $i++) {
-                                    if ($i==0) {
-                                        $counts[$i] = min($count, floor($fullcount / $i_max));
-                                    } else {
-                                        $counts[$i] = ceil($count / ($i_max - $i));
-                                    }
-                                    $count -= $counts[$i];
+                                if ($i==2) {
+                                    $x -= $userwidth;
+                                    $y += $userheight;
                                 }
-
-                                // switch sides so students can be seated sequentially
-                                //     [0] : left side   (a similar number to right side)
-                                //     [1] : top side    (the most number of students)
-                                //     [2] : right side  (a similar number to left side)
-                                //     [3] : bottom side (the remaining number of students)
-                                if ($i_max==1) {
-                                    $counts[1] = 0;
-                                }
-                                $i = $counts[1];
-                                $counts[1] = $counts[0];
-                                $counts[0] = $i;
-
-                                // adjust the coordinates for each student
-                                for ($i=0; $i<$i_max; $i++) {
-                                    $usercount = $counts[$i];
-                                    if ($i==0) {
-                                        $x = 0;
-                                        $y = $usercount * $userheight;
-                                        $mapwidth = $x;
-                                        $mapheight = $y;
-                                    }
-                                    if ($i==2) {
-                                        $x -= $userwidth;
-                                        $y += $userheight;
-                                    }
-                                    for ($u=0; $u<$usercount; $u++) {
-                                        if ($coord = array_shift($coords)) {
-                                            $coord->x = $x;
-                                            $coord->y = $y;
-                                            $DB->update_record($table, $coord);
-                                            $mapwidth = max($mapwidth, $x + $userwidth + $user_container_padding);
-                                            $mapheight = max($mapheight, $y + $userheight + $user_container_padding);
-                                            switch ($i) {
-                                                case 0: $y -= $userheight; break;
-                                                case 1: $x += $userwidth;  break;
-                                                case 2: $y += $userheight; break;
-                                                case 3: $x -= $userwidth;  break;
-                                            }
+                                for ($u=0; $u<$usercount; $u++) {
+                                    if ($coord = array_shift($coords)) {
+                                        $coord->x = $x;
+                                        $coord->y = $y;
+                                        $DB->update_record($table, $coord);
+                                        $mapwidth = max($mapwidth, $x + $userwidth + $user_container_padding);
+                                        $mapheight = max($mapheight, $y + $userheight + $user_container_padding);
+                                        switch ($i) {
+                                            case 0: $y -= $userheight; break;
+                                            case 1: $x += $userwidth;  break;
+                                            case 2: $y += $userheight; break;
+                                            case 3: $x -= $userwidth;  break;
                                         }
                                     }
                                 }
-                                break;
+                            }
+                            break;
 
-                            case 'circle':
-                                switch (optional_param($name.'circle', '', PARAM_ALPHANUM)) {
-                                    case '100'    : $percent = 100; break;
-                                    case  '75'    : $percent =  75; break;
-                                    case  '50'    : $percent =  50; break;
-                                    case  '25'    : $percent =  25; break;
-                                    case 'percent': $percent = optional_param($name.'circlepercent', '', PARAM_INT); break;
-                                    default       : $percent = 0;
+                        case 'circle':
+                            switch (optional_param($name.'circle', '', PARAM_ALPHANUM)) {
+                                case '100'    : $percent = 100; break;
+                                case  '75'    : $percent =  75; break;
+                                case  '50'    : $percent =  50; break;
+                                case  '25'    : $percent =  25; break;
+                                case 'percent': $percent = optional_param($name.'circlepercent', '', PARAM_INT); break;
+                                default       : $percent = 0;
+                            }
+
+                            // sanity check on $percent value
+                            $percent = min(100, max(1, $percent));
+
+                            // the number of users in a full circle
+                            $usercount = ceil($count * (100 / $percent));
+
+                            // calculate radius, $r, of a circle big enough to hold all users
+                            // later we add $r to all calculated (x, y) coordinates
+                            // Note: PHP prefers radians to degrees (360° = 2π radians)
+                            $radians_per_user = deg2rad(360 / $usercount);
+                            $r = sqrt(pow($userwidth, 2) + pow($userheight, 2)) / (2 * sin($radians_per_user / 2));
+
+                            // if there is an odd number of users
+                            // we want to rotate by a quarter turn (=90°)
+                            $offset = (($usercount % 2) ? deg2rad(90) : 0);
+
+                            for ($u=0; $u<$usercount; $u++) {
+                                if ($u < (($usercount - $count) / 2)) {
+                                    continue;
                                 }
+                                if ($coord = array_shift($coords)) {
+                                    $x = round($r * (1 + cos(($u * $radians_per_user) + $offset)));
+                                    $y = round($r * (1 + sin(($u * $radians_per_user) + $offset)));
+                                    $coord->x = $x;
+                                    $coord->y = $y;
+                                    $DB->update_record($table, $coord);
+                                    $mapwidth = max($mapwidth, $x + $userwidth + $user_container_padding);
+                                    $mapheight = max($mapheight, $y + $userheight + $user_container_padding);
+                                    $update = true;
+                                }
+                            }
+                            break;;
 
-                                // sanity check on $percent value
-                                $percent = min(100, max(1, $percent));
+                        case 'lines':
+                            $type     = optional_param($name.'linestype',    0, PARAM_INT);
+                            $numtype  = optional_param($name.'linesnumtype', 0, PARAM_INT);
+                            $numvalue = optional_param($name.'linesnumvalue', 0, PARAM_INT);
 
-                                // the number of users in a full circle
-                                $usercount = ceil($count * (100 / $percent));
+                            if ($numvalue==0) {
+                                switch ($type) {
+                                    case 0: $numvalue = $custom->mapwidth / $custom->userwidth; break; // horizontal
+                                    case 1: $numvalue = $custom->mapheight / $custom->userheight; break; // vertical
+                                }
+                            }
 
-                                // calculate radius, $r, of a circle big enough to hold all users
-                                // later we add $r to all calculated (x, y) coordinates
-                                // Note: PHP prefers radians to degrees (360° = 2π radians)
-                                $radians_per_user = deg2rad(360 / $usercount);
-                                $r = sqrt(pow($userwidth, 2) + pow($userheight, 2)) / (2 * sin($radians_per_user / 2));
+                            // $line_max : number of lines
+                            // $user_max : number of cols
+                            switch ($numtype) {
+                                case 0: // number of lines
+                                        $user_max = ceil($count / $numvalue);
+                                        $line_max = $numvalue;
+                                        break;
+                                case 1: // users per line
+                                        $user_max = $numvalue;
+                                        $line_max = ceil($count / $numvalue);
+                                        break;
+                            }
 
-                                // if there is an odd number of users
-                                // we want to rotate by a quarter turn (=90°)
-                                $offset = (($usercount % 2) ? deg2rad(90) : 0);
+                            $update = true;
 
-                                for ($u=0; $u<$usercount; $u++) {
-                                    if ($u < (($usercount - $count) / 2)) {
-                                        continue;
-                                    }
+                            $padding = 24;
+                            $mapwidth = 0;
+                            $mapheight = 0;
+                            $userwidth = $map->userwidth;
+                            $userheight = $map->userheight;
+
+                            for ($line=0; $line<$line_max; $line++) {
+                                switch ($type) {
+                                    case 0: $x = 0;
+                                            $y = ($userheight + $padding) * ($line_max - $line - 1);
+                                            break;
+                                    case 1: $x = ($userwidth + $padding) * $line;
+                                            $y = $userheight * ($user_max - 1);
+                                            break;
+                                }
+                                for ($user=0; $user<$user_max; $user++) {
                                     if ($coord = array_shift($coords)) {
+                                        $coord->x = $x;
+                                        $coord->y = $y;
+                                        $DB->update_record($table, $coord);
+                                        $mapwidth = max($mapwidth, $x + $userwidth + $user_container_padding);
+                                        $mapheight = max($mapheight, $y + $userheight + $user_container_padding);
+                                        switch ($type) {
+                                            case 0: $x += $userwidth;  break;
+                                            case 1: $y -= $userheight; break;
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+
+                        case 'islands':
+                            $type     = optional_param($name.'islandstype',     0, PARAM_INT);
+                            $numtype  = optional_param($name.'islandsnumtype',  0, PARAM_INT);
+                            $numvalue = optional_param($name.'islandsnumvalue', 0, PARAM_INT);
+
+                            // $island_max : number of islands
+                            // $user_max   : number of users per island
+                            switch ($numtype) {
+                                case 0: // number of islands
+                                        $user_max = ceil($count / $numvalue);
+                                        $island_max = $numvalue;
+                                        break;
+                                case 1: // users per island
+                                        $user_max = $numvalue;
+                                        $island_max = ceil($count / $numvalue);
+                                        break;
+                            }
+
+                            $update = true;
+
+                            $padding = 24;
+                            $mapwidth = 0;
+                            $mapheight = 0;
+                            $userwidth = $map->userwidth;
+                            $userheight = $map->userheight;
+
+                            if ($type==0) {
+                                // calculate radius, $r, of a circle big enough to hold all users
+                                $radians_per_user = deg2rad(360 / $user_max);
+                                $r = sqrt(pow($userwidth, 2) + pow($userheight, 2)) / (2 * sin($radians_per_user / 2));
+                                $offset = 0;
+                                $offset += deg2rad(270) + ($radians_per_user / 2);
+                                //$offset -= ($radians_per_user * ($count % $user_max) / 2);
+                            }
+
+                            $p = array();
+                            for ($u=0; $u<$user_max; $u++) {
+                                switch ($type) {
+                                    case 0: // circle
                                         $x = round($r * (1 + cos(($u * $radians_per_user) + $offset)));
                                         $y = round($r * (1 + sin(($u * $radians_per_user) + $offset)));
+                                        break;
+                                    case 1: // square
+                                        $x = (($u % 2)==0 ? 0 : $userwidth);
+                                        $y = (intval($u / 2) * $userheight);
+                                        break;
+                                    default:
+                                        continue; // shouldn't happen !!
+                                }
+                                $p[] = (object)array('x' => $x, 'y' => $y);
+                            }
+
+                            // compact the coordinates
+                            while ($this->compact_coords('x', $userwidth, $p) ||
+                                   $this->compact_coords('y', $userheight, $p));
+
+                            // set island width/height
+                            $islandwidth = 0;
+                            $islandheight =  0;
+                            $islandpadding = 24;
+                            for ($u=0; $u<$user_max; $u++) {
+                                $islandwidth = max($islandwidth, $p[$u]->x + $userwidth);
+                                $islandheight = max($islandheight, $p[$u]->y + $userheight);
+                            }
+
+                            $x_start = 0;
+                            $y_start = 0;
+                            for ($i=0; $i<$island_max; $i++) {
+                                if ($x_start > ($map->mapwidth - $islandwidth)) {
+                                    $x_start = 0;
+                                    $y_start += ($islandheight + $islandpadding);
+                                }
+                                if ($type==0 && ($i+1)==$island_max) {
+                                    $segment = (($count % $user_max) / 2);
+                                } else {
+                                    $segment = 0;
+                                }
+                                for ($u=0; $u<$user_max; $u++) {
+                                    if ($segment && (($u+1) > $segment) && (($u+1) <= ($user_max - $segment))) {
+                                        continue;
+                                    }
+                                    $x = $x_start + $p[$u]->x;
+                                    $y = $y_start + $p[$u]->y;
+                                    if ($coord = array_shift($coords)) {
                                         $coord->x = $x;
                                         $coord->y = $y;
                                         $DB->update_record($table, $coord);
@@ -1366,440 +1677,260 @@ class assign_feedback_points extends assign_feedback_plugin {
                                         $update = true;
                                     }
                                 }
-                                break;;
-
-                            case 'lines':
-                                $type     = optional_param($name.'linestype',    0, PARAM_INT);
-                                $numtype  = optional_param($name.'linesnumtype', 0, PARAM_INT);
-                                $numvalue = optional_param($name.'linesnumvalue', 0, PARAM_INT);
-
-                                if ($numvalue==0) {
-                                    switch ($type) {
-                                        case 0: $numvalue = $custom->mapwidth / $custom->userwidth; break; // horizontal
-                                        case 1: $numvalue = $custom->mapheight / $custom->userheight; break; // vertical
-                                    }
-                                }
-
-                                // $line_max : number of lines
-                                // $user_max : number of cols
-                                switch ($numtype) {
-                                    case 0: // number of lines
-                                            $user_max = ceil($count / $numvalue);
-                                            $line_max = $numvalue;
-                                            break;
-                                    case 1: // users per line
-                                            $user_max = $numvalue;
-                                            $line_max = ceil($count / $numvalue);
-                                            break;
-                                }
-
-                                $update = true;
-
-                                $padding = 24;
-                                $mapwidth = 0;
-                                $mapheight = 0;
-                                $userwidth = $map->userwidth;
-                                $userheight = $map->userheight;
-
-                                for ($line=0; $line<$line_max; $line++) {
-                                    switch ($type) {
-                                        case 0: $x = 0;
-                                                $y = ($userheight + $padding) * ($line_max - $line - 1);
-                                                break;
-                                        case 1: $x = ($userwidth + $padding) * $line;
-                                                $y = $userheight * ($user_max - 1);
-                                                break;
-                                    }
-                                    for ($user=0; $user<$user_max; $user++) {
-                                        if ($coord = array_shift($coords)) {
-                                            $coord->x = $x;
-                                            $coord->y = $y;
-                                            $DB->update_record($table, $coord);
-                                            $mapwidth = max($mapwidth, $x + $userwidth + $user_container_padding);
-                                            $mapheight = max($mapheight, $y + $userheight + $user_container_padding);
-                                            switch ($type) {
-                                                case 0: $x += $userwidth;  break;
-                                                case 1: $y -= $userheight; break;
-                                            }
-                                        }
-                                    }
-                                }
-                                break;
-
-                            case 'islands':
-                                $type     = optional_param($name.'islandstype',     0, PARAM_INT);
-                                $numtype  = optional_param($name.'islandsnumtype',  0, PARAM_INT);
-                                $numvalue = optional_param($name.'islandsnumvalue', 0, PARAM_INT);
-
-                                // $island_max : number of islands
-                                // $user_max   : number of users per island
-                                switch ($numtype) {
-                                    case 0: // number of islands
-                                            $user_max = ceil($count / $numvalue);
-                                            $island_max = $numvalue;
-                                            break;
-                                    case 1: // users per island
-                                            $user_max = $numvalue;
-                                            $island_max = ceil($count / $numvalue);
-                                            break;
-                                }
-
-                                $update = true;
-
-                                $padding = 24;
-                                $mapwidth = 0;
-                                $mapheight = 0;
-                                $userwidth = $map->userwidth;
-                                $userheight = $map->userheight;
-
-                                if ($type==0) {
-                                    // calculate radius, $r, of a circle big enough to hold all users
-                                    $radians_per_user = deg2rad(360 / $user_max);
-                                    $r = sqrt(pow($userwidth, 2) + pow($userheight, 2)) / (2 * sin($radians_per_user / 2));
-                                    $offset = 0;
-                                    $offset += deg2rad(270) + ($radians_per_user / 2);
-                                    //$offset -= ($radians_per_user * ($count % $user_max) / 2);
-                                }
-
-                                $p = array();
-                                for ($u=0; $u<$user_max; $u++) {
-                                    switch ($type) {
-                                        case 0: // circle
-                                            $x = round($r * (1 + cos(($u * $radians_per_user) + $offset)));
-                                            $y = round($r * (1 + sin(($u * $radians_per_user) + $offset)));
-                                            break;
-                                        case 1: // square
-                                            $x = (($u % 2)==0 ? 0 : $userwidth);
-                                            $y = (intval($u / 2) * $userheight);
-                                            break;
-                                        default:
-                                            continue; // shouldn't happen !!
-                                    }
-                                    $p[] = (object)array('x' => $x, 'y' => $y);
-                                }
-
-                                // compact the coordinates
-                                while ($this->compact_coords('x', $userwidth, $p) ||
-                                       $this->compact_coords('y', $userheight, $p));
-
-                                // set island width/height
-                                $islandwidth = 0;
-                                $islandheight =  0;
-                                $islandpadding = 24;
-                                for ($u=0; $u<$user_max; $u++) {
-                                    $islandwidth = max($islandwidth, $p[$u]->x + $userwidth);
-                                    $islandheight = max($islandheight, $p[$u]->y + $userheight);
-                                }
-
-                                $x_start = 0;
-                                $y_start = 0;
-                                for ($i=0; $i<$island_max; $i++) {
-                                    if ($x_start > ($map->mapwidth - $islandwidth)) {
-                                        $x_start = 0;
-                                        $y_start += ($islandheight + $islandpadding);
-                                    }
-                                    if ($type==0 && ($i+1)==$island_max) {
-                                        $segment = (($count % $user_max) / 2);
-                                    } else {
-                                        $segment = 0;
-                                    }
-                                    for ($u=0; $u<$user_max; $u++) {
-                                        if ($segment && (($u+1) > $segment) && (($u+1) <= ($user_max - $segment))) {
-                                            continue;
-                                        }
-                                        $x = $x_start + $p[$u]->x;
-                                        $y = $y_start + $p[$u]->y;
-                                        if ($coord = array_shift($coords)) {
-                                            $coord->x = $x;
-                                            $coord->y = $y;
-                                            $DB->update_record($table, $coord);
-                                            $mapwidth = max($mapwidth, $x + $userwidth + $user_container_padding);
-                                            $mapheight = max($mapheight, $y + $userheight + $user_container_padding);
-                                            $update = true;
-                                        }
-                                    }
-                                    $x_start += ($islandwidth + $islandpadding);
-                                }
-                                break;
-                        }
-                    }
-                    break;
-
-                case 'save' :
-                    $table = $plugin.'_maps';
-                    if ($name = optional_param($name.'savename', '', PARAM_TEXT)) {
-                        if ($name==$map->name) {
-                            $name = ''; // same name as current map
-                        }
-                    }
-                    if ($name) {
-                        $i = 1;
-                        while ($DB->record_exists($table, array('assignid' => $instance->id, 'userid' => $USER->id, 'name' => $name))) {
-                            $i++;
-                            if ($i==2) {
-                                $name = "$name ($i)";
-                            } else {
-                                $name = preg_replace('/\([0-9]+\)$/', "($i)", $name);
+                                $x_start += ($islandwidth + $islandpadding);
                             }
-                        }
-                        unset($map->id);
-                        $map->name = $name;
-                        $map->id = $DB->insert_record($table, $map);
-                        $mapid = $map->id;
-                        $update_form_values = true;
-                        $update_dimensions  = true;
-                        $update_coordinates = true;
+                            break;
                     }
-                    break;
+                }
+                break;
 
-                case 'delete':
-                    $table = $plugin.'_maps';
-                    if ($deleteid = optional_param($name.'deleteid', 0, PARAM_INT)) {
-                        $params = array('id' => $deleteid, 'assignid' => $instance->id, 'userid' => $USER->id);
-                        if ($DB->record_exists($table, $params)) {
-                            $DB->delete_records($table, $params);
-                            $DB->delete_records($plugin.'_coords', array('mapid' => $id));
-                            // if current map was deleted, get a new current map
-                            if ($deleteid==$mapid) {
-                                $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
-                                $mapid = $map->id;
-                                $update_form_values = true;
-                            }
+            case 'save' :
+                $table = $plugin.'_maps';
+                if ($name = optional_param($name.'savename', '', PARAM_TEXT)) {
+                    if ($name==$map->name) {
+                        $name = ''; // same name as current map
+                    }
+                }
+                if ($name) {
+                    $i = 1;
+                    while ($DB->record_exists($table, array('assignid' => $instance->id, 'userid' => $USER->id, 'name' => $name))) {
+                        $i++;
+                        if ($i==2) {
+                            $name = "$name ($i)";
+                        } else {
+                            $name = preg_replace('/\([0-9]+\)$/', "($i)", $name);
                         }
                     }
-                    break;
-
-                default:
-                    if ($ajax) {
-                        $update_coordinates = true;
-                    }
-
-            } // end switch "layouts"
-
-            // prevent calculated values being
-            // overwritten by values from browser
-            if ($update_form_values) {
-                $_POST['mapid'] = $mapid;
-                unset($_POST['awardtox']);
-                unset($_POST['awardtoy']);
-                unset($_POST['mapwidth']);
-                unset($_POST['mapheight']);
-            }
-            if ($update_coordinates) {
-                $this->update_coordinates($plugin, $map, $x, $y);
-            }
-            if ($update_dimensions) {
-                $this->update_dimensions($plugin, $map, $mapwidth, $mapheight);
-            }
-
-            // remove all layout settings because
-            // we do not want them in the outgoing form
-            $names = preg_grep('/^layout/', array_keys($_POST));
-            foreach ($names as $name) {
-            //    unset($_POST[$name]);
-            }
-
-            // initialize "feedback" details
-            $feedback = (object)array('points'     => $points,
-                                      'stringname' => '',
-                                      'usercount'  => 0,
-                                      'userlist'   => array());
-
-            // setup undo, if required
-            if ($undo==0) {
-
-                // set undo comment text
-                $undo_commenttext = get_string('undo', $plugin);
-                if ($commenttext) {
-                    $undo_commenttext .= ": $commenttext";
+                    unset($map->id);
+                    $map->name = $name;
+                    $map->id = $DB->insert_record($table, $map);
+                    $mapid = $map->id;
+                    $update_form_values = true;
+                    $update_dimensions  = true;
+                    $update_coordinates = true;
                 }
+                break;
 
-                // initialize parameters for "undo" link
-                $undoparams = array('undo'          => 1,
-                                    'id'            => $cm->id,
-                                    'plugin'        => 'points',
-                                    'pluginsubtype' => 'assignfeedback',
-                                    'action'        => 'viewpluginpage',
-                                    'pluginaction'  => 'awardpoints',
-                                    'sesskey'       => sesskey(),
-                                    'group'         => $groupid,
-                                    'groupid'       => $groupid,
-                                    'mapid'         => $mapid,
-                                    'pointsid'      => array(),
-                                    'multipleusers' => $multipleusers,
-                                    'commenttext'   => $undo_commenttext);
-            }
-
-            // do we want to send notifications to students ?
-            $name = 'sendnotifications';
-            $sendnotifications = $this->get_config($name);
-
-            if ($sendnotifications===false) {
-                $name = 'sendstudentnotifications';
-                if (isset($instance->$name)) {
-                    $sendnotifications = $instance->$name;
-                } else {
-                    $sendnotifications = get_config('assign', $name);
-                }
-            }
-
-            // disable notifications during development
-            $sendnotifications = 0;
-
-            $name = 'pointstype';
-            $pointstype = $this->get_config($name);
-
-            // get advanced grading data, if any
-            $gradingdata = new stdClass();
-            $context = $this->assignment->get_context();
-            $gradingmanager = get_grading_manager($context, 'mod_assign', 'submissions');
-            if ($gradingmethod = $gradingmanager->get_active_method()) {
-                $name = 'advancedgradinginstanceid';
-                $gradingdata->$name = optional_param($name, 0, PARAM_INT);
-                $name = 'advancedgrading';
-                $gradingdata->$name = self::optional_param_array($name, array(), PARAM_TEXT);
-                if ($gradingmethod=='guide') {
-                    $name = 'showmarkerdesc';
-                    $gradingdata->$name = optional_param($name, true, PARAM_BOOL);
-                    $name = 'showstudentdesc';
-                    $gradingdata->$name = optional_param($name, true, PARAM_BOOL);
-                }
-                $pointstype = 1; // total points
-            }
-
-            $name = 'awardto';
-            $userids = self::optional_param_array($name, array(), PARAM_INT);
-            if (is_scalar($userids)) {
-                $userids = array($userids => 1);
-            }
-
-            // add points for each user
-            foreach ($userids as $userid => $checked) {
-
-                if ($checked==0) {
-                    continue; // shouldn't happen !!
-                }
-
-                // get associated assign_grades record id
-                $params = array('assignment' => $instance->id,
-                                'userid'     => $userid);
-                if ($gradeassign = $DB->get_records('assign_grades', $params, 'attemptnumber DESC')) {
-                    $gradeassign = reset($gradeassign); // most recent assignment grade
-                } else {
-                    $gradeassign = (object)array(
-                        'assignment'    => $instance->id,
-                        'userid'        => $userid,
-                        'timecreated'   => $time,
-                        'timemodified'  => $time,
-                        'grader'        => $USER->id,
-                        'grade'         => 0.00,
-                        'attemptnumber' => 0
-                    );
-                    $gradeassign->id = $DB->insert_record('assign_grades', $gradeassign);
-                }
-
-                // add new assignfeedback_points record
-                $assignfeedbackpoints = (object)array(
-                    'assignid'      => $instance->id,
-                    'gradeid'       => $gradeassign->id,
-                    'awardby'       => $USER->id,
-                    'awardto'       => $userid,
-                    'points'        => $points,
-                    'pointstype'    => $pointstype,
-                    'latitude'      => 0,
-                    'longitude'     => 0,
-                    'commenttext'   => $commenttext,
-                    'commentformat' => $commentformat,
-                    'timecreated'   => $time,
-                    'timeawarded'   => $time,
-                    'timemodified'  => $time
-                );
-                $assignfeedbackpoints->id = $DB->insert_record('assignfeedback_points', $assignfeedbackpoints);
-
-                // append this pointsid to the "undo" parameters
-                if ($undo==0) {
-                    $undoparams['pointsid'][] = $assignfeedbackpoints->id;
-                }
-
-                // append this user to "feedback" details
-                $feedback->userlist[] = $userlist[$userid]->feedbackname;
-
-                if ($pointstype==self::POINTSTYPE_SUM) { // incremental points
-                    $params = array('assignid'   => $instance->id,
-                                    'awardto'    => $userid,
-                                    'pointstype' => $pointstype);
-                    $grade = $DB->get_field('assignfeedback_points', 'SUM(points)', $params);
-                    if (empty($grade)) {
-                        $grade = 0.0;
-                    }
-                } else {
-                    $grade = $points;
-                }
-
-                $gradedata = $this->get_grade_data($gradeassign, $grade, $sendnotifications, $gradingdata);
-                $this->assignment->save_grade($userid, $gradedata);
-            }
-
-            if ($feedback->usercount = count($feedback->userlist)) {
-                $feedback->userlist = implode(', ', $feedback->userlist);
-                switch (true) {
-                    case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'awardonepointoneuser'; break;
-                    case ($feedback->points==1 && $feedback->usercount<>1): $feedback->stringname = 'awardonepointmanyusers'; break;
-                    case ($feedback->points<>1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
-                    case ($feedback->points<>1 && $feedback->usercount<>1): $feedback->stringname = 'awardmanypointsmanyusers'; break;
-                    default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
-                }
-                $feedback = get_string($feedback->stringname, $plugin, $feedback);
-                if ($undo==0 && count($undoparams['pointsid'])) {
-                    if (count($undoparams['pointsid'])==1) {
-                        $undoparams['pointsid'] = reset($undoparams['pointsid']);
-                    } else {
-                        foreach ($undoparams['pointsid'] as $i => $id) {
-                            $undoparams['pointsid['.$i.']'] = $id;
+            case 'delete':
+                $table = $plugin.'_maps';
+                if ($deleteid = optional_param($name.'deleteid', 0, PARAM_INT)) {
+                    $params = array('id' => $deleteid, 'assignid' => $instance->id, 'userid' => $USER->id);
+                    if ($DB->record_exists($table, $params)) {
+                        $DB->delete_records($table, $params);
+                        $DB->delete_records($plugin.'_coords', array('mapid' => $id));
+                        // if current map was deleted, get a new current map
+                        if ($deleteid==$mapid) {
+                            $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
+                            $mapid = $map->id;
+                            $update_form_values = true;
                         }
-                        unset($undoparams['pointsid']);
                     }
-                    $link = new moodle_url('/mod/assign/view.php', $undoparams);
-                    $link = html_writer::link($link, get_string('undo', $plugin), array('id' => 'undolink'));
-                    $feedback .= " $link";
                 }
+                break;
+
+            default:
+                if ($ajax) {
+                    $update_coordinates = true;
+                }
+
+        } // end switch "layouts"
+
+        // prevent calculated values being
+        // overwritten by values from browser
+        if ($update_form_values) {
+            $_POST['mapid'] = $mapid;
+            unset($_POST['awardtox']);
+            unset($_POST['awardtoy']);
+            unset($_POST['mapwidth']);
+            unset($_POST['mapheight']);
+        }
+        if ($update_coordinates) {
+            $this->update_coordinates($plugin, $map, $x, $y);
+        }
+        if ($update_dimensions) {
+            $this->update_dimensions($plugin, $map, $mapwidth, $mapheight);
+        }
+
+        // remove all layout settings because
+        // we do not want them in the outgoing form
+        $names = preg_grep('/^layout/', array_keys($_POST));
+        foreach ($names as $name) {
+        //    unset($_POST[$name]);
+        }
+    }
+
+    /**
+     * process_awardto
+     *
+     * @param  array   $userlist (passed by reference)
+     * @param  object  $instance assign(ment) record from DB
+     * @param  integer $time
+     * @param  integer $undo
+     * @param  array   $undoparams
+     * @param  object  $feedback
+     * @param  array   $grading
+     * @return void, but may update undoparams and $feedback
+     */
+    protected function process_awardto(&$userlist, $instance, $time, $undo, &$undoparams, &$feedback, &$grading) {
+        global $DB, $USER;
+
+        // do we want to send notifications to students ?
+        $name = 'sendnotifications';
+        $sendnotifications = $this->get_config($name);
+
+        if ($sendnotifications===false) {
+            $name = 'sendstudentnotifications';
+            if (isset($instance->$name)) {
+                $sendnotifications = $instance->$name;
             } else {
-                $feedback = '';
+                $sendnotifications = get_config('assign', $name);
             }
-
-            // get latest groupid (it may have changed)
-            $groupid = groups_get_activity_group($cm, true);
-            if ($groupid===false) {
-                $groupid = 0;
-            }
-
-            if ($groupid != $map->groupid) {
-                $userlist = $this->assignment->list_participants($groupid, false);
-                $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
-                // it is necessary to adjust $_POST so that old map
-                // coordinates are not used for new user maps in
-                // _process_submission() in "lib/formslib.php"
-                unset($_POST['awardtox']);
-                unset($_POST['awardtoy']);
-                unset($_POST['groupid']);
-                unset($_POST['mapid']);
-                unset($_POST['mapwidth']);
-                unset($_POST['mapheight']);
-                unset($_POST['userwidth']);
-                unset($_POST['userheight']);
-                unset($_POST['mapprivacy']);
-            }
-        } else {
-            $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
         }
 
-        if ($feedback===null) {
-            $feedback = '';
-        } else {
-            $feedback = html_writer::tag('span', $feedback, array('id' => 'feedback'));
+        // disable notifications during development
+        $sendnotifications = 0;
+
+        $name = 'awardto';
+        $userids = self::optional_param_array($name, array(), PARAM_INT);
+        if (is_scalar($userids)) {
+            $userids = array($userids => 1);
         }
 
-        return array($multipleusers, $groupid, $map, $feedback, $userlist);
+        // prepare incomgin parameters
+        switch ($grading->method) {
+
+            case '': // Simple grading: Points
+
+                // the incoming points are available in the $feedback objet
+                $points = $feedback->points;
+
+                $name = 'pointstype';
+                $pointstype = $this->get_config($name);
+
+                $commenttext   = optional_param('commenttextmenu', '',  PARAM_TEXT);
+                $commentformat = optional_param('commentformat',    0,   PARAM_INT);
+
+                // if commenttext was not selected from the drop down menu
+                // try to get it from the text input element
+                if ($commenttext=='') {
+                    $commenttext = optional_param('commenttext',   '', PARAM_TEXT);
+                }
+
+                // append to $undparams comment, if necessary
+                if ($undo==0 && $commenttext) {
+                    $undoparams['commenttext'] .= ": $commenttext";
+                }
+                break;
+
+            case 'rubric': // Advanced grading: Rubric
+
+                // get details of criteria entered for each user
+                $name = 'criterialevels';
+                $criterialevels = self::optional_param_array($name, array(), PARAM_INT);
+
+                // shortcut to criteria details
+                $criteria =& $grading->definition->rubric_criteria;
+                break;
+
+            case 'guide':
+                break;
+        }
+
+        // add points for each user
+        foreach ($userids as $userid => $checked) {
+
+            if ($checked==0) {
+                continue; // shouldn't happen !!
+            }
+
+            // get associated assign_grades record id
+            $params = array('assignment' => $instance->id,
+                            'userid'     => $userid);
+            if ($gradeassign = $DB->get_records('assign_grades', $params, 'attemptnumber DESC')) {
+                $gradeassign = reset($gradeassign); // most recent assignment grade
+            } else {
+                $gradeassign = (object)array(
+                    'assignment'    => $instance->id,
+                    'userid'        => $userid,
+                    'timecreated'   => $time,
+                    'timemodified'  => $time,
+                    'grader'        => $USER->id,
+                    'grade'         => 0.00,
+                    'attemptnumber' => 0
+                );
+                $gradeassign->id = $DB->insert_record('assign_grades', $gradeassign);
+            }
+
+            switch ($grading->method) {
+                case '': // Simple grading: Points
+
+                    // add new assignfeedback_points record
+                    $assignfeedbackpoints = (object)array(
+                        'assignid'      => $instance->id,
+                        'gradeid'       => $gradeassign->id,
+                        'awardby'       => $USER->id,
+                        'awardto'       => $userid,
+                        'points'        => $points,
+                        'pointstype'    => $pointstype,
+                        'latitude'      => 0,
+                        'longitude'     => 0,
+                        'commenttext'   => $commenttext,
+                        'commentformat' => $commentformat,
+                        'timecreated'   => $time,
+                        'timeawarded'   => $time,
+                        'timemodified'  => $time
+                    );
+                    $assignfeedbackpoints->id = $DB->insert_record('assignfeedback_points', $assignfeedbackpoints);
+
+                    // append this pointsid to the "undo" parameters
+                    if ($undo==0) {
+                        $undoparams['pointsid'][] = $assignfeedbackpoints->id;
+                    }
+
+                    if ($pointstype==self::POINTSTYPE_SUM) { // incremental points
+                        $params = array('assignid'   => $instance->id,
+                                        'awardto'    => $userid,
+                                        'pointstype' => $pointstype);
+                        $grade = $DB->get_field('assignfeedback_points', 'SUM(points)', $params);
+                        if (empty($grade)) {
+                            $grade = 0.0;
+                        }
+                    } else {
+                        $grade = $points;
+                    }
+
+                    $gradingdata = $grading->data;
+                    break;
+
+                case 'rubric': // Advanced grading: Rubric
+                    $grade = 0;
+                    $name = 'advancedgrading';
+                    $gradingdata = (object)array(
+                        $name => array('criteria' => array()),
+                        $name.'instanceid' => $grading->instance->get_id()
+                    );
+                    $levels =& $gradingdata->$name;
+                    if (array_key_exists($userid, $criterialevels)) {
+                        foreach ($criterialevels[$userid] as $criterionid => $levelid) {
+                            $levels['criteria'][$criterionid] = array('levelid' => $levelid);
+                            $grade += $criteria[$criterionid]['levels'][$levelid]['score'];
+                        }
+                    }
+                    unset($levels);
+                    break;
+
+                case 'guide': // Advanced grading: Marking guide
+                    break;
+            }
+
+            unset($criteria);
+
+            // append this user to "feedback" details
+            $feedback->userlist[] = $userlist[$userid]->feedbackname;
+
+            $gradedata = $this->get_grade_data($gradeassign, $grade, $sendnotifications, $gradingdata);
+            $this->assignment->save_grade($userid, $gradedata);
+        }
     }
 
     /**
@@ -1808,7 +1939,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param  object  $gradeassign
      * @param  decimal $grade
      * @param  boolean $sendnotifications
-     * @param  object  $gradingdata required by "rubric" and "guide" grading methods
+     * @param  object  grading $data required by "rubric" and "guide" grading methods
      * @return object
      */
     protected function get_grade_data($gradeassign, $grade, $sendnotifications, $gradingdata) {
@@ -2424,12 +2555,12 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'showpicture'        => 0,
                      'showpointstoday'    => 1,
                      'showpointstotal'    => 1,
-                     'showrubricscores' => 0,
+                     'showrubricscores'   => 0,
                      'showrubricremarks'  => 0,
-                     'showrubrictotal'   => 1,
-                     'showguidescores'  => 0,
+                     'showrubrictotal'    => 1,
+                     'showguidescores'    => 0,
                      'showguideremarks'   => 0,
-                     'showguidetotal'    => 1,
+                     'showguidetotal'     => 1,
                      'showassigngrade'    => 0,
                      'showcoursegrade'    => 0,
                      'showfeedback'       => 0,
@@ -2702,6 +2833,114 @@ class assign_feedback_points extends assign_feedback_plugin {
         foreach ($scripts as $script) {
             $PAGE->requires->js($script);
         }
+    }
+
+    /**
+     * get_grading_instance
+     *
+     * @param object  $mform
+     */
+    static public function get_grading_instance($context, $component='mod_assign', $area='submissions', $name='advancedgrading') {
+        global $USER;
+        $grading = (object)array(
+            'manager'    => null,
+            'method'     => '',
+            'controller' => null,
+            'instance'   => null,
+            'definition' => null,
+            'data'       => null
+        );
+        $grading->manager = get_grading_manager($context, $component, $area);
+        $grading->method = $grading->manager->get_active_method();
+        if ($grading->method) {
+            $grading->controller = $grading->manager->get_controller($grading->method);
+            if ($grading->controller->is_form_available()) {
+                $instanceid = optional_param($name.'instanceid', 0, PARAM_INT);
+                $grading->instance = $grading->controller->get_or_create_instance($instanceid, $USER->id, null);
+            }
+
+            $grading->data = new stdClass();
+            $grading->data->$name = self::optional_param_array($name, array(), PARAM_TEXT);
+
+            $param = $name.'instanceid';
+            $grading->data->$param = optional_param($param, 0, PARAM_INT);
+
+            if ($grading->method=='guide') {
+                $param = 'showmarkerdesc';
+                $grading->data->$param = optional_param($param, true, PARAM_BOOL);
+                $param = 'showstudentdesc';
+                $grading->data->$param = optional_param($param, true, PARAM_BOOL);
+            }
+
+            $grading->definition = $grading->controller->get_definition();
+
+            $name = 'description';
+            $text = self::format_text($grading->definition, $name);
+            $grading->definition->{$name.'text'} = $text;
+
+            $grading->definition->totalscore = 0;
+
+            $criteria =& $grading->definition->rubric_criteria;
+            foreach ($criteria as $criterionid => $criterion) {
+
+                $name = 'description';
+                $text = self::format_text($criterion, $name);
+                $criteria[$criterionid][$name.'text'] = $text;
+
+                $minscore = null;
+                $maxscore = null;
+
+                $levels =& $criteria[$criterionid]['levels'];
+                foreach ($levels as $levelid => $level) {
+
+                    $name = 'definition';
+                    $text = self::format_text($level, $name);
+                    $levels[$levelid][$name.'text'] = $text;
+
+                    if ($minscore===null || $minscore > $level['score']) {
+                        $minscore = $level['score'];
+                    }
+                    if ($maxscore===null || $maxscore < $level['score']) {
+                        $maxscore = $level['score'];
+                    }
+                }
+                unset($levels);
+
+                $criteria[$criterionid]['minscore'] = ($minscore===null ? 0 : $minscore);
+                $criteria[$criterionid]['maxscore'] = ($maxscore===null ? 0 : $maxscore);
+                $grading->definition->totalscore += $criteria[$criterionid]['maxscore'];
+            }
+            unset($criteria);
+        }
+        return $grading;
+    }
+
+    /**
+     * get_all_user_name_fields
+     *
+     * return an array of user field names
+     * suitable for use in a Moodle form
+     *
+     * @return array of field names
+     */
+    static public function format_text($values, $name, $defaultvalue=null, $defaultformat=0) {
+        if (is_object($values) && property_exists($values, $name)) {
+            $value = $values->$name;
+            $format = $values->{$name.'format'};
+        } else if (is_array($values) && array_key_exists($name, $values)) {
+            $value = $values[$name];
+            $format = $values[$name.'format'];
+        } else {
+            $value = $defaultvalue;
+            $format = $defaultformat;
+        }
+        if ($value===null || $value==='') {
+            return '';
+        }
+        if (is_numeric($value)) {
+            return $value;
+        }
+        return html_to_text(format_text($value, $format));
     }
 
     /**

@@ -61,7 +61,7 @@ if (! $assign->can_grade()) {
 $points = new assign_feedback_points($assign, 'points');
 
 // process incoming formdata
-list($multipleusers, $groupid, $map, $feedback, $userlist) = $points->process_formdata();
+list($multipleusers, $groupid, $map, $feedback, $userlist, $grading) = $points->process_formdata();
 
 // send feedback, if any
 echo $feedback;

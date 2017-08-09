@@ -54,8 +54,7 @@ class assignfeedback_points_award_points_form extends moodleform {
             $mform->disable_form_change_checker();
         }
 
-        $gradingmanager = get_grading_manager($custom->context, 'mod_assign', 'submissions');
-        if ($custom->gradingmethod = $gradingmanager->get_active_method()) {
+        if ($custom->grading->method) {
             // if we are using advanced grading,
             // we must use "total points"
             // and disable "points awarded today"
@@ -81,13 +80,13 @@ class assignfeedback_points_award_points_form extends moodleform {
         $this->add_field_mapaction($mform, $custom, $plugin);
         $this->add_field_mapmode($mform, $custom, $plugin);
         $this->add_field_awardto($mform, $custom, $plugin);
-        if ($custom->gradingmethod=="") {
+        if ($custom->grading->method=='') {
             // simple direct grading
             $this->add_field_points($mform, $custom, $plugin);
             $this->add_field_commenttext($mform, $custom, $plugin);
         } else {
             // an advanced grading method e.g. "rubric" or "guide"
-            $this->add_field_advancedgrading($mform, $custom, $plugin, $gradingmanager);
+            $this->add_field_advancedgrading($mform, $custom, $plugin);
         }
 
         // ========================
@@ -310,7 +309,7 @@ class assignfeedback_points_award_points_form extends moodleform {
             $pointstoday = array();
         }
 
-        // get total points today, if required
+        // get total points for each user, if required
         if ($usersfound && $custom->config->showpointstotal) {
             $select = "p.$name";
             $from   = '{assignfeedback_points} p';
@@ -353,50 +352,35 @@ class assignfeedback_points_award_points_form extends moodleform {
         if ($usersfound && $custom->config->showrubricscores) {
             $select = $DB->sql_concat('grf.id', "'_'", 'ag.userid');
             $select = "$select as id, ag.userid AS $name, ".
-                      'grf.criterionid, grc.sortorder, grc.description, grc.descriptionformat, '.
-                      'grf.levelid, grl.score, grl.definition, grl.definitionformat, '.
-                      'grf.remark, grf.remarkformat';
+                      'grf.criterionid, grf.levelid, grf.remark, grf.remarkformat';
             $from   = '{gradingform_rubric_fillings} grf'.
-                      ' JOIN {gradingform_rubric_criteria} grc ON grc.id = grf.criterionid'.
-                      ' JOIN {gradingform_rubric_levels} grl ON grl.id = grf.levelid'.
                       ' JOIN {grading_instances} gi ON gi.id = grf.instanceid'.
                       ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
-            $order  = 'ag.userid, grc.sortorder';
+            $order  = 'ag.userid';
             list($where, $params) = $DB->get_in_or_equal($userids);
             $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where ORDER BY $order";
             array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
-            if ($rubriccriteria = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
-                $ids = array_keys($rubriccriteria);
-                foreach ($ids as $id) {
+            if ($rubricscores = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
+                foreach (array_keys($rubricscores) as $id) {
                     $userid = substr($id, strpos($id, '_') + 1);
-                    if (empty($rubriccriteria[$userid])) {
-                        $rubriccriteria[$userid] = array();
+                    if (empty($rubricscores[$userid])) {
+                        $rubricscores[$userid] = array();
                     }
-                    $rubriccriteria[$userid][] = (object)array(
-                        'criterionid' => $rubriccriteria[$id]->criterionid,
-                        'levelid' => $rubriccriteria[$id]->levelid,
-                        'score' => $rubriccriteria[$id]->score,
-                        // feedback remark
-                        'remark' => html_to_text(format_text(
-                            $rubriccriteria[$id]->remark,
-                            $rubriccriteria[$id]->remarkformat)),
-                        // level description
-                        'definition' => html_to_text(format_text(
-                            $rubriccriteria[$id]->definition,
-                            $rubriccriteria[$id]->definitionformat)),
-                        // criteria description
-                        'description' => html_to_text(format_text(
-                            $rubriccriteria[$id]->description,
-                            $rubriccriteria[$id]->descriptionformat)),
-                    );
-                    unset($rubriccriteria[$id]);
+                    $criterionid = $rubricscores[$id]->criterionid;
+                    $levelid = $rubricscores[$id]->levelid;
+                    if ($remark = $rubricscores[$id]->remark) {
+                        $remark = html_to_text(format_text($remark, $rubricscores[$id]->remarkformat));
+                    }
+                    $rubricscores[$userid][$criterionid] = (object)array('levelid' => $levelid,
+                                                                         'remark' => $remark);
+                    unset($rubricscores[$id]);
                 }
             }
         } else {
-            $rubriccriteria = false;
+            $rubricscores = false;
         }
-        if ($rubriccriteria===false) {
-            $rubriccriteria = array();
+        if ($rubricscores===false) {
+            $rubricscores = array();
         }
 
         // get total rubric points for each user, if required
@@ -483,48 +467,64 @@ class assignfeedback_points_award_points_form extends moodleform {
             if ($custom->config->showusername || count($text)==0) {
                 $text[] = html_writer::tag('em', $user->username, array('class' => 'name'));
             }
-            if ($custom->gradingmethod=='' && $custom->config->showpointstotal) {
+            if ($custom->grading->method=='' && $custom->config->showpointstotal) {
                 $value = (isset($pointstotal[$userid]) ? $pointstotal[$userid] : 0);
                 $value = get_string('pointstotal', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'pointstotal'));
+                $text[] = html_writer::tag('em', $value, array('class' => 'numeric pointstotal'));
             }
-            if ($custom->gradingmethod=='' && $custom->config->showpointstoday) {
+            if ($custom->grading->method=='' && $custom->config->showpointstoday) {
                 $value = (isset($pointstoday[$userid]) ? $pointstoday[$userid] : 0);
                 $value = get_string('pointstoday', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'pointstoday'));
+                $text[] = html_writer::tag('em', $value, array('class' => 'numeric pointstoday'));
             }
-            if ($custom->gradingmethod=='rubric' && $custom->config->showrubricscores) {
-                if (isset($rubriccriteria[$userid])) {
-                    foreach ($rubriccriteria[$userid] as $value) {
-                        $value = $value->description.': '.round($value->score, $gradeprecision);
-                        $text[] = html_writer::tag('em', $value, array('class' => 'rubriccriteria'));
+            if ($custom->grading->method=='rubric' && $custom->config->showrubricscores) {
+                $criteria =& $custom->grading->definition->rubric_criteria;
+                foreach ($criteria as $criterionid => $criterion) {
+                    if (empty($rubricscores[$userid][$criterionid])) {
+                        $score = 0;
+                        $remark = '';
+                    } else {
+                        $levelid = $rubricscores[$userid][$criterionid]->levelid;
+                        $score = $criterion['levels'][$levelid]['score'];
+                        $remark = $rubricscores[$userid][$criterionid]->remark;
                     }
+                    $score = round($score, $gradeprecision);
+                    if ($criterion['maxscore']) {
+                        $score .= '/'.round($criterion['maxscore'], $gradeprecision);
+                    }
+                    $value = $criterion['descriptiontext'].': '.$score;
+                    $text[] = html_writer::tag('em', $value, array('class' => 'numeric rubricscores criterion-'.$criterionid));
                 }
+                unset($criteria);
             }
-            if ($custom->gradingmethod=='rubric' && $custom->config->showrubrictotal) {
+            if ($custom->grading->method=='rubric' && $custom->config->showrubrictotal) {
                 $value = (isset($rubrictotal[$userid]) ? $rubrictotal[$userid] : 0);
+                if ($custom->grading->definition->totalscore) {
+                    $value .= '/'.round($custom->grading->definition->totalscore, $gradeprecision);
+                }
                 $value = get_string('rubrictotal', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'rubrictotal'));
+                $text[] = html_writer::tag('em', $value, array('class' => 'numeric rubrictotal'));
             }
-            if ($custom->gradingmethod=='guide' && $custom->config->showguidetotal) {
+            if ($custom->grading->method=='guide' && $custom->config->showguidetotal) {
                 $value = (isset($guidetotal[$userid]) ? $guidetotal[$userid] : 0);
                 $value = get_string('guidetotal', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'guidetotal'));
+                $text[] = html_writer::tag('em', $value, array('class' => 'numeric guidetotal'));
             }
             if ($custom->config->showassigngrade) {
                 $value = (isset($gradeassign[$userid]) ? $gradeassign[$userid] : 0);
                 $value = get_string('gradeassign', $plugin, round($value, $gradeprecision));
-                $text[] = html_writer::tag('em', $value, array('class' => 'gradeassign'));
+                $text[] = html_writer::tag('em', $value, array('class' => 'numeric gradeassign'));
             }
             if ($custom->config->showcoursegrade) {
                 $value = (isset($gradecourse[$userid]) ? $gradecourse[$userid] : 0);
                 $value = get_string('gradecourse', $plugin, round($value, $gradeprecision));
-                $text[] = html_writer::tag('em', $value, array('class' => 'gradecourse'));
+                $text[] = html_writer::tag('em', $value, array('class' => 'numeric gradecourse'));
             }
 
-            // convert the $text array to a string and append a space to prevent &nbsp;
-            // being added by "HTML_QuickForm_Renderer_Tableless->finishForm()"
-            // in "lib/pear/HTML/QuickForm/Renderer/Tableless.php" (line 267)
+            // Convert the $text array to a string.
+            // Also, we append a space to prevent &nbsp; being added
+            // by "HTML_QuickForm_Renderer_Tableless->finishForm()"
+            // in "lib/pear/HTML/QuickForm/Renderer/Tableless.php"
             $text = implode(html_writer::empty_tag('br'), $text).' ';
 
             if ($custom->config->multipleusers) {
@@ -657,33 +657,30 @@ class assignfeedback_points_award_points_form extends moodleform {
     /**
      * add_field_advancedgrading
      *
+     * this code mimics $custom->assignment->get_grading_instance()
+     * which is a protected method in "mod/assign/locallib.php"
+     *
      * @param object  $mform
      * @param object  $custom
      * @param string  $plugin
-     * @param object  $gradingmanager
+     * @param string  $name (optional, default="advancedgrading")
      */
-    private function add_field_advancedgrading($mform, $custom, $plugin, $gradingmanager) {
-        global $USER;
-
-        // the following code mimics $custom->assignment->get_grading_instance()
-        // which is a protected method (for details, see: mod/assign/locallib.php)
+    private function add_field_advancedgrading($mform, $custom, $plugin, $name='advancedgrading') {
 
         // form elements are produced by the "display_xxx()" method
         // in the "grade/grading/form/xxx/renderer.php" script file
-        $name = 'advancedgrading';
-        $label = get_string('gradingmanagement', 'grading');
 
-        $controller = $gradingmanager->get_controller($custom->gradingmethod);
-        if ($controller->is_form_available()) {
-            $label = $controller->get_definition()->name;
-            $gradinginstanceid = optional_param($name.'instanceid', 0, PARAM_INT);
-            $gradinginstance = $controller->get_or_create_instance($gradinginstanceid, $USER->id, null);
-            $mform->addElement('grading', $name, $label, array('gradinginstance' => $gradinginstance));
-            $mform->addElement('hidden', $name.'instanceid', $gradinginstance->get_id());
+        if ($custom->grading->instance) {
+            $instance = $custom->grading->instance;
+            $label = $custom->grading->controller->get_definition()->name;
+            $mform->addElement('grading', $name, $label, array('gradinginstance' => $instance));
+            $mform->addElement('hidden', $name.'instanceid', $instance->get_id());
             $mform->setType($name.'instanceid', PARAM_INT);
         } else {
             // shouldn't happen !!
-            $mform->addElement('static', $name, $label, $controller->form_unavailable_notification());
+            $text = $custom->grading->controller->form_unavailable_notification();
+            $label = get_string('gradingmanagement', 'grading');
+            $mform->addElement('static', $name, $label, $text);
         }
     }
 

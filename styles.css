@@ -126,7 +126,14 @@ body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label {
 
 body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.name,
 #id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.name {
-    font-style: normal;
+    font-style  : normal;
+}
+
+body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.numeric,
+#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.numeric {
+    display     : inline-block;
+    text-align  : right;
+    width       : 100%;
 }
 
 body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.pointstoday,
@@ -365,6 +372,24 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
     /* Opera   */ -o-border-bottom-right-radius: 8px;
     /* Firefox */ -moz-border-bottom-right-radius: 8px;
     /* Webkit  */ -webkit-border-bottom-right-radius: 8px;
+}
+
+/***********************************
+** Advanced grading: Criteria
+***********************************/
+
+#assignfeedback_points_award_points_form .gradingform_rubric {
+    max-width : 100%;
+}
+
+#advancedgrading-criteria .criteria-reset-cell {
+    text-align :  center;
+    vertical-align : top;
+}
+
+#advancedgrading-criteria .criteria-reset-button {
+    margin  :     0px;
+    padding : 4px 8px;
 }
 
 /***********************************
