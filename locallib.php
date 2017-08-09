@@ -71,6 +71,12 @@ class assign_feedback_points extends assign_feedback_plugin {
     const THEME_TYPE_LABEL = 1; // templateable theme
     const THEME_TYPE_SPAN  = 2; // non-templateable theme
 
+    const ALIGN_NONE = '';
+    const ALIGN_LEFT = 'left';
+    const ALIGN_RIGHT = 'right';
+    const ALIGN_CENTER = 'center';
+    const ALIGN_JUSTIFY = 'justify';
+
     /**
      * Get the name of the feedback points plugin.
      * @return string
@@ -223,8 +229,14 @@ class assign_feedback_points extends assign_feedback_plugin {
     static public function add_settings($mform, $plugin, $config, $custom=null) {
         global $OUTPUT;
 
+        // we may need the string manager
+        $strman = get_string_manager();
+
+        // cache name of gradingmethod field for use in "disabledIf" conditions
+        $gradingmethod = 'advancedgradingmethod_submissions';
+
         // add header for new section
-        if ($custom==null) {
+        if ($custom===null) {
             self::add_heading($mform, 'settings', $plugin, false);
         }
 
@@ -254,15 +266,15 @@ class assign_feedback_points extends assign_feedback_plugin {
             $options = self::get_text_options();
             foreach ($names as $name) {
                 self::add_setting($mform, $config, $name, 'text', 0, $options);
-                if ($custom==null) {
-                    $mform->disabledIf($name, 'advancedgradingmethod_submissions', 'ne', '');
+                if ($custom===null) {
+                    $mform->disabledIf($name, $gradingmethod, 'ne', '');
                 }
             }
 
             $name = 'pointstype';
             $options = self::get_pointstype_options();
             self::add_setting($mform, $config, $name, 'select', 0, $options);
-            $mform->disabledIf($name, 'advancedgradingmethod_submissions', 'ne', '');
+            $mform->disabledIf($name, $gradingmethod, 'ne', '');
 
             $name = 'showcomments';
             self::add_setting($mform, $config, $name, 'checkbox', 0);
@@ -276,11 +288,8 @@ class assign_feedback_points extends assign_feedback_plugin {
         // $names of hidden fields
         $names = array();
 
-        // cache name of gradingmethod field for use in "disabledIf" conditions
-        $gradingmethod = 'advancedgradingmethod_submissions';
-
         $name = 'showpointstoday';
-        if ($custom==null || $custom->grading->method=='') {
+        if ($custom===null || $custom->grading->method=='') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', '');
             $mform->disabledIf($name, 'pointstype', 'ne', self::POINTSTYPE_SUM);
@@ -289,7 +298,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showpointstotal';
-        if ($custom==null || $custom->grading->method=='') {
+        if ($custom===null || $custom->grading->method=='') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', '');
         } else {
@@ -297,7 +306,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showrubrictotal';
-        if ($custom==null || $custom->grading->method=='rubric') {
+        if ($custom===null || $custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
@@ -305,7 +314,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showrubricscores';
-        if ($custom==null || $custom->grading->method=='rubric') {
+        if ($custom===null || $custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
@@ -313,7 +322,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showrubricremarks';
-        if ($custom==null || $custom->grading->method=='rubric') {
+        if ($custom===null || $custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
@@ -321,7 +330,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showguidetotal';
-        if ($custom==null || $custom->grading->method=='guide') {
+        if ($custom===null || $custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
@@ -329,7 +338,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showguidescores';
-        if ($custom==null || $custom->grading->method=='guide') {
+        if ($custom===null || $custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
@@ -337,11 +346,49 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         $name = 'showguideremarks';
-        if ($custom==null || $custom->grading->method=='guide') {
+        if ($custom===null || $custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
             $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
             $names[] = $name;
+        }
+
+        $name = 'criteria';
+        if ($custom===null || $custom->grading->method=='rubric') {
+            $elements = array();
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'length', 'text',   0);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'head',   'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'join',   'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'tail',   'text',   1, 2);
+
+            $groupname = $name.'settings';
+            $label = get_string($groupname, $plugin);
+            $mform->addElement('group', $groupname, $label, $elements, '', false);
+            $mform->addHelpButton($groupname, $groupname, $plugin);
+
+            $setting = $name.'length';
+            $mform->setType($setting, PARAM_INT);
+            $mform->setDefault($setting, $config->$setting);
+
+            $setting = $name.'head';
+            $mform->setType($setting, PARAM_INT);
+            $mform->setDefault($setting, $config->$setting);
+            $mform->disabledIf($setting, $name.'length', 'eq', '');
+
+            $setting = $name.'join';
+            $mform->setType($setting, PARAM_TEXT);
+            $mform->setDefault($setting, $config->$setting);
+            $mform->disabledIf($setting, $name.'length', 'eq', '');
+
+            $setting = $name.'tail';
+            $mform->setType($setting, PARAM_INT);
+            $mform->setDefault($setting, $config->$setting);
+            $mform->disabledIf($setting, $name.'length', 'eq', '');
+        } else {
+            $names[] = $name.'length';
+            $names[] = $name.'head';
+            $names[] = $name.'join';
+            $names[] = $name.'tail';
         }
 
         // add hidden fields, if any
@@ -352,6 +399,8 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         self::add_setting($mform, $config, 'showassigngrade', 'checkbox', 0);
         self::add_setting($mform, $config, 'showcoursegrade', 'checkbox', 0);
+        self::add_setting($mform, $config, 'alignscoresgrades', 'select', 0,
+                          self::get_alignscoresgrades_options(), PARAM_ALPHA);
 
         if ($custom) {
             self::add_heading($mform, 'names', $plugin, false);
@@ -364,7 +413,6 @@ class assign_feedback_points extends assign_feedback_plugin {
         // nametokens
         $name = 'nametokens';
 
-        $strman = get_string_manager();
         $types = self::get_nametoken_setting_types();
         $defaults = self::get_nametoken_setting_defaults($strman, $plugin);
 
@@ -548,7 +596,12 @@ class assign_feedback_points extends assign_feedback_plugin {
         } else {
             $options = null;
         }
-        $elements[] = $mform->createElement($elementtype, $name."[$i][$setting]", '', $options);
+        if ($i===null) {
+            $elementname = "$name$setting";
+        } else {
+            $elementname = $name."[$i][$setting]";
+        }
+        $elements[] = $mform->createElement($elementtype, $elementname, '', $options);
 
         if ($spacetype) {
             switch ($spacetype) {
@@ -655,11 +708,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     $showguideremarks = intval($custom->config->showguideremarks);
                     $showguidetotal = intval($custom->config->showguidetotal);
                     foreach ($custom->grading->definition->guide_criteria as $criterionid => $criterion) {
-                        $scores = array();
-                        foreach ($criterion['levels'] as $levelid => $level) {
-                            $scores[] = $levelid.':'.$level['score'];
-                        }
-                        $criterialevelscores[] = $criterionid.':{'.implode(',', $scores).'}';
+                        $criterialevelscores[] = $criterionid.':'.$criterion['maxscore'];
                     }
                     break;
 
@@ -973,7 +1022,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $undo = optional_param('undo', 0, PARAM_INT);
 
         $config = $this->get_all_config($plugin);
-        $grading = self::get_grading_instance($context);
+        $grading = self::get_grading_instance($config, $context);
 
         // cache the current time
         $time = time();
@@ -1914,7 +1963,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                         foreach ($criterialevels[$userid] as $criterionid => $levelid) {
                             $levels['criteria'][$criterionid] = array('levelid' => $levelid);
                             $grade += $criteria[$criterionid]['levels'][$levelid]['score'];
-                        }
+                       }
                     }
                     unset($levels);
                     break;
@@ -1923,13 +1972,14 @@ class assign_feedback_points extends assign_feedback_plugin {
                     break;
             }
 
-            unset($criteria);
-
             // append this user to "feedback" details
             $feedback->userlist[] = $userlist[$userid]->feedbackname;
 
             $gradedata = $this->get_grade_data($gradeassign, $grade, $sendnotifications, $gradingdata);
             $this->assignment->save_grade($userid, $gradedata);
+        }
+        if (isset($criteria)) {
+            unset($criteria);
         }
     }
 
@@ -1952,8 +2002,10 @@ class assign_feedback_points extends assign_feedback_plugin {
             'sendstudentnotifications' => $sendnotifications
         );
 
-        foreach (get_object_vars($gradingdata) as $name => $value) {
-            $gradedata->$name = $value;
+        if ($gradingdata) {
+            foreach (get_object_vars($gradingdata) as $name => $value) {
+                $gradedata->$name = $value;
+            }
         }
 
         // the "assignment->save_grade()" method
@@ -2563,6 +2615,11 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'showguidetotal'     => 1,
                      'showassigngrade'    => 0,
                      'showcoursegrade'    => 0,
+                     'alignscoresgrades'  => self::ALIGN_NONE,
+                     'criterialength'     => 0,
+                     'criteriahead'       => 0,
+                     'criteriajoin'       => '...',
+                     'criteriatail'       => 0,
                      'showfeedback'       => 0,
                      'showelement'        => 0,
                      'multipleusers'      => 0,
@@ -2803,6 +2860,23 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * get_pointstype_options
+     *
+     * return an array of formatted pointstype options
+     * suitable for use in a Moodle form
+     *
+     * @return array of field names
+     */
+    static public function get_alignscoresgrades_options() {
+        $plugin = 'assignfeedback_points';
+        return array(self::ALIGN_NONE    => get_string('default'),
+                     self::ALIGN_LEFT    => get_string('alignleft',    $plugin),
+                     self::ALIGN_RIGHT   => get_string('alignright',   $plugin),
+                     self::ALIGN_CENTER  => get_string('aligncenter',  $plugin),
+                     self::ALIGN_JUSTIFY => get_string('alignjustify', $plugin));
+    }
+
+    /**
      * requires_jquery
      *
      * add standard jquery base to this page
@@ -2840,8 +2914,9 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @param object  $mform
      */
-    static public function get_grading_instance($context, $component='mod_assign', $area='submissions', $name='advancedgrading') {
+    static public function get_grading_instance($config, $context) {
         global $USER;
+
         $grading = (object)array(
             'manager'    => null,
             'method'     => '',
@@ -2850,6 +2925,11 @@ class assign_feedback_points extends assign_feedback_plugin {
             'definition' => null,
             'data'       => null
         );
+
+        $component = 'mod_assign';
+        $area      = 'submissions';
+        $name      = 'advancedgrading';
+
         $grading->manager = get_grading_manager($context, $component, $area);
         $grading->method = $grading->manager->get_active_method();
         if ($grading->method) {
@@ -2880,31 +2960,60 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             $grading->definition->totalscore = 0;
 
-            $criteria =& $grading->definition->rubric_criteria;
-            foreach ($criteria as $criterionid => $criterion) {
+            // shortcuts to criteria length settings
+            $length = $config->criterialength;
+            $head   = $config->criteriahead;
+            $join   = $config->criteriajoin;
+            $tail   = $config->criteriatail;
 
-                $name = 'description';
-                $text = self::format_text($criterion, $name);
-                $criteria[$criterionid][$name.'text'] = $text;
+            $criteria = $grading->method.'_criteria';
+            $criteria =& $grading->definition->$criteria;
+            foreach ($criteria as $criterionid => $criterion) {
 
                 $minscore = null;
                 $maxscore = null;
 
-                $levels =& $criteria[$criterionid]['levels'];
-                foreach ($levels as $levelid => $level) {
+                switch ($grading->method) {
 
-                    $name = 'definition';
-                    $text = self::format_text($level, $name);
-                    $levels[$levelid][$name.'text'] = $text;
+                    case 'rubric':
 
-                    if ($minscore===null || $minscore > $level['score']) {
-                        $minscore = $level['score'];
-                    }
-                    if ($maxscore===null || $maxscore < $level['score']) {
-                        $maxscore = $level['score'];
-                    }
+                        $name = 'description';
+                        $text = self::format_text($criterion, $name);
+                        if ($length) {
+                            $text = self::shorten_text($text, $length, $head, $tail, $join);
+                        }
+                        $criteria[$criterionid][$name.'text'] = $text;
+
+                        $levels =& $criteria[$criterionid]['levels'];
+                        foreach ($levels as $levelid => $level) {
+
+                            $name = 'definition';
+                            $text = self::format_text($level, $name);
+                            if ($length) {
+                                $text = self::shorten_text($text, $length, $head, $tail, $join);
+                            }
+                            $levels[$levelid][$name.'text'] = $text;
+
+                            if ($minscore===null || $minscore > $level['score']) {
+                                $minscore = $level['score'];
+                            }
+                            if ($maxscore===null || $maxscore < $level['score']) {
+                                $maxscore = $level['score'];
+                            }
+                        }
+                        unset($levels);
+                        break;
+
+                    case 'guide':
+                        $name = 'shortname';
+                        $text = $criterion[$name];
+                        if ($length) {
+                            $text = self::shorten_text($text, $length, $head, $tail, $join);
+                        }
+                        $criteria[$criterionid][$name.'text'] = $text;
+                        $maxscore = $criterion['maxscore'];
+                        break;
                 }
-                unset($levels);
 
                 $criteria[$criterionid]['minscore'] = ($minscore===null ? 0 : $minscore);
                 $criteria[$criterionid]['maxscore'] = ($maxscore===null ? 0 : $maxscore);

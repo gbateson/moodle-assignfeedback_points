@@ -117,11 +117,17 @@ body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span label {
 body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label,
 #id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label {
     font-size   : 11px;
-    line-height : 14px;
+    line-height :  1.4;
 }
 
 body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label {
     padding     :  0px;
+}
+
+body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em,
+#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em {
+    display     : block;
+    font-style  : italic;
 }
 
 body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.name,
@@ -129,21 +135,31 @@ body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.na
     font-style  : normal;
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.numeric,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.numeric {
-    display     : inline-block;
+body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.alignleft,
+#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.alignleft {
+    text-align  : left;
+}
+body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.alignright,
+#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.alignright {
     text-align  : right;
-    width       : 100%;
+}
+body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.aligncenter,
+#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.aligncenter {
+    text-align  : center;
+}
+body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.alignjustify,
+#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.alignjustify {
+    height          :   1.4em;
+    text-align      : justify;
+    text-align-last : justify;
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.pointstoday,
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.pointstotal,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.pointstoday,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.pointstotal {
-    font-style  : italic;
-    white-space : nowrap;
+body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.alignjustify:after,
+#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement label em.alignjustify:after {
+    content : "";
+    display : inline-block ;
+    width   : 100%;
 }
-
 
 /***********************************
 ** mapaction: normal, hover, checked

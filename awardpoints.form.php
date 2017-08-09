@@ -454,6 +454,12 @@ class assignfeedback_points_award_points_form extends moodleform {
         $linebreak = html_writer::empty_tag('br');
         $increment = strlen($linebreak) + 1;
 
+        // CSS classes for scores and grades
+        $numericalign = 'numeric';
+        if ($custom->config->alignscoresgrades) {
+            $numericalign .= ' align'.$custom->config->alignscoresgrades;
+        }
+
         $elements = array();
         foreach ($custom->$name as $userid => $user) {
             $text = array();
@@ -470,12 +476,12 @@ class assignfeedback_points_award_points_form extends moodleform {
             if ($custom->grading->method=='' && $custom->config->showpointstotal) {
                 $value = (isset($pointstotal[$userid]) ? $pointstotal[$userid] : 0);
                 $value = get_string('pointstotal', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'numeric pointstotal'));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign pointstotal"));
             }
             if ($custom->grading->method=='' && $custom->config->showpointstoday) {
                 $value = (isset($pointstoday[$userid]) ? $pointstoday[$userid] : 0);
                 $value = get_string('pointstoday', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'numeric pointstoday'));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign pointstoday"));
             }
             if ($custom->grading->method=='rubric' && $custom->config->showrubricscores) {
                 $criteria =& $custom->grading->definition->rubric_criteria;
@@ -493,7 +499,7 @@ class assignfeedback_points_award_points_form extends moodleform {
                         $score .= '/'.round($criterion['maxscore'], $gradeprecision);
                     }
                     $value = $criterion['descriptiontext'].': '.$score;
-                    $text[] = html_writer::tag('em', $value, array('class' => 'numeric rubricscores criterion-'.$criterionid));
+                    $text[] = html_writer::tag('em', $value, array('class' => "$numericalign rubricscores criterion-$criterionid"));
                 }
                 unset($criteria);
             }
@@ -503,29 +509,29 @@ class assignfeedback_points_award_points_form extends moodleform {
                     $value .= '/'.round($custom->grading->definition->totalscore, $gradeprecision);
                 }
                 $value = get_string('rubrictotal', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'numeric rubrictotal'));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign rubrictotal"));
             }
             if ($custom->grading->method=='guide' && $custom->config->showguidetotal) {
                 $value = (isset($guidetotal[$userid]) ? $guidetotal[$userid] : 0);
                 $value = get_string('guidetotal', $plugin, $value);
-                $text[] = html_writer::tag('em', $value, array('class' => 'numeric guidetotal'));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign guidetotal"));
             }
             if ($custom->config->showassigngrade) {
                 $value = (isset($gradeassign[$userid]) ? $gradeassign[$userid] : 0);
                 $value = get_string('gradeassign', $plugin, round($value, $gradeprecision));
-                $text[] = html_writer::tag('em', $value, array('class' => 'numeric gradeassign'));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign gradeassign"));
             }
             if ($custom->config->showcoursegrade) {
                 $value = (isset($gradecourse[$userid]) ? $gradecourse[$userid] : 0);
                 $value = get_string('gradecourse', $plugin, round($value, $gradeprecision));
-                $text[] = html_writer::tag('em', $value, array('class' => 'numeric gradecourse'));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign gradecourse"));
             }
 
             // Convert the $text array to a string.
             // Also, we append a space to prevent &nbsp; being added
             // by "HTML_QuickForm_Renderer_Tableless->finishForm()"
             // in "lib/pear/HTML/QuickForm/Renderer/Tableless.php"
-            $text = implode(html_writer::empty_tag('br'), $text).' ';
+            $text = implode('', $text).' ';
 
             if ($custom->config->multipleusers) {
                 $elements[] = $mform->createElement('checkbox', $name.'['.$userid.']', $userid, $text);

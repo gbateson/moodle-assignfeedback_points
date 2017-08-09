@@ -25,6 +25,12 @@ $string['pluginname'] = 'Feedback points';
 
 $string['absent'] = 'Absent';
 $string['addmorenames'] = 'Add more names';
+$string['aligncenter'] = 'Center';
+$string['alignjustify'] = 'Justify';
+$string['alignleft'] = 'Left';
+$string['alignright'] = 'Right';
+$string['alignscoresgrades_help'] = 'This setting allows you to specify the alignment of students\' scores and grades';
+$string['alignscoresgrades'] = 'Align scores and grades';
 $string['allowselectable_help'] = 'If this setting is enabled, jQuery\'s selectable functionality can be used to selected multiple students at once.';
 $string['allowselectable'] = 'Enable jQuery selectable';
 $string['automatically'] = 'Automatically';
@@ -47,6 +53,10 @@ $string['commenttext_help'] = 'A brief decription of why these points are being 
 $string['commenttext'] = 'Comment';
 $string['contactingserver'] = 'Contacting server ...';
 $string['count'] = 'Count';
+$string['criteriasettings_help'] = 'These settings specify how to format long criteria names.
+
+If the number of characters in a criteria name exceeds the "Length" value here, then the name will be reformatted as HEAD JOIN TAIL, where HEAD is the "Head" number of characters from the beginning of the name, JOIN is the "Join" string, and TAIL is the "Tail" number of characters from the end of the name.';
+$string['criteriasettings'] = 'Criteria name length';
 $string['default_help'] = 'If set, this feedback method will be enabled by default for all new assignments.';
 $string['default'] = 'Enabled by default';
 $string['delete'] = 'Delete';
