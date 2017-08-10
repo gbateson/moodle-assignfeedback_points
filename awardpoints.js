@@ -730,43 +730,13 @@ PTS.update_usermap_via_ajax = function() {
  */
 PTS.send_points_via_ajax = function(input) {
 
-    if (PTS.gradingmethod=="") {
-        // simple direct grading
-        var points = $(PTS.points_container + " > " + PTS.group_element_tag + " > input[name=points]:checked").val();
-        var advancedgrading = false;
-
-    } else {
-        // advanced grading e.g. "rubric" or "guide"
-        var points = 0;
-        var advancedgrading = {};
-
-        // select all radio and textarea elements within the rubric table
-        var selector = PTS.gradingcontainer + " input[type=radio][name^=advancedgrading]:checked,"
-                     + PTS.gradingcontainer + " input[type=text][name^=advancedgrading],"
-                     + PTS.gradingcontainer + " textarea[name^=advancedgrading]";
-
-        $(selector).each(function(){
-            var name = $(this).prop("name");
-            var type = $(this).prop("type");
-            var value = $(this).val();
-            advancedgrading[name] = value;
-        });
-    }
-
-    if ($("#id_commenttextmenu").length==0) {
-        var commenttext = "";
-    } else {
-        var commenttext = $("#id_commenttextmenu").val();
-    }
-    if (commenttext=="") {
-        commenttext = $("#id_commenttext").val();
-    }
-
     if (input.length==0) {
-        var userid = 0; // shouldn't happen !!
-    } else if (input.length==1) {
+        return false; // shouldn't happen !!
+    }
+
+    if (input.length==1) {
         var userid = PTS.get_input_userid(input)
-    } else if (input.length) {
+    } else {
         var userid = [];
         input.each(function(){
             var uid = PTS.get_input_userid($(this));
@@ -776,150 +746,292 @@ PTS.send_points_via_ajax = function(input) {
         });
     }
 
-    if (userid) {
-        var data = {
-            "ajax"    : 1,
-            "group"   : PTS.groupid,
-            "groupid" : PTS.groupid,
-            "sesskey" : PTS.sesskey,
-            "awardto" : userid,
-            "points"  : points,
-            "commenttext": commenttext
-        };
-        if (advancedgrading) {
-            for (var name in advancedgrading) {
-                data[name] = advancedgrading[name];
-            }
-            data.advancedgradinginstanceid = $("input[type=hidden][name=advancedgradinginstanceid]").val();
+    var data = {
+        "ajax"    : 1,
+        "group"   : PTS.groupid,
+        "groupid" : PTS.groupid,
+        "sesskey" : PTS.sesskey,
+        "awardto" : userid
+    };
 
-            // declare as an object, {}, so that numeric key
-            // do not force the creation of all intervening keys,
-            // as this would make the array potentially huge and we
-            // may exceed the server's limit on number of form items
-            var criterialevels = {};
+    if (PTS.gradingmethod=="") {
+        // simple direct grading
+
+        var name = "points";
+        data[name] = $(PTS.points_container + " > "
+                     + PTS.group_element_tag + " > "
+                     + "input[name=" + name + "]:checked").val();
+
+        var value = "";
+        var name = "commenttext";
+        var selector = "#id_" + name + "menu";
+        if ($(selector).length) {
+            value = $(selector).val();
+        }
+        if (value=="") {
+            selector = "#id_" + name;
+            value = $(selector).val();
+        }
+        data[name] = value;
+
+    } else {
+        // advanced grading e.g. "rubric" or "guide"
+
+        // select all radio, input  and textarea elements in the advanced grading table
+        var name = "advancedgrading";
+        var selector = PTS.gradingcontainer + " input[type=radio][name^=" + name + "],"
+                     + PTS.gradingcontainer + " input[type=text][name^=" + name + "],"
+                     + PTS.gradingcontainer + " textarea[name^=" + name + "]";
+
+        $(selector).each(function(){
+            var tag = this.tagName;
+            var name = this.name;
+            var type = this.type;
+            if (tag=="TEXTAREA" || (tag=="INPUT" && type=="text")) {
+                var ok = $(this).val().length;
+            } else if (tag=="INPUT" && type=="radio") {
+                var ok = $(this).prop("checked");
+            } else {
+                var ok = false; // shouldn't happen !!
+            }
+            if (ok) {
+                data[name] = $(this).val();
+            }
+        });
+
+        var name = "advancedgradinginstanceid";
+        data[name] = $("input[type=hidden][name=" + name + "]").val();
+
+        // RegExp to parse the html of a criterion score's DOM element
+        // e.g. Report 1: 3/5
+        // $1 : the criterion description
+        // $2 : the current score for this criterion
+        // $3 : the maximum score for this criterion
+        var regexp = new RegExp("^(.*): ([0-9.]+)/([0-9.]+)$");
+
+        if (PTS.gradingmethod=="rubric") {
+            // declare criterialevels as an object, {}, so that numeric
+            // keys do not force the creation of all intervening keys,
+            // as this can make the array huge and even exceed
+            // the server's limit on number of form elements
+            var name = "rubricdata";
+            data[name] = {};
             if (typeof(userid)=="string") {
-                criterialevels[userid] = PTS.get_criteria_levels(userid);
+                data[name][userid] = PTS.get_rubric_levels(userid, regexp);
             } else {
                 for (var uid in userid) {
-                    criterialevels[uid] = PTS.get_criteria_levels(uid);
+                    data[name][uid] = PTS.get_rubric_levels(uid, regexp);
                 }
             }
-            data.criterialevels = criterialevels;
         }
+
         if (PTS.gradingmethod=="guide") {
-            data.showmarkerdesc = $(PTS.gradingcontainer + " input[type=radio][name=showmarkerdesc]:checked").val();
-            data.showstudentdesc = $(PTS.gradingcontainer + " input[type=radio][name=showstudentdesc]:checked").val();
+            var name = "showmarkerdesc";
+            data[name] = $(PTS.gradingcontainer + " input[type=radio][name=" + name + "]:checked").val();
+
+            var name = "showstudentdesc";
+            data[name] = $(PTS.gradingcontainer + " input[type=radio][name=" + name + "]:checked").val();
+
+            // we are not going to send anything extra to the server
+            // however, we need to update the scores and total
+            // in the browser
+            if (typeof(userid)=="string") {
+                PTS.set_guide_scores(userid, regexp);
+            } else {
+                for (var uid in userid) {
+                    PTS.set_guide_scores(uid, regexp);
+                }
+            }
         }
-        PTS.set_feedback(PTS.contacting_server_msg);
-        $.ajax({
-            "cache"    : false,
-            "data"     : data,
-            "datatype" : "html",
-            "method"   : "post",
-            "url"      : PTS.awardpoints_ajax_php
-        }).done(function(feedback){
-            PTS.set_ajax_feedback(feedback);
-            if (PTS.showpointstoday && PTS.gradingmethod=="") {
-                PTS.update_points_html(input, "pointstoday", points);
-            }
-            if (PTS.showpointstotal && PTS.gradingmethod=="") {
-                PTS.update_points_html(input, "pointstotal", points);
-            }
-            input.parent().removeClass("checked");
-            input.prop("checked", false);
-        });
     }
+
+    PTS.set_feedback(PTS.contacting_server_msg);
+    $.ajax({
+        "cache"    : false,
+        "data"     : data,
+        "datatype" : "html",
+        "method"   : "post",
+        "url"      : PTS.awardpoints_ajax_php
+    }).done(function(feedback){
+        PTS.set_ajax_feedback(feedback);
+        if (PTS.showpointstoday && PTS.gradingmethod=="") {
+            PTS.update_points_html(input, "pointstoday", data.points);
+        }
+        if (PTS.showpointstotal && PTS.gradingmethod=="") {
+            PTS.update_points_html(input, "pointstotal", data.points);
+        }
+        input.parent().removeClass("checked");
+        input.prop("checked", false);
+    });
 }
 
 /**
- * get_criteria_levels
+ * get_rubric_levels
  *
  * @param integer uid
- * @param string  type: "rubric" or "guide"
+ * @param object  regexp to parse score in user tile
  * @return array of scores for each criterion id
  */
-PTS.get_criteria_levels = function(uid) {
+PTS.get_rubric_levels = function(uid, regexp) {
 
     var input = $("#id_awardto_" + uid);
     if (input.length==0) {
         return false; // shouldn't happen !!
     }
 
-    // RegExp to parse the html of a criterion score's DOM element
-    // e.g. Report 1: 3/5
-    // $1 : the criterion description
-    // $2 : the current score for this criterion
-    // $3 : the maximum score for this criterion
-    var regexp = new RegExp("^(.*): ([0-9.]+)/([0-9.]+)$");
-
     var levels = {};
     var total = null;
     for (var cid in PTS.criterialevelscores) {
 
-        // em       : the <em> element used to display the criteria score
-        // oldhtml  : the inner html used to display the criteria score
-        // score    : the value of the rubric criteria score
-        var em = input.parent().find("em.criterion-" + cid);
-        var oldhtml = '';
-        if (em.length) {
-            em = em.first();
-            oldhtml = em.html();
-        }
+        // get score from rubric form
+        var score = PTS.get_rubric_form_score(cid);
 
-        // fetch score from criteria form, if possible
-        var score = PTS.get_criteria_form_score(cid);
+        // update/extract score in user tile
+        score = PTS.get_criterion_score(input, cid, score, regexp);
 
-        // set/get score in criteria score display element
-        if (oldhtml) {
-            if (score===null) {
-                score = oldhtml.replace(regexp, "$2");
-            } else {
-                var newhtml = "$1: " + score + "/$3";
-                em.html(oldhtml.replace(regexp, newhtml));
-            }
-        } else if (score===null) {
-            // score was not set in criteria form
-            // nor was it available in the display <em>
-            // so get it from PTS.usercriteriascores
-            score = PTS.get_user_criteria_score(uid, cid);
-        }
+        // get levelid that matches this score
+        levels[cid] = PTS.get_criteria_level(cid, score);
 
+        // increment total
         if (total===null) {
             total = 0;
         }
-        total += parseFloat(score);
-        levels[cid] = PTS.get_criteria_level(cid, score);
+        total += parseInt(score);
     }
 
     // update total score for this user
     if (total !== null) {
-        var em = input.parent().find("em." + PTS.gradingmethod + "total");
-        if (em.length) {
-            em = em.first();
-            var oldhtml = em.html();
-            var newhtml = "$1: " + total + "/$3";
-            em.html(oldhtml.replace(regexp, newhtml));
-        }
+        PTS.update_criteria_total(input, regexp, total);
     }
 
     return levels;
 }
 
 /**
- * get_criteria_form_score
+ * set_guide_scores
+ *
+ * @param integer uid
+ * @param object  regexp to parse score in user tile
+ * @return void, but may update guide scores
+ */
+PTS.set_guide_scores = function(uid, regexp) {
+
+    var input = $("#id_awardto_" + uid);
+    if (input.length==0) {
+        return false; // shouldn't happen !!
+    }
+
+    var scores = {};
+    var total = null;
+    for (var cid in PTS.criterialevelscores) {
+
+        // get score from advanced grading form
+        var score = PTS.get_guide_form_score(cid);
+
+        // update/extract score in user tile
+        score = PTS.get_criterion_score(input, cid, score, regexp);
+        scores[cid] = score;
+
+        // increment total
+        if (total===null) {
+            total = 0;
+        }
+        total += parseInt(score);
+    }
+
+    // update total score for this user
+    if (total !== null) {
+        PTS.update_criteria_total(input, regexp, total);
+    }
+}
+
+/**
+ * update_criteria_total
+ *
+ * @param object  input element for user tile
+ * @param object  regexp to match score in user tile
+ * @param integer total of criteria scores
+ * @return void, but may update criteria total in user tile
+ */
+PTS.update_criteria_total = function(input, regexp, total) {
+    var em = input.parent().find("em." + PTS.gradingmethod + "total");
+    if (em.length) {
+        em = em.first();
+        var oldhtml = em.html();
+        var newhtml = "$1: " + total + "/$3";
+        em.html(oldhtml.replace(regexp, newhtml));
+    }
+}
+
+/**
+ * get_criterion_score
+ *
+ * @param object  cid criterion id
+ * @param integer score from advanced grading form
+ * @param object  regexp to match score in user tile
+ * @return void, but may update criteria total in user tile
+ */
+PTS.get_criterion_score = function(input, cid, score, regexp) {
+
+    // em       : the <em> element used to display the criteria score
+    // oldhtml  : the inner html used to display the criteria score
+    // score    : the value of the rubric criteria score
+
+    var em = input.parent().find("em.criterion-" + cid);
+    var oldhtml = '';
+    if (em.length) {
+        em = em.first();
+        oldhtml = em.html();
+    }
+
+    // set/get score in criteria score display element
+    if (oldhtml) {
+        if (score===null) {
+            score = oldhtml.replace(regexp, "$2");
+        } else {
+            var newhtml = "$1: " + score + "/$3";
+            em.html(oldhtml.replace(regexp, newhtml));
+        }
+    } else if (score===null) {
+        // score was not set in criteria form
+        // nor was it available in the display <em>
+        // so get it from PTS.usercriteriascores
+        score = PTS.get_user_criteria_score(uid, cid);
+    }
+
+    return score;
+}
+
+/**
+ * get_rubric_form_score
  *
  * @param integer cid
  * @return integer (or null)
  */
-PTS.get_criteria_form_score = function(cid) {
+PTS.get_rubric_form_score = function(cid) {
     for (var lid in PTS.criterialevelscores[cid]) {
-        var id = "advancedgrading-criteria-" + cid
+        var id = "#advancedgrading-criteria-" + cid
                + "-levels-" + lid + "-definition";
-        if ($("#" + id).first().prop("checked")) {                        
+        if ($(id).first().prop("checked")) {
             return PTS.criterialevelscores[cid][lid];
         }
     }
     return null; // no level is selected in form
+}
+
+/**
+ * get_guide_form_score
+ *
+ * @param integer cid
+ * @return integer (or null)
+ */
+PTS.get_guide_form_score = function(cid) {
+    var id = "#advancedgrading-criteria-" + cid + "-score";
+    var score = $(id).first().val();
+    if (score===null || score===false || score==="" || isNaN(score)) {
+        return null;
+    }
+    return score;
 }
 
 /**
@@ -938,7 +1050,7 @@ PTS.get_user_criteria_score = function(uid, cid) {
 }
 
 /**
- * get_criteria_form_score
+ * get_criteria_level
  *
  * @param integer cid
  * @return integer (or null)
@@ -1775,7 +1887,7 @@ $(document).ready(function() {
             var tr = $(this).closest("tr");
             tr.find("input[type=radio]:checked").prop("checked", false);
             tr.find("td.checked").removeClass("checked");
-            tr.find("textarea").val("");
+            tr.find("textarea, input[type=text]").val("");
             event.preventDefault();
             event.stopPropagation();
         });

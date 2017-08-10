@@ -270,14 +270,18 @@ class assignfeedback_points_award_points_form extends moodleform {
         $usersfound = (empty($userids) ? false : true);
 
         // get precision for $grades
-        $gradeprecision = 0;
-        if ($usersfound && ($custom->config->showassigngrade || $custom->config->showcoursegrade)) {
-            $params = array('courseid' => $custom->courseid,
-                            'name'     => 'decimalpoints');
-            if ($DB->record_exists('grade_settings', $params)) {
-                $gradeprecision = $DB->get_field('grade_settings', 'value', $params);
-            } else if (isset($CFG->grade_decimalpoints)) {
-                $gradeprecision = $CFG->grade_decimalpoints;
+        if (isset($custom->config->gradeprecision)) {
+            $gradeprecision = $custom->config->gradeprecision;
+        } else {
+            $gradeprecision = 0;
+            if ($usersfound && ($custom->config->showassigngrade || $custom->config->showcoursegrade)) {
+                $params = array('courseid' => $custom->courseid,
+                                'name'     => 'decimalpoints');
+                if ($DB->record_exists('grade_settings', $params)) {
+                    $gradeprecision = $DB->get_field('grade_settings', 'value', $params);
+                } else if (isset($CFG->grade_decimalpoints)) {
+                    $gradeprecision = $CFG->grade_decimalpoints;
+                }
             }
         }
 
@@ -295,7 +299,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
 
         // get points today for each user, if required
-        if ($usersfound && $custom->config->showpointstoday) {
+        if ($usersfound && $custom->config->showpointstoday && $custom->grading->method=='') {
             $select = "$name, SUM(points) AS pointstoday";
             $from   = '{assignfeedback_points}';
             list($where, $params) = $DB->get_in_or_equal($userids);
@@ -310,7 +314,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
 
         // get total points for each user, if required
-        if ($usersfound && $custom->config->showpointstotal) {
+        if ($usersfound && $custom->config->showpointstotal && $custom->grading->method=='') {
             $select = "p.$name";
             $from   = '{assignfeedback_points} p';
             list($where, $params) = $DB->get_in_or_equal($userids);
@@ -348,8 +352,8 @@ class assignfeedback_points_award_points_form extends moodleform {
             $pointstotal = array();
         }
 
-        // get total rubric points for each user, if required
-        if ($usersfound && $custom->config->showrubricscores) {
+        // get rubric scores for each user, if required
+        if ($usersfound && $custom->config->showrubricscores && $custom->grading->method=='rubric') {
             $select = $DB->sql_concat('grf.id', "'_'", 'ag.userid');
             $select = "$select as id, ag.userid AS $name, ".
                       'grf.criterionid, grf.levelid, grf.remark, grf.remarkformat';
@@ -383,8 +387,8 @@ class assignfeedback_points_award_points_form extends moodleform {
             $rubricscores = array();
         }
 
-        // get total rubric points for each user, if required
-        if ($usersfound && $custom->config->showrubrictotal) {
+        // get total of rubric scores for each user, if required
+        if ($usersfound && $custom->config->showrubrictotal && $custom->grading->method=='rubric') {
             $select = "ag.userid AS $name, ROUND(SUM(grl.score),0) AS pointstotal";
             $from   = '{gradingform_rubric_levels} grl'.
                       ' JOIN {gradingform_rubric_fillings} grf ON grl.id = grf.levelid'.
@@ -402,8 +406,43 @@ class assignfeedback_points_award_points_form extends moodleform {
             $rubrictotal = array();
         }
 
-        // get total marking guide points for each user, if required
-        if ($usersfound && $custom->config->showguidetotal) {
+        // get guide scores for each user, if required
+        if ($usersfound && $custom->config->showguidescores && $custom->grading->method=='guide') {
+            $select = $DB->sql_concat('ggf.id', "'_'", 'ag.userid');
+            $select = "$select as id, ag.userid AS $name, ".
+                      'ggf.criterionid, ggf.score, ggf.remark, ggf.remarkformat';
+            $from   = '{gradingform_guide_fillings} ggf'.
+                      ' JOIN {grading_instances} gi ON gi.id = ggf.instanceid'.
+                      ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
+            $order  = 'ag.userid';
+            list($where, $params) = $DB->get_in_or_equal($userids);
+            $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where ORDER BY $order";
+            array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
+            if ($guidescores = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
+                foreach (array_keys($guidescores) as $id) {
+                    $userid = substr($id, strpos($id, '_') + 1);
+                    if (empty($guidescores[$userid])) {
+                        $guidescores[$userid] = array();
+                    }
+                    $criterionid = $guidescores[$id]->criterionid;
+                    $score = $guidescores[$id]->score;
+                    if ($remark = $guidescores[$id]->remark) {
+                        $remark = html_to_text(format_text($remark, $guidescores[$id]->remarkformat));
+                    }
+                    $guidescores[$userid][$criterionid] = (object)array('score' => $score,
+                                                                         'remark' => $remark);
+                    unset($guidescores[$id]);
+                }
+            }
+        } else {
+            $guidescores = false;
+        }
+        if ($guidescores===false) {
+            $guidescores = array();
+        }
+
+        // get total of guide scores for each user, if required
+        if ($usersfound && $custom->config->showguidetotal && $custom->grading->method=='guide') {
             $select = "ag.userid AS $name, ROUND(SUM(ggf.score),0) AS pointstotal";
             $from   = '{gradingform_guide_fillings} ggf'.
                       ' JOIN {grading_instances} gi ON ggf.instanceid = gi.id'.
@@ -473,17 +512,17 @@ class assignfeedback_points_award_points_form extends moodleform {
             if ($custom->config->showusername || count($text)==0) {
                 $text[] = html_writer::tag('em', $user->username, array('class' => 'name'));
             }
-            if ($custom->grading->method=='' && $custom->config->showpointstotal) {
+            if ($custom->config->showpointstotal && $custom->grading->method=='') {
                 $value = (isset($pointstotal[$userid]) ? $pointstotal[$userid] : 0);
                 $value = get_string('pointstotal', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign pointstotal"));
             }
-            if ($custom->grading->method=='' && $custom->config->showpointstoday) {
+            if ($custom->config->showpointstoday && $custom->grading->method=='') {
                 $value = (isset($pointstoday[$userid]) ? $pointstoday[$userid] : 0);
                 $value = get_string('pointstoday', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign pointstoday"));
             }
-            if ($custom->grading->method=='rubric' && $custom->config->showrubricscores) {
+            if ($custom->config->showrubricscores && $custom->grading->method=='rubric') {
                 $criteria =& $custom->grading->definition->rubric_criteria;
                 foreach ($criteria as $criterionid => $criterion) {
                     if (empty($rubricscores[$userid][$criterionid])) {
@@ -503,7 +542,7 @@ class assignfeedback_points_award_points_form extends moodleform {
                 }
                 unset($criteria);
             }
-            if ($custom->grading->method=='rubric' && $custom->config->showrubrictotal) {
+            if ($custom->config->showrubrictotal && $custom->grading->method=='rubric') {
                 $value = (isset($rubrictotal[$userid]) ? $rubrictotal[$userid] : 0);
                 if ($custom->grading->definition->totalscore) {
                     $value .= '/'.round($custom->grading->definition->totalscore, $gradeprecision);
@@ -511,8 +550,30 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $value = get_string('rubrictotal', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign rubrictotal"));
             }
-            if ($custom->grading->method=='guide' && $custom->config->showguidetotal) {
+            if ($custom->config->showguidescores && $custom->grading->method=='guide') {
+                $criteria =& $custom->grading->definition->guide_criteria;
+                foreach ($criteria as $criterionid => $criterion) {
+                    if (empty($guidescores[$userid][$criterionid])) {
+                        $score = 0;
+                        $remark = '';
+                    } else {
+                        $score = $guidescores[$userid][$criterionid]->score;
+                        $remark = $guidescores[$userid][$criterionid]->remark;
+                    }
+                    $score = round($score, $gradeprecision);
+                    if ($criterion['maxscore']) {
+                        $score .= '/'.round($criterion['maxscore'], $gradeprecision);
+                    }
+                    $value = $criterion['shortnametext'].': '.$score;
+                    $text[] = html_writer::tag('em', $value, array('class' => "$numericalign guidescores criterion-$criterionid"));
+                }
+                unset($criteria);
+            }
+            if ($custom->config->showguidetotal && $custom->grading->method=='guide') {
                 $value = (isset($guidetotal[$userid]) ? $guidetotal[$userid] : 0);
+                if ($custom->grading->definition->totalscore) {
+                    $value .= '/'.round($custom->grading->definition->totalscore, $gradeprecision);
+                }
                 $value = get_string('guidetotal', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign guidetotal"));
             }

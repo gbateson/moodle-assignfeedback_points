@@ -30,7 +30,7 @@ $string['alignjustify'] = 'Justify';
 $string['alignleft'] = 'Left';
 $string['alignright'] = 'Right';
 $string['alignscoresgrades_help'] = 'This setting allows you to specify the alignment of students\' scores and grades';
-$string['alignscoresgrades'] = 'Align scores and grades';
+$string['alignscoresgrades'] = 'Text alignment';
 $string['allowselectable_help'] = 'If this setting is enabled, jQuery\'s selectable functionality can be used to selected multiple students at once.';
 $string['allowselectable'] = 'Enable jQuery selectable';
 $string['automatically'] = 'Automatically';
@@ -53,10 +53,6 @@ $string['commenttext_help'] = 'A brief decription of why these points are being 
 $string['commenttext'] = 'Comment';
 $string['contactingserver'] = 'Contacting server ...';
 $string['count'] = 'Count';
-$string['criteriasettings_help'] = 'These settings specify how to format long criteria names.
-
-If the number of characters in a criteria name exceeds the "Length" value here, then the name will be reformatted as HEAD JOIN TAIL, where HEAD is the "Head" number of characters from the beginning of the name, JOIN is the "Join" string, and TAIL is the "Tail" number of characters from the end of the name.';
-$string['criteriasettings'] = 'Criteria name length';
 $string['default_help'] = 'If set, this feedback method will be enabled by default for all new assignments.';
 $string['default'] = 'Enabled by default';
 $string['delete'] = 'Delete';
@@ -94,6 +90,8 @@ $string['fixvowelsshorten'] = 'Shorten long vowels to single letters, aiueo';
 $string['fixvowelsmacrons'] = 'Display long vowels using macrons, āīūēō';
 $string['gradeassign'] = 'Assignment: {$a}';
 $string['gradecourse'] = 'Gradebook: {$a}';
+$string['gradeprecision_help'] = 'The number of decimal places to be displayed in the Assignment and Course grades for each student. If this precision is set to zero, then no decimal places will be displayed.';
+$string['gradeprecision'] = 'Grade precision';
 $string['guidetotal'] = 'Guide total: {$a}';
 $string['head'] = 'Head';
 $string['horizontal'] = 'Horizontal';
@@ -167,12 +165,12 @@ $string['nameformat_help'] = 'This string defines the display format for student
 : A name token is a short string of characters that acts as a placeholder in the name format string. Each name token is defined in a "Name token [...]" defintion. A name token definition defines which name field from the user profile to display and may also specify how the name field should be shortened and formatted.
 
 **Newline tokens**
-: A newline token is a short string that acts as a placeholder for a newline, or line break, in the format string. Usually, a newline token is just one character, but it can be any string or any length.
+: A newline token is a short string that acts as a placeholder for a newline, or line break, in the format string. Usually, a newline token is just one character, but it can be any string of any length.
 
 **Other characters**
 : Character strings other than those defined as name tokens or newline tokens will appear unchanged in the student names. Such characters may be useful for separating parts of names, and adding titles and punctuation to names.';
 $string['nameformat'] = 'Name format';
-$string['newlinetoken_help'] = 'A newline token is a short string that acts as a placeholder for a newline, or line break, in the format string. Usually, a newline token is just one character, but it can be any string or any length.
+$string['newlinetoken_help'] = 'A newline token is a short string that acts as a placeholder for a newline, or line break, in the format string. Usually, a newline token is just one character, but it can be any string of any length.
 
 Commonly used newline tokens are a single space (" "); a symbol, such as a vertical bar ("|") or slash ("/"); or a punctuation mark, such as a period (".") or exclamation mark ("!").';
 $string['newlinetoken'] = 'Newline token';
@@ -343,6 +341,10 @@ $string['style'] = 'Style';
 $string['subtotal'] = 'Sub-total';
 $string['tail'] = 'Tail';
 $string['textforgradebook'] = '{$a->timeawarded} ({$a->points} pts) {$a->comment}';
+$string['textsettings_help'] = 'These settings specify how to format long text strings.
+
+If the number of characters in a string exceeds the "Length" value here, then the string will be reformatted as HEAD JOIN TAIL, where HEAD is the "Head" number of characters from the beginning of the name, JOIN is the "Join" string, and TAIL is the "Tail" number of characters from the end of the string.';
+$string['textsettings'] = 'Text length';
 $string['totals'] = 'Totals';
 $string['timeawarded'] = 'Time awarded';
 $string['timecancelled'] = 'Time cancelled';
@@ -351,5 +353,7 @@ $string['undomanypointsmanyusers'] = 'Cancelled award of {$a->points} points to 
 $string['undomanypointsoneuser'] = 'Cancelled award of {$a->points} points to {$a->usercount} user: {$a->userlist}';
 $string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a->usercount} users: {$a->userlist}';
 $string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
+$string['upgradescoresmanyusers'] = 'Scores were upgraded for {$a->usercount} users: {$a->userlist}';
+$string['upgradescoresoneuser'] = 'Scores were upgraded for {$a->userlist}';
 $string['uppercase'] = 'UPPER CASE';
 $string['vertical'] = 'Vertical';

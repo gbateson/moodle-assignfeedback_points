@@ -195,7 +195,6 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
             }
         }
-        //self::add_settings($mform, $plugin, $config);
    }
 
     /**
@@ -226,7 +225,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param object $custom (optional, default=null)
      * @todo Finish documenting this function
      */
-    static public function add_settings($mform, $plugin, $config, $custom=null) {
+    static public function add_settings($mform, $plugin, $config, $custom) {
         global $OUTPUT;
 
         // we may need the string manager
@@ -235,17 +234,12 @@ class assign_feedback_points extends assign_feedback_plugin {
         // cache name of gradingmethod field for use in "disabledIf" conditions
         $gradingmethod = 'advancedgradingmethod_submissions';
 
-        // add header for new section
-        if ($custom===null) {
-            self::add_heading($mform, 'settings', $plugin, false);
-        }
-
         // Points settings
         $names = array('minpoints',
                        'maxpoints',
                        'increment',
                        'pointsperrow');
-        if ($custom && $custom->grading->method) {
+        if ($custom->grading->method) {
 
             // Advanced Grading (in awardpoints_form)
             array_push($names, 'pointstype',
@@ -259,16 +253,11 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             // Simple Direct Grading (or Assignment settings form)
 
-            if ($custom) {
-                self::add_heading($mform, 'points', $plugin, false);
-            }
+            self::add_heading($mform, 'points', $plugin, false);
 
             $options = self::get_text_options();
             foreach ($names as $name) {
                 self::add_setting($mform, $config, $name, 'text', 0, $options);
-                if ($custom===null) {
-                    $mform->disabledIf($name, $gradingmethod, 'ne', '');
-                }
             }
 
             $name = 'pointstype';
@@ -281,80 +270,13 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         // points, scores and grades
-        if ($custom) {
-            self::add_heading($mform, 'totals', $plugin , false);
-        }
+        self::add_heading($mform, 'totals', $plugin , false);
 
         // $names of hidden fields
         $names = array();
 
-        $name = 'showpointstoday';
-        if ($custom===null || $custom->grading->method=='') {
-            self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', '');
-            $mform->disabledIf($name, 'pointstype', 'ne', self::POINTSTYPE_SUM);
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showpointstotal';
-        if ($custom===null || $custom->grading->method=='') {
-            self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', '');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showrubrictotal';
-        if ($custom===null || $custom->grading->method=='rubric') {
-            self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showrubricscores';
-        if ($custom===null || $custom->grading->method=='rubric') {
-            self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showrubricremarks';
-        if ($custom===null || $custom->grading->method=='rubric') {
-            self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showguidetotal';
-        if ($custom===null || $custom->grading->method=='guide') {
-            self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showguidescores';
-        if ($custom===null || $custom->grading->method=='guide') {
-            self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'showguideremarks';
-        if ($custom===null || $custom->grading->method=='guide') {
-            self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
-        } else {
-            $names[] = $name;
-        }
-
-        $name = 'criteria';
-        if ($custom===null || $custom->grading->method=='rubric') {
+        $name = 'text';
+        if ($custom->grading->method) {
             $elements = array();
             self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'length', 'text',   0);
             self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'head',   'text',   1);
@@ -374,16 +296,19 @@ class assign_feedback_points extends assign_feedback_plugin {
             $mform->setType($setting, PARAM_INT);
             $mform->setDefault($setting, $config->$setting);
             $mform->disabledIf($setting, $name.'length', 'eq', '');
+            $mform->disabledIf($setting, $name.'length', 'eq', '0');
 
             $setting = $name.'join';
             $mform->setType($setting, PARAM_TEXT);
             $mform->setDefault($setting, $config->$setting);
             $mform->disabledIf($setting, $name.'length', 'eq', '');
+            $mform->disabledIf($setting, $name.'length', 'eq', '0');
 
             $setting = $name.'tail';
             $mform->setType($setting, PARAM_INT);
             $mform->setDefault($setting, $config->$setting);
             $mform->disabledIf($setting, $name.'length', 'eq', '');
+            $mform->disabledIf($setting, $name.'length', 'eq', '0');
         } else {
             $names[] = $name.'length';
             $names[] = $name.'head';
@@ -391,20 +316,87 @@ class assign_feedback_points extends assign_feedback_plugin {
             $names[] = $name.'tail';
         }
 
+        self::add_setting($mform, $config, 'alignscoresgrades', 'select', 0,
+                          self::get_alignscoresgrades_options(), PARAM_ALPHA);
+
+        self::add_setting($mform, $config, 'gradeprecision', 'select', 0,
+                          self::get_gradeprecision_options(), PARAM_INT);
+
+        $name = 'showpointstoday';
+        if ($custom->grading->method=='') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', '');
+            $mform->disabledIf($name, 'pointstype', 'ne', self::POINTSTYPE_SUM);
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showpointstotal';
+        if ($custom->grading->method=='') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', '');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showrubrictotal';
+        if ($custom->grading->method=='rubric') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showrubricscores';
+        if ($custom->grading->method=='rubric') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showrubricremarks';
+        if ($custom->grading->method=='rubric') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showguidetotal';
+        if ($custom->grading->method=='guide') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showguidescores';
+        if ($custom->grading->method=='guide') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
+        } else {
+            $names[] = $name;
+        }
+
+        $name = 'showguideremarks';
+        if ($custom->grading->method=='guide') {
+            self::add_setting($mform, $config, $name, 'checkbox', 1);
+            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
+        } else {
+            $names[] = $name;
+        }
+
+        self::add_setting($mform, $config, 'showassigngrade', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showcoursegrade', 'checkbox', 0);
+
         // add hidden fields, if any
         foreach ($names as $name) {
             $mform->addElement('hidden', $name, $config->$name);
             $mform->setType($name, PARAM_INT);
         }
 
-        self::add_setting($mform, $config, 'showassigngrade', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showcoursegrade', 'checkbox', 0);
-        self::add_setting($mform, $config, 'alignscoresgrades', 'select', 0,
-                          self::get_alignscoresgrades_options(), PARAM_ALPHA);
-
-        if ($custom) {
-            self::add_heading($mform, 'names', $plugin, false);
-        }
+        self::add_heading($mform, 'names', $plugin, false);
 
         self::add_setting($mform, $config, 'showpicture', 'checkbox', 0);
         self::add_setting($mform, $config, 'nameformat', 'text', '', self::get_text_options(20), PARAM_TEXT);
@@ -484,9 +476,8 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         // development settings (one day, these may be hidden completely)
-        if ($custom) {
-            self::add_heading($mform, 'development', 'admin', false);
-        }
+        self::add_heading($mform, 'development', 'admin', false);
+
         self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options());
         self::add_setting($mform, $config, 'showelement',     'checkbox', 0);
         self::add_setting($mform, $config, 'multipleusers',   'checkbox', 0);
@@ -623,7 +614,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param string  $plugin
      * @param object  $custom (optional, default=null)
      */
-    static public function add_field_jquery($mform, $plugin, $custom=null) {
+    static public function add_field_jquery($mform, $plugin, $custom) {
         global $CFG, $OUTPUT;
 
         // add jQuery script to this page
@@ -646,160 +637,158 @@ class assign_feedback_points extends assign_feedback_plugin {
         $js .= '    PTS.str.newlineempty     = "'.self::js_safe(get_string('newlineempty', $plugin)).'";'."\n";
         $js .= '    PTS.str.newlinespace     = "'.self::js_safe(get_string('newlinespace', $plugin)).'";'."\n";
 
-        if ($custom) {
-            $js .= '    PTS.str.contactingserver = "'.self::js_safe(get_string('contactingserver', $plugin)).'";'."\n";
+        $js .= '    PTS.str.contactingserver = "'.self::js_safe(get_string('contactingserver', $plugin)).'";'."\n";
 
-            // determine html tag used to enclose group elements
-            // templatable forms on Moodle >= 2.9 use "LABEL" tags
-            // non-templatable forms use "SPAN" tags
+        // determine html tag used to enclose group elements
+        // templatable forms on Moodle >= 2.9 use "LABEL" tags
+        // non-templatable forms use "SPAN" tags
 
-            if (method_exists($OUTPUT, 'mform_element')) {
-                // Moodle >= 2.9
-                $element = $mform->getElement('mapmodeelements'); // group of radio elements
-                $element = $element->getElements();               // array of radio elements
-                $element = $element[0];                           // the first radio element
-                $element = $OUTPUT->mform_element($element, false, false, '', true);
-                $group_element_tag = preg_replace('/^.*?<(\w+)[^>]*>.*$/s', '$1', $element);
-            } else {
-                // Moodle <= 2.8
-                $group_element_tag = 'span';
-            }
-
-            if ($group_element_tag=='label') {
-                // templatable theme for Moodle >= 2.9
-                $theme_type          = self::THEME_TYPE_LABEL;
-                $mapaction_container = '#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement';
-                $mapmode_container   = '#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement';
-                $user_container      = '#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement';
-                $points_container    = '#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement';
-                $layouts_container   = '#id_layouts_hdr div.form-group.row:nth-child(1) div.felement';
-            } else {
-                // non-templatable theme
-                $theme_type          = self::THEME_TYPE_SPAN;
-                $mapaction_container = '#fgroup_id_mapactionelements fieldset.fgroup';
-                $mapmode_container   = '#fgroup_id_mapmodeelements fieldset.fgroup';
-                $user_container      = '#fgroup_id_awardtoelements fieldset.fgroup';
-                $points_container    = '#fgroup_id_pointselements fieldset.fgroup';
-                $layouts_container   = '#fgroup_id_layoutselements';
-            }
-
-            $showpointstoday = 0;
-            $showpointstotal = 0;
-
-            $showguidescores = 0;
-            $showguideremarks = 0;
-            $showguidetotal = 0;
-
-            $showrubricscores = 0;
-            $showrubricremarks = 0;
-            $showrubrictotal = 0;
-
-            $usercriteriascores = array();
-            $criterialevelscores = array();
-            switch ($custom->grading->method) {
-
-                case '':
-                    $showpointstoday = intval($custom->config->showpointstoday);
-                    $showpointstotal = intval($custom->config->showpointstotal);
-                    break;
-
-                case 'guide':
-                    $showguidescores = intval($custom->config->showguidescores);
-                    $showguideremarks = intval($custom->config->showguideremarks);
-                    $showguidetotal = intval($custom->config->showguidetotal);
-                    foreach ($custom->grading->definition->guide_criteria as $criterionid => $criterion) {
-                        $criterialevelscores[] = $criterionid.':'.$criterion['maxscore'];
-                    }
-                    break;
-
-                case 'rubric':
-                    $showrubricscores = intval($custom->config->showrubricscores);
-                    $showrubricremarks = intval($custom->config->showrubricremarks);
-                    $showrubrictotal = intval($custom->config->showrubrictotal);
-                    foreach ($custom->grading->definition->rubric_criteria as $criterionid => $criterion) {
-                        $scores = array();
-                        foreach ($criterion['levels'] as $levelid => $level) {
-                            $scores[] = $levelid.':'.$level['score'];
-                        }
-                        $criterialevelscores[] = $criterionid.':{'.implode(',', $scores).'}';
-                    }
-                    break;
-            }
-
-            $usercriteriascores = '{'.implode(',', $usercriteriascores).'}';
-            $criterialevelscores = '{'.implode(',', $criterialevelscores).'}';
-
-            $js .= '    PTS.gradingmethod         = "'.$custom->grading->method.'";'."\n";
-            $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
-
-            $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
-            $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
-
-            $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
-            $js .= '    PTS.pointsperrow          = '.intval($custom->config->pointsperrow).";\n";
-            $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
-            $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
-
-            $js .= '    PTS.showpointstoday       = '.$showpointstoday.";\n";
-            $js .= '    PTS.showpointstotal       = '.$showpointstotal.";\n";
-
-            $js .= '    PTS.showrubricscores      = '.$showrubricscores.";\n";
-            $js .= '    PTS.showrubricremarks     = '.$showrubricremarks.";\n";
-            $js .= '    PTS.showrubrictotal       = '.$showrubrictotal.";\n";
-
-            $js .= '    PTS.showguidescores       = '.$showguidescores.";\n";
-            $js .= '    PTS.showguideremarks      = '.$showguideremarks.";\n";
-            $js .= '    PTS.showguidetotal        = '.$showguidetotal.";\n";
-
-            $js .= '    PTS.usercriteriascores    = '.$usercriteriascores.";\n";
-            $js .= '    PTS.criterialevelscores   = '.$criterialevelscores.";\n";
-
-            $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
-            $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
-            $js .= '    PTS.THEME_TYPE_LABEL      = '.self::THEME_TYPE_LABEL."\n";
-            $js .= '    PTS.group_element_tag     = "'.$group_element_tag.'";'."\n";
-            $js .= '    PTS.GROUP_ELEMENT_TAG     = PTS.group_element_tag.toUpperCase();'."\n";
-
-            $js .= '    PTS.mapaction_container   = "'.$mapaction_container.'";'."\n";
-            $js .= '    PTS.mapaction_min_width   = 48;'."\n";
-            $js .= '    PTS.mapaction_min_height  = 18;'."\n";
-
-            $js .= '    PTS.mapmode_container     = "'.$mapmode_container.'";'."\n";
-            $js .= '    PTS.mapmode_min_width     = 48;'."\n";
-            $js .= '    PTS.mapmode_min_height    = 18;'."\n";
-
-            $js .= '    PTS.user_container        = "'.$user_container.'";'."\n";
-            $js .= '    PTS.user_min_width        = 60;'."\n";
-            $js .= '    PTS.user_min_height       = 18;'."\n";
-
-            $js .= '    PTS.points_container      = "'.$points_container.'";'."\n";
-            $js .= '    PTS.points_min_width      = (PTS.theme_type==PTS.THEME_TYPE_LABEL ? 48 : 36);'."\n";
-            $js .= '    PTS.points_min_height     = 24;'."\n";
-
-            $js .= '    PTS.layouts_container     = "'.$layouts_container.'"'.";\n";
-
-            $js .= '    PTS.report_container_id   = "id_report_container";'."\n";
-            $js .= '    PTS.report_container      = "#" + PTS.report_container_id;'."\n";
-
-            $url  = '/mod/assign/feedback/points/awardpoints.ajax.php';
-            $url  = new moodle_url($url, array('id' => $custom->cm->id));
-            $js .= '    PTS.awardpoints_ajax_php  = "'.self::js_safe($url).'";'."\n";
-
-            $url = '/mod/assign/feedback/points/reportpoints.ajax.php';
-            $url = new moodle_url($url, array('id' => $custom->cm->id));
-            $js .= '    PTS.reportpoints_ajax_php = "'.self::js_safe($url).'";'."\n";
-
-            $js .= '    PTS.groupid               = '.intval($custom->groupid).";\n";
-            $js .= '    PTS.sesskey               = "'.sesskey().'";'."\n";
-
-            $js .= '    PTS.cleanup               = {duration : 400};'."\n";
-            $js .= '    PTS.separate              = {duration : 400, grid : {x : 12, y : 8}};'."\n";
-            $js .= '    PTS.rotate                = {duration : 400};'."\n";
-            $js .= '    PTS.resize                = {duration : 400};'."\n";
-            $js .= '    PTS.shuffle               = {duration : 400};'."\n";
-
-            $js .= '    PTS.allowselectable       = '.intval($custom->config->allowselectable).';'."\n";
+        if (method_exists($OUTPUT, 'mform_element')) {
+            // Moodle >= 2.9
+            $element = $mform->getElement('mapmodeelements'); // group of radio elements
+            $element = $element->getElements();               // array of radio elements
+            $element = $element[0];                           // the first radio element
+            $element = $OUTPUT->mform_element($element, false, false, '', true);
+            $group_element_tag = preg_replace('/^.*?<(\w+)[^>]*>.*$/s', '$1', $element);
+        } else {
+            // Moodle <= 2.8
+            $group_element_tag = 'span';
         }
+
+        if ($group_element_tag=='label') {
+            // templatable theme for Moodle >= 2.9
+            $theme_type          = self::THEME_TYPE_LABEL;
+            $mapaction_container = '#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement';
+            $mapmode_container   = '#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement';
+            $user_container      = '#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement';
+            $points_container    = '#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement';
+            $layouts_container   = '#id_layouts_hdr div.form-group.row:nth-child(1) div.felement';
+        } else {
+            // non-templatable theme
+            $theme_type          = self::THEME_TYPE_SPAN;
+            $mapaction_container = '#fgroup_id_mapactionelements fieldset.fgroup';
+            $mapmode_container   = '#fgroup_id_mapmodeelements fieldset.fgroup';
+            $user_container      = '#fgroup_id_awardtoelements fieldset.fgroup';
+            $points_container    = '#fgroup_id_pointselements fieldset.fgroup';
+            $layouts_container   = '#fgroup_id_layoutselements';
+        }
+
+        $showpointstoday = 0;
+        $showpointstotal = 0;
+
+        $showguidescores = 0;
+        $showguideremarks = 0;
+        $showguidetotal = 0;
+
+        $showrubricscores = 0;
+        $showrubricremarks = 0;
+        $showrubrictotal = 0;
+
+        $usercriteriascores = array();
+        $criterialevelscores = array();
+        switch ($custom->grading->method) {
+
+            case '':
+                $showpointstoday = intval($custom->config->showpointstoday);
+                $showpointstotal = intval($custom->config->showpointstotal);
+                break;
+
+            case 'guide':
+                $showguidescores = intval($custom->config->showguidescores);
+                $showguideremarks = intval($custom->config->showguideremarks);
+                $showguidetotal = intval($custom->config->showguidetotal);
+                foreach ($custom->grading->definition->guide_criteria as $criterionid => $criterion) {
+                    $criterialevelscores[] = $criterionid.':'.$criterion['maxscore'];
+                }
+                break;
+
+            case 'rubric':
+                $showrubricscores = intval($custom->config->showrubricscores);
+                $showrubricremarks = intval($custom->config->showrubricremarks);
+                $showrubrictotal = intval($custom->config->showrubrictotal);
+                foreach ($custom->grading->definition->rubric_criteria as $criterionid => $criterion) {
+                    $scores = array();
+                    foreach ($criterion['levels'] as $levelid => $level) {
+                        $scores[] = $levelid.':'.$level['score'];
+                    }
+                    $criterialevelscores[] = $criterionid.':{'.implode(',', $scores).'}';
+                }
+                break;
+        }
+
+        $usercriteriascores = '{'.implode(',', $usercriteriascores).'}';
+        $criterialevelscores = '{'.implode(',', $criterialevelscores).'}';
+
+        $js .= '    PTS.gradingmethod         = "'.$custom->grading->method.'";'."\n";
+        $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
+
+        $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
+        $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
+
+        $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
+        $js .= '    PTS.pointsperrow          = '.intval($custom->config->pointsperrow).";\n";
+        $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
+        $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
+
+        $js .= '    PTS.showpointstoday       = '.$showpointstoday.";\n";
+        $js .= '    PTS.showpointstotal       = '.$showpointstotal.";\n";
+
+        $js .= '    PTS.showrubricscores      = '.$showrubricscores.";\n";
+        $js .= '    PTS.showrubricremarks     = '.$showrubricremarks.";\n";
+        $js .= '    PTS.showrubrictotal       = '.$showrubrictotal.";\n";
+
+        $js .= '    PTS.showguidescores       = '.$showguidescores.";\n";
+        $js .= '    PTS.showguideremarks      = '.$showguideremarks.";\n";
+        $js .= '    PTS.showguidetotal        = '.$showguidetotal.";\n";
+
+        $js .= '    PTS.usercriteriascores    = '.$usercriteriascores.";\n";
+        $js .= '    PTS.criterialevelscores   = '.$criterialevelscores.";\n";
+
+        $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
+        $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
+        $js .= '    PTS.THEME_TYPE_LABEL      = '.self::THEME_TYPE_LABEL."\n";
+        $js .= '    PTS.group_element_tag     = "'.$group_element_tag.'";'."\n";
+        $js .= '    PTS.GROUP_ELEMENT_TAG     = PTS.group_element_tag.toUpperCase();'."\n";
+
+        $js .= '    PTS.mapaction_container   = "'.$mapaction_container.'";'."\n";
+        $js .= '    PTS.mapaction_min_width   = 48;'."\n";
+        $js .= '    PTS.mapaction_min_height  = 18;'."\n";
+
+        $js .= '    PTS.mapmode_container     = "'.$mapmode_container.'";'."\n";
+        $js .= '    PTS.mapmode_min_width     = 48;'."\n";
+        $js .= '    PTS.mapmode_min_height    = 18;'."\n";
+
+        $js .= '    PTS.user_container        = "'.$user_container.'";'."\n";
+        $js .= '    PTS.user_min_width        = 60;'."\n";
+        $js .= '    PTS.user_min_height       = 18;'."\n";
+
+        $js .= '    PTS.points_container      = "'.$points_container.'";'."\n";
+        $js .= '    PTS.points_min_width      = (PTS.theme_type==PTS.THEME_TYPE_LABEL ? 48 : 36);'."\n";
+        $js .= '    PTS.points_min_height     = 24;'."\n";
+
+        $js .= '    PTS.layouts_container     = "'.$layouts_container.'"'.";\n";
+
+        $js .= '    PTS.report_container_id   = "id_report_container";'."\n";
+        $js .= '    PTS.report_container      = "#" + PTS.report_container_id;'."\n";
+
+        $url  = '/mod/assign/feedback/points/awardpoints.ajax.php';
+        $url  = new moodle_url($url, array('id' => $custom->cm->id));
+        $js .= '    PTS.awardpoints_ajax_php  = "'.self::js_safe($url).'";'."\n";
+
+        $url = '/mod/assign/feedback/points/reportpoints.ajax.php';
+        $url = new moodle_url($url, array('id' => $custom->cm->id));
+        $js .= '    PTS.reportpoints_ajax_php = "'.self::js_safe($url).'";'."\n";
+
+        $js .= '    PTS.groupid               = '.intval($custom->groupid).";\n";
+        $js .= '    PTS.sesskey               = "'.sesskey().'";'."\n";
+
+        $js .= '    PTS.cleanup               = {duration : 400};'."\n";
+        $js .= '    PTS.separate              = {duration : 400, grid : {x : 12, y : 8}};'."\n";
+        $js .= '    PTS.rotate                = {duration : 400};'."\n";
+        $js .= '    PTS.resize                = {duration : 400};'."\n";
+        $js .= '    PTS.shuffle               = {duration : 400};'."\n";
+
+        $js .= '    PTS.allowselectable       = '.intval($custom->config->allowselectable).';'."\n";
 
         $js .= '//]]>'."\n";
         $js .= '</script>'."\n";
@@ -1077,7 +1066,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $this->process_layouts($userlist, $instance, $plugin, $x, $y, $map, $mapid, $ajax);
 
             // initialize "feedback" details
-            $feedback = (object)array('points'     => optional_param('points', 0, PARAM_INT),
+            $feedback = (object)array('points'     => 0,
                                       'stringname' => '',
                                       'usercount'  => 0,
                                       'userlist'   => array());
@@ -1106,10 +1095,12 @@ class assign_feedback_points extends assign_feedback_plugin {
             if ($feedback->usercount = count($feedback->userlist)) {
                 $feedback->userlist = implode(', ', $feedback->userlist);
                 switch (true) {
+                    case ($feedback->points==0 && $feedback->usercount==1): $feedback->stringname = 'upgradescoresoneuser'; break;
+                    case ($feedback->points==0 && $feedback->usercount > 1): $feedback->stringname = 'upgradescoresmanyusers'; break;
                     case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'awardonepointoneuser'; break;
-                    case ($feedback->points==1 && $feedback->usercount<>1): $feedback->stringname = 'awardonepointmanyusers'; break;
-                    case ($feedback->points<>1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
-                    case ($feedback->points<>1 && $feedback->usercount<>1): $feedback->stringname = 'awardmanypointsmanyusers'; break;
+                    case ($feedback->points==1 && $feedback->usercount > 1): $feedback->stringname = 'awardonepointmanyusers'; break;
+                    case ($feedback->points > 1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
+                    case ($feedback->points > 1 && $feedback->usercount > 1): $feedback->stringname = 'awardmanypointsmanyusers'; break;
                     default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
                 }
                 $feedback = get_string($feedback->stringname, $plugin, $feedback);
@@ -1850,11 +1841,11 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             case '': // Simple grading: Points
 
-                // the incoming points are available in the $feedback objet
-                $points = $feedback->points;
-
                 $name = 'pointstype';
                 $pointstype = $this->get_config($name);
+
+                $points = optional_param('points', 0, PARAM_INT);
+                $feedback->points = $points;
 
                 $commenttext   = optional_param('commenttextmenu', '',  PARAM_TEXT);
                 $commentformat = optional_param('commentformat',    0,   PARAM_INT);
@@ -1874,14 +1865,20 @@ class assign_feedback_points extends assign_feedback_plugin {
             case 'rubric': // Advanced grading: Rubric
 
                 // get details of criteria entered for each user
-                $name = 'criterialevels';
-                $criterialevels = self::optional_param_array($name, array(), PARAM_INT);
+                $name = 'rubricdata';
+                $rubricdata = self::optional_param_array($name, array(), PARAM_INT);
 
                 // shortcut to criteria details
                 $criteria =& $grading->definition->rubric_criteria;
                 break;
 
             case 'guide':
+
+                // shortcut to criteria details
+                $criteria =& $grading->definition->guide_criteria;
+
+                // shortcut to incoming form data
+                $formscores =& $grading->data->advancedgrading;
                 break;
         }
 
@@ -1959,8 +1956,8 @@ class assign_feedback_points extends assign_feedback_plugin {
                         $name.'instanceid' => $grading->instance->get_id()
                     );
                     $levels =& $gradingdata->$name;
-                    if (array_key_exists($userid, $criterialevels)) {
-                        foreach ($criterialevels[$userid] as $criterionid => $levelid) {
+                    if (array_key_exists($userid, $rubricdata)) {
+                        foreach ($rubricdata[$userid] as $criterionid => $levelid) {
                             $levels['criteria'][$criterionid] = array('levelid' => $levelid);
                             $grade += $criteria[$criterionid]['levels'][$levelid]['score'];
                        }
@@ -1969,6 +1966,60 @@ class assign_feedback_points extends assign_feedback_plugin {
                     break;
 
                 case 'guide': // Advanced grading: Marking guide
+                    $grade = 0;
+                    $name = 'advancedgrading';
+                    $gradingdata = (object)array(
+                        $name => array('criteria' => array()),
+                        $name.'instanceid' => $grading->instance->get_id(),
+                        'showmarkerdesc' => $grading->data->showmarkerdesc,
+                        'showstudentdesc' => $grading->data->showstudentdesc
+                    );
+
+                    $select = 'ggf.criterionid, ggf.score, ggf.remark, ggf.remarkformat';
+                    $from   = '{gradingform_guide_fillings} ggf'.
+                              ' JOIN {grading_instances} gi ON gi.id = ggf.instanceid'.
+                              ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
+                    $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid  = ?";
+                    $params = array($instance->id, gradingform_instance::INSTANCE_STATUS_ACTIVE, $userid);
+                    $oldscores = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params);
+
+                    $update = false;
+                    $newscores =& $gradingdata->$name;
+
+                    foreach ($criteria as $criterionid => $criterion) {
+                        $score = null;
+                        $remark = null;
+                        if (array_key_exists($criterionid, $formscores['criteria'])) {
+                            if (array_key_exists('score', $formscores['criteria'][$criterionid])) {
+                                $score = $formscores['criteria'][$criterionid]['score'];
+                                $update = true;
+                            }
+                            if (array_key_exists('remark', $formscores['criteria'][$criterionid])) {
+                                $remark = $formscores['criteria'][$criterionid]['remark'];
+                                $update = true;
+                            }
+                        }
+                        if ($score===null) {
+                            if ($oldscores) {
+                                $score = $oldscores[$criterionid]->score;
+                            } else {
+                                $score = 0;
+                            }
+                        }
+                        if ($remark===null) {
+                            if ($oldscores) {
+                                $remark = $oldscores[$criterionid]->remark;
+                            } else {
+                                $remark = '';
+                            }
+                        }
+                        $newscores['criteria'][$criterionid] = array(
+                            'score' => $score,
+                            'remark' => $remark
+                        );
+                    }
+                    unset($newscores);
+                    unset($oldscores);
                     break;
             }
 
@@ -1980,6 +2031,9 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
         if (isset($criteria)) {
             unset($criteria);
+        }
+        if (isset($formscores)) {
+            unset($formscores);
         }
     }
 
@@ -2605,6 +2659,12 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'newlinetoken'       => get_string('newlinetokendefault', $plugin),
                      'nametokens'         => array(), // base64_encode(serialize(array()))
                      'showpicture'        => 0,
+                     'textlength'         => 0,
+                     'texthead'           => 0,
+                     'textjoin'           => '...',
+                     'texttail'           => 0,
+                     'alignscoresgrades'  => self::ALIGN_NONE,
+                     'gradeprecision'     => 0,
                      'showpointstoday'    => 1,
                      'showpointstotal'    => 1,
                      'showrubricscores'   => 0,
@@ -2615,11 +2675,6 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'showguidetotal'     => 1,
                      'showassigngrade'    => 0,
                      'showcoursegrade'    => 0,
-                     'alignscoresgrades'  => self::ALIGN_NONE,
-                     'criterialength'     => 0,
-                     'criteriahead'       => 0,
-                     'criteriajoin'       => '...',
-                     'criteriatail'       => 0,
                      'showfeedback'       => 0,
                      'showelement'        => 0,
                      'multipleusers'      => 0,
@@ -2860,9 +2915,9 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_pointstype_options
+     * get_alignscoresgrades_options
      *
-     * return an array of formatted pointstype options
+     * return an array of formatted alignscoresgrades options
      * suitable for use in a Moodle form
      *
      * @return array of field names
@@ -2874,6 +2929,18 @@ class assign_feedback_points extends assign_feedback_plugin {
                      self::ALIGN_RIGHT   => get_string('alignright',   $plugin),
                      self::ALIGN_CENTER  => get_string('aligncenter',  $plugin),
                      self::ALIGN_JUSTIFY => get_string('alignjustify', $plugin));
+    }
+
+    /**
+     * get_gradeprecision_options
+     *
+     * return an array of formatted gradeprecision options
+     * suitable for use in a Moodle form
+     *
+     * @return array of field names
+     */
+    static public function get_gradeprecision_options() {
+        return range(0, 3);
     }
 
     /**
@@ -2960,11 +3027,11 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             $grading->definition->totalscore = 0;
 
-            // shortcuts to criteria length settings
-            $length = $config->criterialength;
-            $head   = $config->criteriahead;
-            $join   = $config->criteriajoin;
-            $tail   = $config->criteriatail;
+            // shortcuts to text length settings
+            $length = $config->textlength;
+            $head   = $config->texthead;
+            $join   = $config->textjoin;
+            $tail   = $config->texttail;
 
             $criteria = $grading->method.'_criteria';
             $criteria =& $grading->definition->$criteria;
