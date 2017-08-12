@@ -61,7 +61,11 @@ PTS.set_feedback = function(msg) {
  * @return void
  */
 PTS.set_ajax_feedback = function(msg) {
-    $("#feedback").parent().html(msg);
+    if (msg=="") {
+        $("#feedback").html(msg);
+    } else {
+        $("#feedback").parent().html(msg);
+    }
     PTS.set_feedback_visibility();
 }
 
@@ -657,31 +661,6 @@ PTS.do_map_rotate = function() {
 }
 
 /**
- * update_points_html
- *
- * @param object  input
- * @param string  classname
- * @param integer points
- * @return void
- */
-PTS.update_points_html = function(input, classname, points) {
-    var regexp = new RegExp("-?[0-9]+$");
-    input.each(function(){
-        var em = $(this).parent().find("em." + classname).first();
-        var html = em.html();
-        var match = html.match(regexp);
-        if (match) {
-            var newpoints = parseInt(points);
-            if (PTS.pointstype==0) { // incremental points
-                newpoints += parseInt(html.substring(match.index));
-            }
-            html = html.substring(0, match.index) + newpoints;
-            em.html(html);
-        }
-    });
-}
-
-/**
  * update_usermap_via_ajax
  *
  * @param object input
@@ -758,9 +737,11 @@ PTS.send_points_via_ajax = function(input) {
         // simple direct grading
 
         var name = "points";
-        data[name] = $(PTS.points_container + " > "
+        var selector = PTS.points_container + " > "
                      + PTS.group_element_tag + " > "
-                     + "input[name=" + name + "]:checked").val();
+                     + "input[name=" + name + "]:checked";
+        var points = $(selector).val();
+        data[name] = points;
 
         var value = "";
         var name = "commenttext";
@@ -774,8 +755,15 @@ PTS.send_points_via_ajax = function(input) {
         }
         data[name] = value;
 
+        if (PTS.showpointstoday) {
+            PTS.set_points(input, "pointstoday", points);
+        }
+        if (PTS.showpointstotal) {
+            PTS.set_points(input, "pointstotal", points);
+        }
+
     } else {
-        // advanced grading e.g. "rubric" or "guide"
+        // Advanced grading e.g. "rubric" or "guide"
 
         // select all radio, input  and textarea elements in the advanced grading table
         var name = "advancedgrading";
@@ -807,20 +795,14 @@ PTS.send_points_via_ajax = function(input) {
         // $1 : the criterion description
         // $2 : the current score for this criterion
         // $3 : the maximum score for this criterion
-        var regexp = new RegExp("^(.*): ([0-9.]+)/([0-9.]+)$");
+        var regexp = new RegExp("^(.*): (-?[0-9.]+)/([0-9.]+)$");
 
         if (PTS.gradingmethod=="rubric") {
-            // declare criterialevels as an object, {}, so that numeric
-            // keys do not force the creation of all intervening keys,
-            // as this can make the array huge and even exceed
-            // the server's limit on number of form elements
-            var name = "rubricdata";
-            data[name] = {};
             if (typeof(userid)=="string") {
-                data[name][userid] = PTS.get_rubric_levels(userid, regexp);
+                PTS.set_rubric_levels(userid, regexp);
             } else {
                 for (var uid in userid) {
-                    data[name][uid] = PTS.get_rubric_levels(uid, regexp);
+                    PTS.set_rubric_levels(uid, regexp);
                 }
             }
         }
@@ -853,33 +835,65 @@ PTS.send_points_via_ajax = function(input) {
         "method"   : "post",
         "url"      : PTS.awardpoints_ajax_php
     }).done(function(feedback){
-        PTS.set_ajax_feedback(feedback);
-        if (PTS.showpointstoday && PTS.gradingmethod=="") {
-            PTS.update_points_html(input, "pointstoday", data.points);
-        }
-        if (PTS.showpointstotal && PTS.gradingmethod=="") {
-            PTS.update_points_html(input, "pointstotal", data.points);
-        }
-        input.parent().removeClass("checked");
         input.prop("checked", false);
+        input.parent().removeClass("checked");
+        if (feedback.charAt(0)=="{" && feedback.slice(-1)=="}") {
+            feedback = $.parseJSON(feedback);
+            var regexp = new RegExp("^(.*): (-?[0-9.]+)(/[0-9.]+)?$");
+            for (var userid in feedback.values) {
+                var user = $("#id_awardto_" + userid).first();
+                for (var type in feedback.values[userid]) {
+                    var value = feedback.values[userid][type];
+                    var em = user.parent().find("em." + type);
+                    if (em.length) {
+                        em = em.first();
+                        var oldhtml = em.html();
+                        var newhtml = "$1: " + value + "$3";
+                        em.html(oldhtml.replace(regexp, newhtml));
+                    }
+                }
+            }
+            feedback = feedback.text;
+        }
+        PTS.set_ajax_feedback(feedback);
     });
 }
 
 /**
- * get_rubric_levels
+ * set_points
+ *
+ * @param object  input
+ * @param string  classname
+ * @param integer points
+ * @return void
+ */
+PTS.set_points = function(input, classname, points) {
+    var regexp = new RegExp("^(.*): (-?[0-9]+)$");
+    input.each(function(){
+        var em = $(this).parent().find("em." + classname).first();
+        var oldhtml = em.html();
+        var newpoints = parseInt(points);
+        if (PTS.pointstype==0) {
+            newpoints += parseInt(oldhtml.replace(regexp, "$2"));
+        }
+        em.html(oldhtml.replace(regexp, "$1: " + newpoints));
+    });
+}
+
+/**
+ * set_rubric_levels
  *
  * @param integer uid
  * @param object  regexp to parse score in user tile
- * @return array of scores for each criterion id
+ * @return void, but may update rubric levels
  */
-PTS.get_rubric_levels = function(uid, regexp) {
+PTS.set_rubric_levels = function(uid, regexp) {
 
     var input = $("#id_awardto_" + uid);
     if (input.length==0) {
         return false; // shouldn't happen !!
     }
 
-    var levels = {};
     var total = null;
     for (var cid in PTS.criterialevelscores) {
 
@@ -889,9 +903,6 @@ PTS.get_rubric_levels = function(uid, regexp) {
         // update/extract score in user tile
         score = PTS.get_criterion_score(input, cid, score, regexp);
 
-        // get levelid that matches this score
-        levels[cid] = PTS.get_criteria_level(cid, score);
-
         // increment total
         if (total===null) {
             total = 0;
@@ -900,11 +911,9 @@ PTS.get_rubric_levels = function(uid, regexp) {
     }
 
     // update total score for this user
-    if (total !== null) {
-        PTS.update_criteria_total(input, regexp, total);
+    if (PTS.showrubrictotal && total !== null) {
+        PTS.set_criteria_total(input, regexp, total);
     }
-
-    return levels;
 }
 
 /**
@@ -921,7 +930,6 @@ PTS.set_guide_scores = function(uid, regexp) {
         return false; // shouldn't happen !!
     }
 
-    var scores = {};
     var total = null;
     for (var cid in PTS.criterialevelscores) {
 
@@ -930,7 +938,6 @@ PTS.set_guide_scores = function(uid, regexp) {
 
         // update/extract score in user tile
         score = PTS.get_criterion_score(input, cid, score, regexp);
-        scores[cid] = score;
 
         // increment total
         if (total===null) {
@@ -939,21 +946,21 @@ PTS.set_guide_scores = function(uid, regexp) {
         total += parseInt(score);
     }
 
-    // update total score for this user
-    if (total !== null) {
-        PTS.update_criteria_total(input, regexp, total);
+    // set total score for this user
+    if (PTS.showguidetotal && total !== null) {
+        PTS.set_criteria_total(input, regexp, total);
     }
 }
 
 /**
- * update_criteria_total
+ * set_criteria_total
  *
  * @param object  input element for user tile
  * @param object  regexp to match score in user tile
  * @param integer total of criteria scores
  * @return void, but may update criteria total in user tile
  */
-PTS.update_criteria_total = function(input, regexp, total) {
+PTS.set_criteria_total = function(input, regexp, total) {
     var em = input.parent().find("em." + PTS.gradingmethod + "total");
     if (em.length) {
         em = em.first();
@@ -1044,21 +1051,6 @@ PTS.get_user_criteria_score = function(uid, cid) {
     if (uid in PTS.usercriteriascores) {
         if (cid in PTS.usercriteriascores[uid]) {
             return PTS.usercriteriascores[uid][cid];
-        }
-    }
-    return 0; // shouldn't happen !!
-}
-
-/**
- * get_criteria_level
- *
- * @param integer cid
- * @return integer (or null)
- */
-PTS.get_criteria_level = function(cid, score) {
-    for (var lid in PTS.criterialevelscores[cid]) {
-        if (PTS.criterialevelscores[cid][lid]==score) {
-            return lid;
         }
     }
     return 0; // shouldn't happen !!

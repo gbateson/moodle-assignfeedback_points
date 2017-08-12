@@ -388,6 +388,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         self::add_setting($mform, $config, 'showassigngrade', 'checkbox', 0);
+        self::add_setting($mform, $config, 'showmodulegrade', 'checkbox', 0);
         self::add_setting($mform, $config, 'showcoursegrade', 'checkbox', 0);
 
         // add hidden fields, if any
@@ -1016,9 +1017,14 @@ class assign_feedback_points extends assign_feedback_plugin {
         // cache the current time
         $time = time();
 
-        // feedback string
-        $feedback = null;
-
+        // initialize "feedback" details
+        $feedback = (object)array('text'       => '',
+                                  'stringname' => '',
+                                  'points'     => 0,
+                                  'usercount'  => 0,
+                                  'userlist'   => array(),
+                                  'values'     => array(),
+                                  'undo'       => array());
 
         // get multipleusers setting that was used to create incoming form data
         if ($ajax) {
@@ -1027,7 +1033,6 @@ class assign_feedback_points extends assign_feedback_plugin {
             $multipleusers = $this->get_config('multipleusers');
         }
 
-        // handle "undo" request - i.e. cancel previously awarded points
         // get original groupid
         $groupid = optional_param('groupid', false, PARAM_INT);
         if ($groupid===false) {
@@ -1037,44 +1042,36 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
         }
 
+        // get/update user map (do not update if processing an "undo" request)
+        $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id, ($undo ? false : true));
+        $mapid = $map->id;
+
         // get userlist for original $groupid
         $userlist = $this->assignment->list_participants($groupid, false);
         $this->format_userlist_names($userlist, $config);
 
         if ($undo) {
-            $feedback = $this->process_undo($userlist, $instance);
-        }
+            // Handle an "undo" request - i.e. cancel previously awarded points.
+            // Note that "undo" is available only for simple grading using points.
+            $this->process_undo($feedback, $userlist, $instance, $plugin, $time);
 
-        // process incoming POST $data, if any
-        if ($data = data_submitted()) {
+        } else if ($data = data_submitted()) {
 
-            if ($ajax || $undo) {
+            if ($ajax) {
                 // don't save settings
             } else {
                 $this->save_settings_allowmissing($data, false);
             }
-
-            // get/update user map
-            $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id, true);
-            $mapid = $map->id;
 
             // get (x, y) coordinates
             $x = self::optional_param_array('awardtox', array(), PARAM_INT);
             $y = self::optional_param_array('awardtoy', array(), PARAM_INT);
 
             // register incoming points in assignfeedback_points table
-            $this->process_layouts($userlist, $instance, $plugin, $x, $y, $map, $mapid, $ajax);
+            $this->process_layouts($feedback, $userlist, $instance, $plugin, $x, $y, $map, $mapid, $ajax);
 
-            // initialize "feedback" details
-            $feedback = (object)array('points'     => 0,
-                                      'stringname' => '',
-                                      'usercount'  => 0,
-                                      'userlist'   => array());
-
-            // setup undo, if required
-            if ($undo==0) {
-                // initialize parameters for "undo" link
-                $undoparams = array('undo'          => 1,
+            // initialize parameters for "undo" link
+            $feedback->undo = array('undo'          => 1,
                                     'id'            => $cm->id,
                                     'plugin'        => 'points',
                                     'pluginsubtype' => 'assignfeedback',
@@ -1087,38 +1084,48 @@ class assign_feedback_points extends assign_feedback_plugin {
                                     'pointsid'      => array(),
                                     'multipleusers' => $multipleusers,
                                     'commenttext'   => get_string('undo', $plugin));
-            }
 
             // award the points to selected users
-            $this->process_awardto($userlist, $instance, $time, $undo, $undoparams, $feedback, $grading);
+            $this->process_awardto($feedback, $userlist, $cm, $instance, $time, $grading);
 
+            // format feedback text, if necessary
             if ($feedback->usercount = count($feedback->userlist)) {
+
                 $feedback->userlist = implode(', ', $feedback->userlist);
                 switch (true) {
                     case ($feedback->points==0 && $feedback->usercount==1): $feedback->stringname = 'upgradescoresoneuser'; break;
-                    case ($feedback->points==0 && $feedback->usercount > 1): $feedback->stringname = 'upgradescoresmanyusers'; break;
+                    case ($feedback->points==0 && $feedback->usercount >1): $feedback->stringname = 'upgradescoresmanyusers'; break;
                     case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'awardonepointoneuser'; break;
-                    case ($feedback->points==1 && $feedback->usercount > 1): $feedback->stringname = 'awardonepointmanyusers'; break;
-                    case ($feedback->points > 1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
-                    case ($feedback->points > 1 && $feedback->usercount > 1): $feedback->stringname = 'awardmanypointsmanyusers'; break;
+                    case ($feedback->points==1 && $feedback->usercount >1): $feedback->stringname = 'awardonepointmanyusers'; break;
+                    case ($feedback->points >1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
+                    case ($feedback->points >1 && $feedback->usercount >1): $feedback->stringname = 'awardmanypointsmanyusers'; break;
                     default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
                 }
-                $feedback = get_string($feedback->stringname, $plugin, $feedback);
-                if ($undo==0 && count($undoparams['pointsid'])) {
-                    if (count($undoparams['pointsid'])==1) {
-                        $undoparams['pointsid'] = reset($undoparams['pointsid']);
-                    } else {
-                        foreach ($undoparams['pointsid'] as $i => $id) {
-                            $undoparams['pointsid['.$i.']'] = $id;
-                        }
-                        unset($undoparams['pointsid']);
+                $feedback->text = get_string($feedback->stringname, $plugin, $feedback);
+
+                // add "Undo" link, if required
+                if ($count = count($feedback->undo['pointsid'])) {
+
+                    // prepare "pointsid" array for Undo link
+                    $params = array();
+                    foreach ($feedback->undo['pointsid'] as $i => $id) {
+                        $params['pointsid['.$i.']'] = $id;
                     }
-                    $link = new moodle_url('/mod/assign/view.php', $undoparams);
-                    $link = html_writer::link($link, get_string('undo', $plugin), array('id' => 'undolink'));
-                    $feedback .= " $link";
+                    if ($count==1) {
+                        $feedback->undo['pointsid'] = reset($params);
+                    } else {
+                        $feedback->undo['pointsid'] = $params;
+                    }
+
+                    // create Undo link
+                    $link = new moodle_url('/mod/assign/view.php', $feedback->undo);
+                    $text = get_string('undo', $plugin);
+                    $params = array('id' => 'undolink');
+                    $link = html_writer::link($link, $text, $params);
+
+                    // append Undo link to $feedback->text
+                    $feedback->text .= ' '.$link;
                 }
-            } else {
-                $feedback = '';
             }
 
             // get latest groupid (it may have changed)
@@ -1143,14 +1150,19 @@ class assign_feedback_points extends assign_feedback_plugin {
                 unset($_POST['userheight']);
                 unset($_POST['mapprivacy']);
             }
-        } else {
-            $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
         }
 
-        if ($feedback===null) {
-            $feedback = '';
+        if ($feedback->text) {
+            $feedback->text = html_writer::tag('span', $feedback->text, array('id' => 'feedback'));
+        }
+        if (empty($feedback->values)) {
+            $feedback = $feedback->text;
         } else {
-            $feedback = html_writer::tag('span', $feedback, array('id' => 'feedback'));
+            unset($feedback->stringname);
+            unset($feedback->points);
+            unset($feedback->usercount);
+            unset($feedback->userlist);
+            unset($feedback->undo);
         }
 
         return array($multipleusers, $groupid, $map, $feedback, $userlist, $grading);
@@ -1294,10 +1306,14 @@ class assign_feedback_points extends assign_feedback_plugin {
     /**
      * process_undo
      *
-     * @param  array  $userlist (passed by reference)
-     * @return string $feedback, if any
+     * @param  object  $feedback (passed by reference)
+     * @param  array   $userlist (passed by reference)
+     * @param  object  $instance assignment instance record
+     * @param  string  $plugin
+     * @param  integer $time
+     * @return void, but may update $userlist and $feedback
      */
-    protected function process_undo(&$userlist, $instance) {
+    protected function process_undo(&$feedback, &$userlist, $instance, $plugin, $time) {
         global $DB, $USER;
 
         // get ids from incoming data
@@ -1307,12 +1323,6 @@ class assign_feedback_points extends assign_feedback_plugin {
             $ids = array($ids);
         }
         $ids = array_filter($ids);
-
-        // initialize "feedback" details
-        $feedback = (object)array('points'     => 0,
-                                  'stringname' => '',
-                                  'usercount'  => 0,
-                                  'userlist'   => array());
 
         // undo the points
         foreach($ids as $id) {
@@ -1338,22 +1348,19 @@ class assign_feedback_points extends assign_feedback_plugin {
             $feedback->userlist = implode(', ', $feedback->userlist);
             switch (true) {
                 case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'undoonepointoneuser'; break;
-                case ($feedback->points==1 && $feedback->usercount<>1): $feedback->stringname = 'undoonepointmanyusers'; break;
-                case ($feedback->points<>1 && $feedback->usercount==1): $feedback->stringname = 'undomanypointsoneuser'; break;
-                case ($feedback->points<>1 && $feedback->usercount<>1): $feedback->stringname = 'undomanypointsmanyusers'; break;
+                case ($feedback->points==1 && $feedback->usercount >1): $feedback->stringname = 'undoonepointmanyusers'; break;
+                case ($feedback->points >1 && $feedback->usercount==1): $feedback->stringname = 'undomanypointsoneuser'; break;
+                case ($feedback->points >1 && $feedback->usercount >1): $feedback->stringname = 'undomanypointsmanyusers'; break;
                 default: $feedback->stringname = 'awardnopoints'; // shouldn't happen !!
             }
-            $feedback = get_string($feedback->stringname, $plugin, $feedback);
-        } else {
-            $feedback = null;
+            $feedback->text = get_string($feedback->stringname, $plugin, $feedback);
         }
-
-        return $feedback;
     }
 
     /**
      * process_layouts
      *
+     * @param  object  $feedback (passed by reference)
      * @param  array   $userlist
      * @param  object  $instance assign(ment) record from DB
      * @param  string  $plugin
@@ -1364,7 +1371,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param  integer $ajax
      * @return void
      */
-    protected function process_layouts(&$userlist, $instance, $plugin, $x, $y, $map, $mapid, $ajax) {
+    protected function process_layouts(&$feedback, &$userlist, $instance, $plugin, $x, $y, $map, $mapid, $ajax) {
         global $DB, $USER;
 
         // set up layouts, if required
@@ -1802,21 +1809,23 @@ class assign_feedback_points extends assign_feedback_plugin {
     /**
      * process_awardto
      *
+     * @param  object  $feedback (passed by reference)
      * @param  array   $userlist (passed by reference)
      * @param  object  $instance assign(ment) record from DB
      * @param  integer $time
-     * @param  integer $undo
-     * @param  array   $undoparams
-     * @param  object  $feedback
-     * @param  array   $grading
-     * @return void, but may update undoparams and $feedback
+     * @param  array   $grading (passed by reference)
+     * @return void, but may update $feedback
      */
-    protected function process_awardto(&$userlist, $instance, $time, $undo, &$undoparams, &$feedback, &$grading) {
+    protected function process_awardto(&$feedback, &$userlist, $cm, $instance, $time, &$grading) {
         global $DB, $USER;
 
-        // do we want to send notifications to students ?
-        $name = 'sendnotifications';
-        $sendnotifications = $this->get_config($name);
+        // cache certain config settings
+        $gradeprecision = $this->get_config('gradeprecision');
+        $showpointstotal = $this->get_config('showpointstotal');
+        $showassigngrade = $this->get_config('showassigngrade');
+        $showmodulegrade = $this->get_config('showmodulegrade');
+        $showcoursegrade = $this->get_config('showcoursegrade');
+        $sendnotifications = $this->get_config('sendnotifications');
 
         if ($sendnotifications===false) {
             $name = 'sendstudentnotifications';
@@ -1836,50 +1845,37 @@ class assign_feedback_points extends assign_feedback_plugin {
             $userids = array($userids => 1);
         }
 
-        // prepare incomgin parameters
-        switch ($grading->method) {
+        // prepare incoming parameters
+        if ($grading->method=='') {
+            // Simple grading: Points
 
-            case '': // Simple grading: Points
+            $pointstype = $this->get_config('pointstype');
+            $points = optional_param('points', 0, PARAM_INT);
+            $feedback->points = $points;
 
-                $name = 'pointstype';
-                $pointstype = $this->get_config($name);
+            $commenttext   = optional_param('commenttextmenu', '',  PARAM_TEXT);
+            $commentformat = optional_param('commentformat',    0,   PARAM_INT);
 
-                $points = optional_param('points', 0, PARAM_INT);
-                $feedback->points = $points;
+            // if commenttext was not selected from the drop down menu
+            // try to get it from the text input element
+            if ($commenttext=='') {
+                $commenttext = optional_param('commenttext',   '', PARAM_TEXT);
+            }
 
-                $commenttext   = optional_param('commenttextmenu', '',  PARAM_TEXT);
-                $commentformat = optional_param('commentformat',    0,   PARAM_INT);
+            // append to $undparams comment, if necessary
+            if ($commenttext) {
+                $feedback->undo['commenttext'] .= ": $commenttext";
+            }
 
-                // if commenttext was not selected from the drop down menu
-                // try to get it from the text input element
-                if ($commenttext=='') {
-                    $commenttext = optional_param('commenttext',   '', PARAM_TEXT);
-                }
+        } else {
+            // Advanced grading: Rubric or Marking guide
 
-                // append to $undparams comment, if necessary
-                if ($undo==0 && $commenttext) {
-                    $undoparams['commenttext'] .= ": $commenttext";
-                }
-                break;
+            // shortcut to rubric/guide criteria details
+            $criteria = $grading->method.'_criteria';
+            $criteria =& $grading->definition->$criteria;
 
-            case 'rubric': // Advanced grading: Rubric
-
-                // get details of criteria entered for each user
-                $name = 'rubricdata';
-                $rubricdata = self::optional_param_array($name, array(), PARAM_INT);
-
-                // shortcut to criteria details
-                $criteria =& $grading->definition->rubric_criteria;
-                break;
-
-            case 'guide':
-
-                // shortcut to criteria details
-                $criteria =& $grading->definition->guide_criteria;
-
-                // shortcut to incoming form data
-                $formscores =& $grading->data->advancedgrading;
-                break;
+            // shortcut to incoming form data
+            $formdata =& $grading->data->advancedgrading;
         }
 
         // add points for each user
@@ -1889,13 +1885,18 @@ class assign_feedback_points extends assign_feedback_plugin {
                 continue; // shouldn't happen !!
             }
 
+            // Initialize $feedback->values for this user.
+            // These are values that are displayed in the browser
+            // but which can only be calculated here, on the server.
+            $feedback->values[$userid] = array();
+
             // get associated assign_grades record id
             $params = array('assignment' => $instance->id,
                             'userid'     => $userid);
-            if ($gradeassign = $DB->get_records('assign_grades', $params, 'attemptnumber DESC')) {
-                $gradeassign = reset($gradeassign); // most recent assignment grade
+            if ($assigngrade = $DB->get_records('assign_grades', $params, 'attemptnumber DESC')) {
+                $assigngrade = reset($assigngrade); // most recent assignment grade
             } else {
-                $gradeassign = (object)array(
+                $assigngrade = (object)array(
                     'assignment'    => $instance->id,
                     'userid'        => $userid,
                     'timecreated'   => $time,
@@ -1904,155 +1905,244 @@ class assign_feedback_points extends assign_feedback_plugin {
                     'grade'         => 0.00,
                     'attemptnumber' => 0
                 );
-                $gradeassign->id = $DB->insert_record('assign_grades', $gradeassign);
+                $assigngrade->id = $DB->insert_record('assign_grades', $assigngrade);
             }
 
-            switch ($grading->method) {
-                case '': // Simple grading: Points
+            if ($grading->method=='') {
 
-                    // add new assignfeedback_points record
-                    $assignfeedbackpoints = (object)array(
-                        'assignid'      => $instance->id,
-                        'gradeid'       => $gradeassign->id,
-                        'awardby'       => $USER->id,
-                        'awardto'       => $userid,
-                        'points'        => $points,
-                        'pointstype'    => $pointstype,
-                        'latitude'      => 0,
-                        'longitude'     => 0,
-                        'commenttext'   => $commenttext,
-                        'commentformat' => $commentformat,
-                        'timecreated'   => $time,
-                        'timeawarded'   => $time,
-                        'timemodified'  => $time
-                    );
-                    $assignfeedbackpoints->id = $DB->insert_record('assignfeedback_points', $assignfeedbackpoints);
+                // add new assignfeedback_points record
+                $assignfeedbackpoints = (object)array(
+                    'assignid'      => $instance->id,
+                    'gradeid'       => $assigngrade->id,
+                    'awardby'       => $USER->id,
+                    'awardto'       => $userid,
+                    'points'        => $points,
+                    'pointstype'    => $pointstype,
+                    'latitude'      => 0,
+                    'longitude'     => 0,
+                    'commenttext'   => $commenttext,
+                    'commentformat' => $commentformat,
+                    'timecreated'   => $time,
+                    'timeawarded'   => $time,
+                    'timemodified'  => $time
+                );
+                $assignfeedbackpoints->id = $DB->insert_record('assignfeedback_points', $assignfeedbackpoints);
 
-                    // append this pointsid to the "undo" parameters
-                    if ($undo==0) {
-                        $undoparams['pointsid'][] = $assignfeedbackpoints->id;
-                    }
+                // append this pointsid to the "undo" parameters
+                $feedback->undo['pointsid'][] = $assignfeedbackpoints->id;
 
-                    if ($pointstype==self::POINTSTYPE_SUM) { // incremental points
-                        $params = array('assignid'   => $instance->id,
-                                        'awardto'    => $userid,
-                                        'pointstype' => $pointstype);
-                        $grade = $DB->get_field('assignfeedback_points', 'SUM(points)', $params);
-                        if (empty($grade)) {
-                            $grade = 0.0;
+                // set SQL parameters for "points" records to calculate grade
+                $aggregate = '';
+                $limitfrom = 0;
+                $limitnum  = 0;
+                $orderby   = '';
+                $groupby   = '';
+                $grade     = null;
+
+                switch ($pointstype) {
+                    case self::POINTSTYPE_SUM:     $aggregate = 'SUM'; break;
+                    case self::POINTSTYPE_AVERAGE: $aggregate = 'AVG'; break;
+                    case self::POINTSTYPE_MAXIMUM: $aggregate = 'MAX'; break;
+                    case self::POINTSTYPE_MINIMUM: $aggregate = 'MIN'; break;
+                    case self::POINTSTYPE_OLDEST:  $orderby = 'timeawarded ASC'; break;
+                    case self::POINTSTYPE_MEDIAN:  $orderby = 'points ASC'; break;
+                    case self::POINTSTYPE_MODE:    $groupby = 'points'; break;
+                    // any thing else, including POINTSTYPE_NEWEST,
+                    // will default $grade = $points
+                }
+
+                $from = '{assignfeedback_points}';
+                $where = 'assignid = :assignid '.
+                         'AND awardto = :awardto '.
+                         'AND cancelby = :cancelby '.
+                         'AND pointstype = :pointstype';
+                $params = array('assignid'   => $instance->id,
+                                'awardto'    => $userid,
+                                'cancelby'   => 0,
+                                'pointstype' => $pointstype);
+
+                if ($aggregate) {
+                    $grade = "SELECT $aggregate(points) FROM $from WHERE $where";
+                    $grade = $DB->get_field_sql($grade, $params);
+                } else if ($orderby) {
+                    $grade = "SELECT id, points FROM $from WHERE $where ORDER BY $orderby";
+                    $grade = $DB->get_records_sql_menu($grade, $params, $limitfrom, $limitnum);
+                    if ($grade) {
+                        if ($limitnum==1) {
+                            // get first (and only) value
+                            $grade = reset($grade);
+                        } else if ($pointstype==self::POINTSTYPE_MEDIAN) {
+                            // get halfway value
+                            $grade = array_slice($grade, floor(count($grade) / 2), 1);
+                        } else {
+                            $grade = null; // shoudln't happen !!
                         }
-                    } else {
-                        $grade = $points;
                     }
-
-                    $gradingdata = $grading->data;
-                    break;
-
-                case 'rubric': // Advanced grading: Rubric
-                    $grade = 0;
-                    $name = 'advancedgrading';
-                    $gradingdata = (object)array(
-                        $name => array('criteria' => array()),
-                        $name.'instanceid' => $grading->instance->get_id()
-                    );
-                    $levels =& $gradingdata->$name;
-                    if (array_key_exists($userid, $rubricdata)) {
-                        foreach ($rubricdata[$userid] as $criterionid => $levelid) {
-                            $levels['criteria'][$criterionid] = array('levelid' => $levelid);
-                            $grade += $criteria[$criterionid]['levels'][$levelid]['score'];
-                       }
+                } else if ($groupby) {
+                    $grade = "SELECT $groupby, count(*) as countvalues ".
+                             "FROM $from WHERE $where ".
+                             "GROUP BY $groupby ".
+                             "ORDER BY countvalues DESC, $groupby ASC";
+                    $grade = $DB->get_records_sql_menu($grade, $params, $limitfrom, $limitnum);
+                    if ($grade) {
+                        $grade = reset($grade);
+                        $grade = $grade->$groupby;
                     }
-                    unset($levels);
-                    break;
-
-                case 'guide': // Advanced grading: Marking guide
+                } else {
+                    $grade = $points;
+                }
+                if ($grade===null || $grade===false) {
                     $grade = 0;
-                    $name = 'advancedgrading';
-                    $gradingdata = (object)array(
-                        $name => array('criteria' => array()),
-                        $name.'instanceid' => $grading->instance->get_id(),
-                        'showmarkerdesc' => $grading->data->showmarkerdesc,
-                        'showstudentdesc' => $grading->data->showstudentdesc
-                    );
+                }
 
+                if ($showpointstotal) {
+                    $feedback->values[$userid]['pointstotal'] = $grade;
+                }
+
+                $gradingdata = $grading->data;
+
+            } else {
+
+                $name = 'advancedgrading';
+                $gradingdata = (object)array(
+                    $name => array('criteria' => array()),
+                    $name.'instanceid' => $grading->instance->get_id()
+                );
+
+                $newdata =& $gradingdata->$name;
+                $olddata = false;
+                $defaults = array();
+
+                if ($grading->method=='rubric') {
+                    // fetch $olddata about this user from $DB
+                    $select = 'grf.criterionid, grf.levelid, grf.remark, grf.remarkformat';
+                    $from   = '{gradingform_rubric_fillings} grf'.
+                              ' JOIN {grading_instances} gi ON gi.id = grf.instanceid'.
+                              ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
+                    $where  = 'ag.assignment = ? AND gi.status = ? AND ag.userid = ?';
+                    $params = array($instance->id, gradingform_instance::INSTANCE_STATUS_ACTIVE, $userid);
+                    $olddata = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params);
+
+                    // specify $defaults for new data
+                    $defaults = array('levelid' => 0,
+                                      'remark'  => '',
+                                      'remarkformat' => 0);
+                }
+
+                if ($grading->method=='guide') {
+                    $gradingdata->showmarkerdesc = $grading->data->showmarkerdesc;
+                    $gradingdata->showstudentdesc = $grading->data->showstudentdesc;
+
+                    // fetch $olddata about this user from $DB
                     $select = 'ggf.criterionid, ggf.score, ggf.remark, ggf.remarkformat';
                     $from   = '{gradingform_guide_fillings} ggf'.
                               ' JOIN {grading_instances} gi ON gi.id = ggf.instanceid'.
                               ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
-                    $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid  = ?";
+                    $where  = 'ag.assignment = ? AND gi.status = ? AND ag.userid = ?';
                     $params = array($instance->id, gradingform_instance::INSTANCE_STATUS_ACTIVE, $userid);
-                    $oldscores = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params);
+                    $olddata = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params);
 
-                    $update = false;
-                    $newscores =& $gradingdata->$name;
+                    // specify $defaults for new data
+                    $defaults = array('score' => 0,
+                                      'remark' => '',
+                                      'remarkformat' => 0);
+                }
 
-                    foreach ($criteria as $criterionid => $criterion) {
-                        $score = null;
-                        $remark = null;
-                        if (array_key_exists($criterionid, $formscores['criteria'])) {
-                            if (array_key_exists('score', $formscores['criteria'][$criterionid])) {
-                                $score = $formscores['criteria'][$criterionid]['score'];
-                                $update = true;
-                            }
-                            if (array_key_exists('remark', $formscores['criteria'][$criterionid])) {
-                                $remark = $formscores['criteria'][$criterionid]['remark'];
-                                $update = true;
+                $grade = 0;
+                foreach ($criteria as $criterionid => $criterion) {
+
+                    // cache flag showing if $formdata exists for this criterionid
+                    $exists = array_key_exists($criterionid, $formdata['criteria']);
+
+                    $new = array();
+                    foreach ($defaults as $name => $default) {
+                        if ($exists && array_key_exists($name, $formdata['criteria'][$criterionid])) {
+                            $value = $formdata['criteria'][$criterionid][$name];
+                        } else if ($olddata) {
+                            $value = $olddata[$criterionid]->$name;
+                        } else {
+                            $value = $default;
+                        }
+                        $new[$name] = $value;
+                        if ($name=='score') {
+                            $grade += $value;
+                        } else if ($name=='levelid') {
+                            if (array_key_exists($value, $criterion['levels'])) {
+                                $grade += $criterion['levels'][$value]['score'];
                             }
                         }
-                        if ($score===null) {
-                            if ($oldscores) {
-                                $score = $oldscores[$criterionid]->score;
-                            } else {
-                                $score = 0;
-                            }
-                        }
-                        if ($remark===null) {
-                            if ($oldscores) {
-                                $remark = $oldscores[$criterionid]->remark;
-                            } else {
-                                $remark = '';
-                            }
-                        }
-                        $newscores['criteria'][$criterionid] = array(
-                            'score' => $score,
-                            'remark' => $remark
-                        );
                     }
-                    unset($newscores);
-                    unset($oldscores);
-                    break;
+                    $newdata['criteria'][$criterionid] = $new;
+                }
+
+                // unset references to new/old data
+                unset($newdata);
+                unset($olddata);
             }
 
             // append this user to "feedback" details
             $feedback->userlist[] = $userlist[$userid]->feedbackname;
 
-            $gradedata = $this->get_grade_data($gradeassign, $grade, $sendnotifications, $gradingdata);
+            $gradedata = $this->get_grade_data($assigngrade, $grade, $sendnotifications, $gradingdata);
             $this->assignment->save_grade($userid, $gradedata);
+
+            if ($showassigngrade) {
+                $grade = array('id' => $assigngrade->id);
+                if ($grade = $DB->get_record('assign_grades', $grade)) {
+                    $grade = round($grade->grade, $gradeprecision);
+                    $feedback->values[$userid]['assigngrade'] = $grade;
+                }
+            }
+
+            if ($showmodulegrade) {
+                $grade = array('courseid'=>$cm->course,
+                               'itemtype'=>'mod',
+                               'itemmodule' => 'assign',
+                               'iteminstance' => $cm->instance);
+                if ($grade = grade_item::fetch($grade)) {
+                    $grade = $grade->get_grade($userid)->finalgrade;
+                    $grade = round($grade, $gradeprecision);
+                    $feedback->values[$userid]['modulegrade'] = $grade;
+                }
+            }
+
+            if ($showcoursegrade) {
+                if ($grade = grade_item::fetch_course_item($cm->course)) {
+                    $grade = $grade->get_final($userid)->finalgrade;
+                    $grade = round($grade, $gradeprecision);
+                    $feedback->values[$userid]['coursegrade'] = $grade;
+                }
+            }
+
+            // remove $feedback values (i.e. scores and grades), if it is not required
+            if (empty($feedback->values[$userid])) {
+                unset($feedback->values[$userid]);
+            }
         }
         if (isset($criteria)) {
             unset($criteria);
         }
-        if (isset($formscores)) {
-            unset($formscores);
+        if (isset($formdata)) {
+            unset($formdata);
         }
     }
 
     /**
      * get_grade_data
      *
-     * @param  object  $gradeassign
+     * @param  object  $assigngrade
      * @param  decimal $grade
      * @param  boolean $sendnotifications
      * @param  object  grading $data required by "rubric" and "guide" grading methods
      * @return object
      */
-    protected function get_grade_data($gradeassign, $grade, $sendnotifications, $gradingdata) {
+    protected function get_grade_data($assigngrade, $grade, $sendnotifications, $gradingdata) {
 
         $gradedata = (object)array(
-            'id'              => $gradeassign->id,
+            'id'              => $assigngrade->id,
             'grade'           => $grade,
             'applytoall'      => 0,
-            'attemptnumber'   => $gradeassign->attemptnumber,
+            'attemptnumber'   => $assigngrade->attemptnumber,
             'sendstudentnotifications' => $sendnotifications
         );
 
@@ -2674,6 +2764,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'showguideremarks'   => 0,
                      'showguidetotal'     => 1,
                      'showassigngrade'    => 0,
+                     'showmodulegrade'    => 0,
                      'showcoursegrade'    => 0,
                      'showfeedback'       => 0,
                      'showelement'        => 0,

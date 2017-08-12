@@ -63,5 +63,9 @@ $points = new assign_feedback_points($assign, 'points');
 // process incoming formdata
 list($multipleusers, $groupid, $map, $feedback, $userlist, $grading) = $points->process_formdata();
 
+if (is_object($feedback)) {
+    $feedback = json_encode($feedback);
+}
+
 // send feedback, if any
 echo $feedback;

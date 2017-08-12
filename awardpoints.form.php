@@ -274,7 +274,9 @@ class assignfeedback_points_award_points_form extends moodleform {
             $gradeprecision = $custom->config->gradeprecision;
         } else {
             $gradeprecision = 0;
-            if ($usersfound && ($custom->config->showassigngrade || $custom->config->showcoursegrade)) {
+            if ($usersfound && ($custom->config->showassigngrade ||
+                                $custom->config->showmodulegrade ||
+                                $custom->config->showcoursegrade)) {
                 $params = array('courseid' => $custom->courseid,
                                 'name'     => 'decimalpoints');
                 if ($DB->record_exists('grade_settings', $params)) {
@@ -466,28 +468,37 @@ class assignfeedback_points_award_points_form extends moodleform {
             list($where, $params) = $DB->get_in_or_equal($userids);
             $where = "assignment = ? AND userid $where";
             array_unshift($params, $custom->assignid);
-            $gradeassign = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where", $params);
+            $assigngrade = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where", $params);
         } else {
-            $gradeassign = false;
+            $assigngrade = false;
         }
-        if ($gradeassign===false) {
-            $gradeassign = array();
+        if ($assigngrade===false) {
+            $assigngrade = array();
+        }
+
+        // get module grades, if required
+        if ($usersfound && $custom->config->showmodulegrade) {
+            $modulegrade = grade_item::fetch(array('courseid' => $custom->courseid,
+                                                   'itemtype' => 'mod',
+                                                   'itemmodule' => 'assign',
+                                                   'iteminstance' => $custom->cm->instance));
+            $modulegrade = grade_grade::fetch_users_grades($modulegrade, $userids, true);
+            foreach ($modulegrade as $userid => $grade) {
+                $modulegrade[$userid] = $grade->finalgrade;
+            }
+        } else {
+            $modulegrade = array();
         }
 
         // get course grades, if required
         if ($usersfound && $custom->config->showcoursegrade) {
-            $gradecourse = grade_get_grades($custom->courseid, 'mod', 'assign', $custom->cm->instance, $userids);
-            if ($gradecourse = reset($gradecourse->items)) {
-                $gradecourse = $gradecourse->grades;
-                foreach ($gradecourse as $userid => $grade) {
-                    $gradecourse[$userid] = $grade->grade; // $grade->str_grade
-                }
+            $coursegrade = grade_item::fetch_course_item($custom->courseid);
+            $coursegrade = grade_grade::fetch_users_grades($coursegrade, $userids, true);
+            foreach ($coursegrade as $userid => $grade) {
+                $coursegrade[$userid] = $grade->finalgrade;
             }
         } else {
-            $gradecourse = false;
-        }
-        if ($gradecourse===false) {
-            $gradecourse = array();
+            $coursegrade = array();
         }
 
         $linebreak = html_writer::empty_tag('br');
@@ -578,14 +589,19 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign guidetotal"));
             }
             if ($custom->config->showassigngrade) {
-                $value = (isset($gradeassign[$userid]) ? $gradeassign[$userid] : 0);
-                $value = get_string('gradeassign', $plugin, round($value, $gradeprecision));
-                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign gradeassign"));
+                $value = (isset($assigngrade[$userid]) ? $assigngrade[$userid] : 0);
+                $value = get_string('assigngrade', $plugin, round($value, $gradeprecision));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign assigngrade"));
+            }
+            if ($custom->config->showmodulegrade) {
+                $value = (isset($modulegrade[$userid]) ? $modulegrade[$userid] : 0);
+                $value = get_string('modulegrade', $plugin, round($value, $gradeprecision));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign modulegrade"));
             }
             if ($custom->config->showcoursegrade) {
-                $value = (isset($gradecourse[$userid]) ? $gradecourse[$userid] : 0);
-                $value = get_string('gradecourse', $plugin, round($value, $gradeprecision));
-                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign gradecourse"));
+                $value = (isset($coursegrade[$userid]) ? $coursegrade[$userid] : 0);
+                $value = get_string('coursegrade', $plugin, round($value, $gradeprecision));
+                $text[] = html_writer::tag('em', $value, array('class' => "$numericalign coursegrade"));
             }
 
             // Convert the $text array to a string.
