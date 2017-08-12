@@ -90,7 +90,7 @@ In some cases, consecutive vowels are not altered because they represent distinc
 $string['fixvowels'] = 'Fix vowels';
 $string['fixvowelsshorten'] = 'Shorten long vowels to single letters, aiueo';
 $string['fixvowelsmacrons'] = 'Display long vowels using macrons, āīūēō';
-$string['gradeprecision_help'] = 'The number of decimal places to be displayed in the Assignment and Course grades for each student. If this precision is set to zero, then no decimal places will be displayed.';
+$string['gradeprecision_help'] = 'The number of decimal places to be displayed in the assignment, activity and course grades for each student. If this precision is set to zero, then no decimal places will be displayed.';
 $string['gradeprecision'] = 'Grade precision';
 $string['guidetotal'] = 'Guide total: {$a}';
 $string['head'] = 'Head';
@@ -321,6 +321,7 @@ $string['showrubricscores'] = 'Show Rubric scores';
 $string['showrubrictotal_help'] = 'If this setting is enabled, the total Rubric score for each student will be displayed.';
 $string['showrubrictotal'] = 'Show Rubric totals';
 $string['shuffle'] = 'Shuffle';
+$string['sortby'] = 'Sort by';
 $string['singlespace'] = '(single white space)';
 $string['split_help'] = 'These settings are optional. They specify how to extract part of a user name field.
 

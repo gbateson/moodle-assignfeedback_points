@@ -661,6 +661,56 @@ PTS.do_map_rotate = function() {
 }
 
 /**
+ * do_map_sortby
+ *
+ * @return void
+ */
+PTS.do_map_sortby = function() {
+
+    var field = $("#id_sortbymenu").val();
+    if (field=="") {
+        return false; // show message?
+    }
+    if (PTS.sortby[field]==null) {
+        return false; // shouldn't happen !!
+    }
+
+    // create array of elms ordered by position
+    var elms = {};
+    $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
+        if ($(this).hasClass("ui-draggable")) {
+            var p = $(this).position();
+            if (elms[p.top]==null) {
+                elms[p.top] = {};
+            }
+            elms[p.top][p.left] = this;
+        }
+    });
+
+    // this flag will be set to true
+    // if the user map changes size
+    // or the users change position
+    PTS.update_usermap = false;
+
+    var i = 0;
+    for (var y in elms) {
+        for (var x in elms[y]) {
+            var id = PTS.sortby[field][i++];
+            var elm = $("#id_awardto_" + id);
+            elm = elm.first().parent().get(0);
+            PTS.shuffle_user(elm, elms[y][x]);
+        }
+    }
+
+    // send new map settings to server
+    // if any of the SPANs were moved
+    setTimeout(PTS.update_usermap_via_ajax, PTS.shuffle.duration);
+
+    // clear the mapaction
+    PTS.clear_map_action();
+}
+
+/**
  * update_usermap_via_ajax
  *
  * @param object input
@@ -1644,7 +1694,6 @@ PTS.hideshow_name_fields = function() {
  * @return void
  */
 $(document).ready(function() {
-
     PTS.hideshow_name_fields();
 
     var mapaction_container = $(PTS.mapaction_container);

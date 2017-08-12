@@ -102,9 +102,10 @@ class assignfeedback_points_award_points_form extends moodleform {
         // - Display names
         // - Display totals
         // - Development
+        // - jquery (PTS settings)
         // ========================
         //
-        assign_feedback_points::add_settings($mform, $plugin, $custom->config, $custom);
+        assign_feedback_points::add_settings($mform, $plugin, $custom);
 
         // ========================
         // report section
@@ -215,10 +216,15 @@ class assignfeedback_points_award_points_form extends moodleform {
                             'separate' => get_string('separate', $plugin),
                             'shuffle'  => get_string('shuffle',  $plugin),
                             'resize'   => get_string('resize',   $plugin),
-                            'rotate'   => get_string('rotate',   $plugin));
+                            'rotate'   => get_string('rotate',   $plugin),
+                            'sortby'   => get_string('sortby',   $plugin));
         $elements = array();
         foreach ($mapactions as $value => $text) {
             $elements[] = $mform->createElement('radio', $name, '', $text, $value);
+            if ($value=='sortby') {
+                $options = assign_feedback_points::get_nametoken_field_options($plugin, $custom, false);
+                $elements[] = $mform->createElement('select', $value.'menu', '', $options);
+            }
         }
         $mform->addGroup($elements, $name.'elements', $label, '', false);
         $mform->addHelpButton($name.'elements', $name, $plugin);

@@ -221,67 +221,82 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @param object $mform
      * @param string $plugin
-     * @param object $config
-     * @param object $custom (optional, default=null)
+     * @param object $custom
      * @todo Finish documenting this function
      */
-    static public function add_settings($mform, $plugin, $config, $custom) {
+    static public function add_settings($mform, $plugin, $custom) {
         global $OUTPUT;
 
-        // we may need the string manager
+        // cache reference to string manager
         $strman = get_string_manager();
 
-        // cache name of gradingmethod field for use in "disabledIf" conditions
-        $gradingmethod = 'advancedgradingmethod_submissions';
+        // cache reference to config settings
+        $config = $custom->config;
 
-        // Points settings
-        $names = array('minpoints',
-                       'maxpoints',
-                       'increment',
-                       'pointsperrow');
-        if ($custom->grading->method) {
+        // names of hidden fields
+        $hiddenfields = array();
 
-            // Advanced Grading (in awardpoints_form)
-            array_push($names, 'pointstype',
-                               'showcomments');
-            foreach ($names as $name) {
-                $mform->addElement('hidden', $name, $config->$name);
-                $mform->setType($name, PARAM_INT);
-            }
-
-        } else {
-
-            // Simple Direct Grading (or Assignment settings form)
-
+        if ($custom->grading->method=='') {
             self::add_heading($mform, 'points', $plugin, false);
+        }
 
+        $name = 'minpoints';
+        if ($custom->grading->method=='') {
             $options = self::get_text_options();
-            foreach ($names as $name) {
-                self::add_setting($mform, $config, $name, 'text', 0, $options);
-            }
+            self::add_setting($mform, $config, $name, 'text', 0, $options);
+        } else {
+            $hiddenfields[$name] = PARAM_INT;
+        }
 
-            $name = 'pointstype';
-            $options = self::get_pointstype_options();
+        $name = 'maxpoints';
+        if ($custom->grading->method=='') {
+            $options = self::get_text_options();
+            self::add_setting($mform, $config, $name, 'text', 0, $options);
+        } else {
+            $hiddenfields[$name] = PARAM_INT;
+        }
+
+        $name = 'increment';
+        if ($custom->grading->method=='') {
+            $options = self::get_text_options();
+            self::add_setting($mform, $config, $name, 'text', 0, $options);
+        } else {
+            $hiddenfields[$name] = PARAM_INT;
+        }
+
+        $name = 'pointsperrow';
+        if ($custom->grading->method=='') {
+            $options = self::get_text_options();
+            self::add_setting($mform, $config, $name, 'text', 0, $options);
+        } else {
+            $hiddenfields[$name] = PARAM_INT;
+        }
+
+        $name = 'pointstype';
+        if ($custom->grading->method=='') {
+            $options = self::get_pointstype_options($plugin);
             self::add_setting($mform, $config, $name, 'select', 0, $options);
-            $mform->disabledIf($name, $gradingmethod, 'ne', '');
+        } else {
+            $hiddenfields[$name] = PARAM_INT;
+        }
 
-            $name = 'showcomments';
+        $name = 'showcomments';
+        if ($custom->grading->method=='') {
             self::add_setting($mform, $config, $name, 'checkbox', 0);
+        } else {
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         // points, scores and grades
         self::add_heading($mform, 'totals', $plugin , false);
 
-        // $names of hidden fields
-        $names = array();
-
         $name = 'text';
         if ($custom->grading->method) {
             $elements = array();
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'length', 'text',   0);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'head',   'text',   1);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'join',   'text',   1);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, null, 'tail',   'text',   1, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, null, 'length', 'text',   0);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, null, 'head',   'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, null, 'join',   'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, null, 'tail',   'text',   1, 2);
 
             $groupname = $name.'settings';
             $label = get_string($groupname, $plugin);
@@ -310,81 +325,73 @@ class assign_feedback_points extends assign_feedback_plugin {
             $mform->disabledIf($setting, $name.'length', 'eq', '');
             $mform->disabledIf($setting, $name.'length', 'eq', '0');
         } else {
-            $names[] = $name.'length';
-            $names[] = $name.'head';
-            $names[] = $name.'join';
-            $names[] = $name.'tail';
+            $hiddenfields[$name.'length'] = PARAM_INT;
+            $hiddenfields[$name.'head'] = PARAM_INT;
+            $hiddenfields[$name.'join'] = PARAM_TEXT;
+            $hiddenfields[$name.'tail'] = PARAM_INT;
         }
 
-        self::add_setting($mform, $config, 'alignscoresgrades', 'select', 0,
-                          self::get_alignscoresgrades_options(), PARAM_ALPHA);
+        $options = self::get_alignscoresgrades_options($plugin);
+        self::add_setting($mform, $config, 'alignscoresgrades', 'select', 0, $options, PARAM_ALPHA);
 
-        self::add_setting($mform, $config, 'gradeprecision', 'select', 0,
-                          self::get_gradeprecision_options(), PARAM_INT);
+        $options = self::get_gradeprecision_options($plugin);
+        self::add_setting($mform, $config, 'gradeprecision', 'select', 0, $options, PARAM_INT);
 
         $name = 'showpointstoday';
         if ($custom->grading->method=='') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', '');
             $mform->disabledIf($name, 'pointstype', 'ne', self::POINTSTYPE_SUM);
         } else {
-            $names[] = $name;
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         $name = 'showpointstotal';
         if ($custom->grading->method=='') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', '');
         } else {
-            $names[] = $name;
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         $name = 'showrubrictotal';
         if ($custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
-            $names[] = $name;
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         $name = 'showrubricscores';
         if ($custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
-            $names[] = $name;
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         $name = 'showrubricremarks';
         if ($custom->grading->method=='rubric') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'rubric');
         } else {
-            $names[] = $name;
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         $name = 'showguidetotal';
         if ($custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
-            $names[] = $name;
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         $name = 'showguidescores';
         if ($custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
-            $names[] = $name;
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         $name = 'showguideremarks';
         if ($custom->grading->method=='guide') {
             self::add_setting($mform, $config, $name, 'checkbox', 1);
-            $mform->disabledIf($name, $gradingmethod, 'ne', 'guide');
         } else {
-            $names[] = $name;
+            $hiddenfields[$name] = PARAM_INT;
         }
 
         self::add_setting($mform, $config, 'showassigngrade', 'checkbox', 0);
@@ -392,9 +399,9 @@ class assign_feedback_points extends assign_feedback_plugin {
         self::add_setting($mform, $config, 'showcoursegrade', 'checkbox', 0);
 
         // add hidden fields, if any
-        foreach ($names as $name) {
+        foreach ($hiddenfields as $name => $type) {
             $mform->addElement('hidden', $name, $config->$name);
-            $mform->setType($name, PARAM_INT);
+            $mform->setType($name, $type);
         }
 
         self::add_heading($mform, 'names', $plugin, false);
@@ -418,19 +425,19 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             // define elements in this nametoken group
             $elements = array();
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'token',     'text',   0, 3);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'field',     'select', 0, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'split',     'text',   2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'start',     'text',   1);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'count',     'text',   1, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'romanize',  'select', 2, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'fixvowels', 'select', 2, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'length',    'text',   2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'head',      'text',   1);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'join',      'text',   1);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'tail',      'text',   1, 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'style',     'select', 2);
-            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $name, $i, 'case',      'select', 1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'token',     'text',   0, 3);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'field',     'select', 0, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'split',     'text',   2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'start',     'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'count',     'text',   1, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'romanize',  'select', 2, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'fixvowels', 'select', 2, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'length',    'text',   2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'head',      'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'join',      'text',   1);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'tail',      'text',   1, 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'style',     'select', 2);
+            self::add_nametokens_setting($mform, $elements, $strman, $plugin, $custom, $name, $i, 'case',      'select', 1);
 
             // add this nametoken group
             $label = get_string('nametoken', $plugin, ($i + 1));
@@ -479,7 +486,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         // development settings (one day, these may be hidden completely)
         self::add_heading($mform, 'development', 'admin', false);
 
-        self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options());
+        self::add_setting($mform, $config, 'showfeedback',    'select',   0, self::get_showfeedback_options($plugin));
         self::add_setting($mform, $config, 'showelement',     'checkbox', 0);
         self::add_setting($mform, $config, 'multipleusers',   'checkbox', 0);
         self::add_setting($mform, $config, 'sendimmediately', 'checkbox', 1);
@@ -554,6 +561,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param array   $elements (baed by reference)
      * @param object  $strman
      * @param string  name of $plugin
+     * @param object  $custom settings for the form
      * @param string  $name of form element (should be "nametokens")
      * @param integer $i(ndex) of form element
      * @param string  name of $setting
@@ -562,7 +570,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param $spacetype (optional, default=0) 0=none, 1=space, 2=newline, 3=get_string("nameseparator", $plugin)
      * @todo Finish documenting this function
      */
-    static public function add_nametokens_setting($mform, &$elements, $strman, $plugin, $name, $i, $setting, $elementtype, $labeltype=0, $spacetype=0) {
+    static public function add_nametokens_setting($mform, &$elements, $strman, $plugin, $custom, $name, $i, $setting, $elementtype, $labeltype=0, $spacetype=0) {
         global $OUTPUT;
 
         if ($labeltype) {
@@ -582,7 +590,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $class = get_class();
         $method = 'get_nametoken_'.$setting.'_options';
         if (method_exists($class, $method)) {
-            $options = call_user_func(array($class, $method));
+            $options = call_user_func(array($class, $method), $plugin, $custom);
         } else if ($elementtype=='text') {
             $options = self::get_text_options();
         } else {
@@ -791,6 +799,8 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         $js .= '    PTS.allowselectable       = '.intval($custom->config->allowselectable).';'."\n";
 
+        $js .= '    PTS.sortby                = '.json_encode($custom->sortby).';'."\n";
+
         $js .= '//]]>'."\n";
         $js .= '</script>'."\n";
 
@@ -846,12 +856,13 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     public function save_setting_allowmissing($data, $name, $default, $allowmissing) {
         $value = null;
+        $plugin = 'assignfeedback_points';
 
         if (isset($data->$name)) {
             $class = get_class();
             $method = 'get_'.$name.'_options';
             if (method_exists($class, $method)) {
-                $options = call_user_func(array($class, $method));
+                $options = call_user_func(array($class, $method), $plugin);
                 if (array_key_exists($data->$name, $options)) {
                     $value = $data->$name;
                 }
@@ -983,7 +994,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             'config'     => $this->get_all_config($plugin),
             'awardto'    => $userlist,
             'feedback'   => $feedback,
-            'grading'    => $grading
+            'grading'    => $grading,
+            'sortby'     => self::get_sortby($userlist)
         );
         $mform = new assignfeedback_points_award_points_form(null, $custom);
 
@@ -1182,6 +1194,7 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // valid name fields in user object
         $namefields = self::get_all_user_name_fields();
+        $namefields['username'] = 'username';
 
         // format the display names for these users
         foreach ($userlist as $id => $user) {
@@ -2734,6 +2747,38 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * get_sortby
+     *
+     * @param  object $custom
+     * @return string json string of sortby object
+     */
+    static public function get_sortby($userlist) {
+        $sortby = array();
+
+        $namefields = self::get_all_user_name_fields();
+        $namefields['username'] = 'username';
+
+        foreach ($namefields as $namefield) {
+            $count = 0;
+            $ids = array();
+            foreach ($userlist as $userid => $user) {
+                if ($user->$namefield===null || $user->$namefield==='') {
+                    $ids[$userid] = '';
+                } else {
+                    $ids[$userid] = $user->$namefield;
+                    $count++;
+                }
+            }
+            if ($count) {
+                asort($ids); // sort but maintain keys
+                $sortby[$namefield] = array_keys($ids);
+            }
+        }
+
+        return $sortby;
+    }
+
+    /**
      * get_defaultvalues
      *
      * @return array(name => default)
@@ -2848,10 +2893,10 @@ class assign_feedback_points extends assign_feedback_plugin {
      * return an array of formatted pointstype options
      * suitable for use in a Moodle form
      *
+     * @param  string $plugin name
      * @return array of field names
      */
-    static public function get_pointstype_options() {
-        $plugin = 'assignfeedback_points';
+    static public function get_pointstype_options($plugin) {
         return array(self::POINTSTYPE_SUM     => get_string('pointstypesum',     $plugin),
                      self::POINTSTYPE_NEWEST  => get_string('pointstypenewest',  $plugin),
                      self::POINTSTYPE_MAXIMUM => get_string('pointstypemaximum', $plugin),
@@ -2863,16 +2908,22 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_nametoken_options
+     * get_nametoken_field_options
      *
      * return an array of formatted name field options
      * suitable for use in a Moodle form
      *
+     * @param  string $plugin name
+     * @param  object $custom settings for the form
+     * @param boolean $includedefault (optional, default=TRUE)
      * @return array of field names
      */
-    static public function get_nametoken_field_options() {
+    static public function get_nametoken_field_options($plugin, $custom, $includedefault=true) {
 
-        $fields = array('' => '', 'default' => '');
+        $fields = array('' => '');
+        if ($includedefault) {
+            $fields['default'] = '';
+        }
         $fields += self::get_all_user_name_fields();
         $fields['username'] = '';
 
@@ -2911,8 +2962,18 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
         }
 
-        if ($default = fullname((object)$fields)) {
+        if ($includedefault) {
+            $default = fullname((object)$fields);
             $fields['default'] .= ": $default";
+        }
+
+        // remove $fields that are not used by this group of users
+        foreach (array_keys($fields) as $field) {
+            if ($field=='' || $field=='default' || array_key_exists($field, $custom->sortby)) {
+                // do nothing
+            } else {
+                unset($fields[$field]);
+            }
         }
 
         return $fields;
@@ -2924,10 +2985,11 @@ class assign_feedback_points extends assign_feedback_plugin {
      * return an array of formatted style options
      * suitable for use in a Moodle form
      *
+     * @param  string $plugin name
+     * @param  object $custom settings for the form
      * @return array of name case options
      */
-    static public function get_nametoken_style_options() {
-        $plugin = 'assignfeedback_points';
+    static public function get_nametoken_style_options($plugin, $custom) {
         return array('' => get_string('none'),
                      'b' => 'b',
                      'i' => 'i',
@@ -2943,15 +3005,16 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_namecase_options
+     * get_nametoken_case_options
      *
      * return an array of name case options
      * suitable for use in a Moodle form
      *
+     * @param  string $plugin name
+     * @param  object $custom settings for the form
      * @return array of name case options
      */
-    static public function get_nametoken_case_options() {
-        $plugin = 'assignfeedback_points';
+    static public function get_nametoken_case_options($plugin, $custom) {
         return array(self::CASE_ORIGINAL => get_string('originalcase', $plugin),
                      self::CASE_PROPER   => get_string('propercase',   $plugin),
                      self::CASE_LOWER    => get_string('lowercase',    $plugin),
@@ -2959,15 +3022,16 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_nameromanize_options
+     * get_nametoken_romanize_options
      *
      * return an array of formatted romanization options
      * suitable for use in a Moodle form
      *
+     * @param  string $plugin name
+     * @param  object $custom settings for the form
      * @return array of field names
      */
-    static public function get_nametoken_romanize_options() {
-        $plugin = 'assignfeedback_points';
+    static public function get_nametoken_romanize_options($plugin, $custom) {
         return array(self::ROMANIZE_NO  => get_string('no'),
                      self::ROMANIZE_ROMAJI => get_string('romanizeromaji', $plugin),
                      self::ROMANIZE_HIRAGANA => get_string('romanizehiragana', $plugin),
@@ -2976,15 +3040,16 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_nameromanize_options
+     * get_nametoken_fixvowels_options
      *
      * return an array of formatted romanization options
      * suitable for use in a Moodle form
      *
+     * @param  string $plugin name
+     * @param  object $custom settings for the form
      * @return array of field names
      */
-    static public function get_nametoken_fixvowels_options() {
-        $plugin = 'assignfeedback_points';
+    static public function get_nametoken_fixvowels_options($plugin, $custom) {
         return array(self::FIXVOWELS_NO  => get_string('no'),
                      self::FIXVOWELS_MACRONS => get_string('fixvowelsmacrons', $plugin),
                      self::FIXVOWELS_SHORTEN => get_string('fixvowelsshorten', $plugin));
@@ -2998,8 +3063,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return array of field names
      */
-    static public function get_showfeedback_options() {
-        $plugin = 'assignfeedback_points';
+    static public function get_showfeedback_options($plugin) {
         return array(0 => get_string('no'),
                      1 => get_string('yes'),
                      2 => get_string('automatically', $plugin));
@@ -3013,8 +3077,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return array of field names
      */
-    static public function get_alignscoresgrades_options() {
-        $plugin = 'assignfeedback_points';
+    static public function get_alignscoresgrades_options($plugin) {
         return array(self::ALIGN_NONE    => get_string('default'),
                      self::ALIGN_LEFT    => get_string('alignleft',    $plugin),
                      self::ALIGN_RIGHT   => get_string('alignright',   $plugin),
@@ -3030,7 +3093,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      *
      * @return array of field names
      */
-    static public function get_gradeprecision_options() {
+    static public function get_gradeprecision_options($plugin) {
         return range(0, 3);
     }
 
@@ -3183,7 +3246,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_all_user_name_fields
+     * format_text
      *
      * return an array of user field names
      * suitable for use in a Moodle form
@@ -3229,7 +3292,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * trim_text
+     * shorten_text
      *
      * @param   string   $text
      * @param   integer  $textlength (optional, default=28)
