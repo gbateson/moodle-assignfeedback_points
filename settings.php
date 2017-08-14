@@ -24,45 +24,88 @@
 
 $pluginname = 'assignfeedback_points';
 
-$settingname = 'default';
+$name    = 'default';
 $default = 0;
-$label   = new lang_string($settingname, $pluginname);
-$help    = new lang_string($settingname.'_help', $pluginname);
-$setting = new admin_setting_configcheckbox("$pluginname/$settingname", $label, $help, $default);
+$label   = new lang_string($name, $pluginname);
+$help    = new lang_string($name.'_help', $pluginname);
+$setting = "$pluginname/$name";
+$setting = new admin_setting_configcheckbox($setting, $label, $help, $default);
 $settings->add($setting);
 
-// integer and text fields
-$settingnames = array('minpoints'  => 0, 'maxpoints'    => 10,
-                      'increment'  => 1, 'pointsperrow' =>  5,
-                      'nameformat' => '', 'newlinetoken' => '');
-foreach ($settingnames as $settingname => $default) {
-    $label   = new lang_string($settingname, $pluginname);
-    $help    = new lang_string($settingname.'_help', $pluginname);
-    $setting = new admin_setting_configtext("$pluginname/$settingname", $label, $help, $default, PARAM_INT, 4);
-    if (method_exists($setting, 'set_advanced_flag_options')) {
+$defaults = array(
+    // $name => array($type, $length, $default)
+    'pointstype'         => array(PARAM_INT, 1, 0),
+    'minpoints'          => array(PARAM_INT, 4, 1),
+    'increment'          => array(PARAM_INT, 4, 1),
+    'maxpoints'          => array(PARAM_INT, 4, 2),
+    'pointsperrow'       => array(PARAM_INT, 4, 0),
+    'showcomments'       => array(PARAM_INT, 1, 1),
+    'nameformat'         => array(PARAM_TEXT, 12, ''),
+    'newlinetoken'       => array(PARAM_TEXT, 4, ''),
+    //'nametokens'         => array(PARAM_TEXT, 4, ''),
+    'showpicture'        => array(PARAM_INT, 1, 0),
+    'textlength'         => array(PARAM_INT, 4, 0),
+    'texthead'           => array(PARAM_INT, 4, 0),
+    'textjoin'           => array(PARAM_TEXT, 4, '...'),
+    'texttail'           => array(PARAM_INT, 4, 0),
+    'alignscoresgrades'  => array(PARAM_INT, 1, 0),
+    'gradeprecision'     => array(PARAM_INT, 4, 0),
+    'showpointstoday'    => array(PARAM_INT, 1, 1),
+    'showpointstotal'    => array(PARAM_INT, 1, 1),
+    'showrubricscores'   => array(PARAM_INT, 1, 0),
+    'showrubricremarks'  => array(PARAM_INT, 1, 0),
+    'showrubrictotal'    => array(PARAM_INT, 1, 1),
+    'showguidescores'    => array(PARAM_INT, 1, 0),
+    'showguideremarks'   => array(PARAM_INT, 1, 0),
+    'showguidetotal'     => array(PARAM_INT, 1, 1),
+    'showassigngrade'    => array(PARAM_INT, 1, 0),
+    'showmodulegrade'    => array(PARAM_INT, 1, 0),
+    'showcoursegrade'    => array(PARAM_INT, 1, 0),
+    'showfeedback'       => array(PARAM_INT, 1, 0),
+    'showelement'        => array(PARAM_INT, 1, 0),
+    'multipleusers'      => array(PARAM_INT, 1, 0),
+    'sendimmediately'    => array(PARAM_INT, 1, 1),
+    'allowselectable'    => array(PARAM_INT, 1, 1),
+    'showlink'           => array(PARAM_INT, 1, 1));
+
+foreach ($defaults as $name => $default) {
+
+    $type = $default[0];
+    $length = $default[1];
+    $default = $default[2];
+
+    if (substr($name, 0, 4)=='text') {
+        $label = new lang_string(substr($name, 4), $pluginname);
+        $help  = new lang_string('textsettings_help', $pluginname);
+    } else {
+        $label = new lang_string($name, $pluginname);
+        $help  = new lang_string($name.'_help', $pluginname);
+    }
+    $name = "$pluginname/$name";
+
+    switch (true) {
+        case ($type==PARAM_INT && $length==1):
+            $setting = new admin_setting_configcheckbox($name, $label, $help, $default, $type);
+            break;
+        case ($type==PARAM_INT && $length==4):
+            $setting = new admin_setting_configtext($name, $label, $help, $default, $type, $length);
+            break;
+        case ($type==PARAM_TEXT):
+            $setting = new admin_setting_configtext($name, $label, $help, $default, $type, $length);
+            break;
+        default:
+            $setting = null; // shouldn't happen !!
+    }
+
+    if ($setting && method_exists($setting, 'set_advanced_flag_options')) {
         // Moodle >= 2.6
         $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
         $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
     }
-    $settings->add($setting);
-}
 
-// boolean fields
-$settingnames = array('sendimmediately' => 1, 'multipleusers'   => 0,
-                      'showelement'     => 0, 'showpicture'     => 0,
-                      'showpointstoday' => 1, 'showpointstotal' => 1,
-                      'showcomments'    => 1, 'showfeedback'    => 1,
-                      'showlink'        => 1, 'allowselectable' => 1);
-foreach ($settingnames as $settingname => $default) {
-    $label   = new lang_string($settingname, $pluginname);
-    $help    = new lang_string($settingname.'_help', $pluginname);
-    $setting = new admin_setting_configcheckbox("$pluginname/$settingname", $label, $help, $default);
-    if (method_exists($setting, 'set_advanced_flag_options')) {
-        // Moodle >= 2.6
-        $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
-        $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
+    if ($setting) {
+        $settings->add($setting);
     }
-    $settings->add($setting);
 }
 
-unset($pluginname, $settingnames, $settingname, $label, $help, $setting, $enabled, $default);
+unset($pluginname, $defaults, $default, $name, $length, $label, $help, $setting);

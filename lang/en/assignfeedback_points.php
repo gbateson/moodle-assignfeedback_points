@@ -275,11 +275,15 @@ $string['sendimmediately'] = 'Send points immediately';
 $string['separate'] = 'Separate';
 $string['settings'] = 'Settings for Feedback points';
 $string['setup'] = 'Setup';
-$string['showassigngrade_help'] = 'If this setting is enabled, each student\'s raw grade for this assignment will be displayed.';
+$string['showassigngrade_help'] = 'If this setting is enabled, each student\'s raw grade for this assignment will be displayed.
+
+The grade can be displayed as a raw grade, as a percent, or as a fraction of the total.';
 $string['showassigngrade'] = 'Show assignment grades';
 $string['showcomments_help'] = 'If this setting is enabled, the top ten most frequently used comments will be displayed for selection from a drop down menu.';
 $string['showcomments'] = 'Show frequent comments';
-$string['showcoursegrade_help'] = 'If this setting is enabled, each student\'s course grade will be displayed.';
+$string['showcoursegrade_help'] = 'If this setting is enabled, each student\'s course grade will be displayed.
+
+The grade can be displayed as a raw grade, as a percent, as a fraction of the total, or exactly as it appears in the gradebook.';
 $string['showcoursegrade'] = 'Show course grades';
 $string['showelement_help'] = 'If this setting is enabled, the checkbox or radio button used to select each student will be shown alongside the name and/or picture of the student.';
 $string['showelement'] = 'Show form element';
@@ -302,7 +306,9 @@ $string['showguidetotal_help'] = 'If this setting is enabled, the total Marking 
 $string['showguidetotal'] = 'Show Marking Guide total';
 $string['showlink_help'] = 'If this setting is enabled, a link that goes directly to this page for awarding points will be added on the teacher\'s main view page for this assignment.';
 $string['showlink'] = 'Show link from view page';
-$string['showmodulegrade_help'] = 'If this setting is enabled, each student\'s adjusted gradebook grade for this assignment activity will be displayed.';
+$string['showmodulegrade_help'] = 'If this setting is enabled, each student\'s adjusted gradebook grade for this assignment activity will be displayed.
+
+The grade can be displayed as a raw grade, as a percent, as a fraction of the total, or exactly as it appears in the gradebook.';
 $string['showmodulegrade'] = 'Show activity grades';
 $string['showpicture_help'] = 'If this setting is enabled, the students\' pictures will be shown in the list of students to whom points are awarded.';
 $string['showpicture'] = 'Show user pictures';
@@ -357,7 +363,7 @@ $string['undomanypointsmanyusers'] = 'Cancelled award of {$a->points} points to 
 $string['undomanypointsoneuser'] = 'Cancelled award of {$a->points} points to {$a->usercount} user: {$a->userlist}';
 $string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a->usercount} users: {$a->userlist}';
 $string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
-$string['upgradescoresmanyusers'] = 'Scores were upgraded for {$a->usercount} users: {$a->userlist}';
-$string['upgradescoresoneuser'] = 'Scores were upgraded for {$a->userlist}';
+$string['updatescoresmanyusers'] = '{$a->type} scores were updated for {$a->usercount} users: {$a->userlist}';
+$string['updatescoresoneuser'] = '{$a->type} scores were upgraded for {$a->userlist}';
 $string['uppercase'] = 'UPPER CASE';
 $string['vertical'] = 'Vertical';

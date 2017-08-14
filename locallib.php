@@ -41,13 +41,35 @@ class assign_feedback_points extends assign_feedback_plugin {
     const NAME_COUNT_MAX = 8;
     const NAME_COUNT_ADD = 1;
 
-    const HIRAGANA_STRING = '/^[ \x{3000}-\x{303F}\x{3040}-\x{309F}]+$/u';
-    const KATAKANA_STRING = '/^[ \x{3000}-\x{303F}\x{30A0}-\x{30FF}]+$/u';
-    // 3000 - 303F punctuation
+    // see http://unicode.org/charts/PDF/U3000.pdf
+    // 3000 - 303F CJK punctuation
+    // FF61 - FF64 CJK punctuation (half width)
+
     // 3040 - 309F hiragana
-    // 30A0 - 30FF katakana
-    // 31F0 - 31FF katakana phonetic extensions
+    // 30A0 - 30FF katakana (full width)
+    // 31F0 - 31FF katakana phonetic extensions (for Ainu)
+    // 3300 - 33FF square katakana words e.g. ㌔
+    // FF65 - FF9F katakana (half width)
+
+    // 3130 - 318F hangul
+    // FFA0 - FFDF hangul (half-width)
+
+    // 3100 - 312F bopomofo
+    // 31A0 - 31BF bopomofo extended
+
+    // FF00 - FF60 Latin letters and punctuation (full width)
+
+    // 3190 - 319F ideographic annotaion marks e.g. ㆖
+    // 31C0 - 31EF CJK Strokes
+    // 3200 - 32FF Enclosed CJK Letters and Months e.g. ㋐
+    // 3400 - 4DFF CJK unified ideographs i.e. kanji
+
+    const HIRAGANA_STRING = '/^[ \x{3000}-\x{303F}\x{3040}-\x{309F}]+$/u';
+    const KATAKANA_FULL_STRING = '/^[ \x{3000}-\x{303F}\x{30A0}-\x{30FF}]+$/u';
+    const KATAKANA_HALF_STRING = '/^[ \x{3000}-\x{303F}\x{31F0}-\x{31FF}\x{FF61}-\x{FF9F}]+$/u';
     const ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((b?by|t?ch|hy|jy|k?ky|p?py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
+    //const HANGUL_FULL_STRING = '/^[ \x{3000}-\x{303F}\x{3130}-\x{318F}]+$/u';
+    //const HANGUL_HALF_STRING = '/^[ \x{3000}-\x{303F}\x{FF61}-\x{FF64}\x{FFA0}-\x{FFDF}]+$/u';
 
     const ROMANIZE_NO = 0;
     const ROMANIZE_ROMAJI = 1;
@@ -77,6 +99,12 @@ class assign_feedback_points extends assign_feedback_plugin {
     const ALIGN_CENTER = 'center';
     const ALIGN_JUSTIFY = 'justify';
 
+    const SHOWGRADE_NONE = 0;
+    const SHOWGRADE_GRADE = 1;
+    const SHOWGRADE_PERCENT = 2;
+    const SHOWGRADE_FRACTION = 3;
+    const SHOWGRADE_GRADEBOOK = 4;
+
     /**
      * Get the name of the feedback points plugin.
      * @return string
@@ -100,7 +128,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         // get the site wide defaults for this $plugin
         $config = get_config($plugin);
 
-        // add defaults for integer fields
+        // add defaults for missing fields
         foreach ($defaults as $name => $value) {
             if (! property_exists($config, $name)) {
                 $config->$name = $value;
@@ -394,9 +422,11 @@ class assign_feedback_points extends assign_feedback_plugin {
             $hiddenfields[$name] = PARAM_INT;
         }
 
-        self::add_setting($mform, $config, 'showassigngrade', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showmodulegrade', 'checkbox', 0);
-        self::add_setting($mform, $config, 'showcoursegrade', 'checkbox', 0);
+        $options = self::get_showgrade_options($plugin, false); // without gradebook option
+        self::add_setting($mform, $config, 'showassigngrade', 'select', 0, $options, PARAM_INT);
+        $options = self::get_showgrade_options($plugin);
+        self::add_setting($mform, $config, 'showmodulegrade', 'select', 0, $options, PARAM_INT);
+        self::add_setting($mform, $config, 'showcoursegrade', 'select', 0, $options, PARAM_INT);
 
         // add hidden fields, if any
         foreach ($hiddenfields as $name => $type) {
@@ -694,7 +724,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $showrubrictotal = 0;
 
         $usercriteriascores = array();
-        $criterialevelscores = array();
+        $criteriascores = array();
         switch ($custom->grading->method) {
 
             case '':
@@ -706,8 +736,10 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $showguidescores = intval($custom->config->showguidescores);
                 $showguideremarks = intval($custom->config->showguideremarks);
                 $showguidetotal = intval($custom->config->showguidetotal);
-                foreach ($custom->grading->definition->guide_criteria as $criterionid => $criterion) {
-                    $criterialevelscores[] = $criterionid.':'.$criterion['maxscore'];
+                $criteria = $custom->grading->method.'_criteria';
+                $criteria = $custom->grading->definition->$criteria;
+                foreach ($criteria as $criterionid => $criterion) {
+                    $criteriascores[] = $criterionid.':'.$criterion['maxscore'];
                 }
                 break;
 
@@ -715,18 +747,24 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $showrubricscores = intval($custom->config->showrubricscores);
                 $showrubricremarks = intval($custom->config->showrubricremarks);
                 $showrubrictotal = intval($custom->config->showrubrictotal);
-                foreach ($custom->grading->definition->rubric_criteria as $criterionid => $criterion) {
+                $criteria = $custom->grading->method.'_criteria';
+                $criteria = $custom->grading->definition->$criteria;
+                foreach ($criteria as $criterionid => $criterion) {
                     $scores = array();
                     foreach ($criterion['levels'] as $levelid => $level) {
                         $scores[] = $levelid.':'.$level['score'];
                     }
-                    $criterialevelscores[] = $criterionid.':{'.implode(',', $scores).'}';
+                    $criteriascores[] = $criterionid.':{'.
+                        '"min":'.$criterion['minscore'].','.
+                        '"max":'.$criterion['maxscore'].','.
+                        '"levels":{'.implode(',', $scores).'}'.
+                    '}';
                 }
                 break;
         }
 
+        $criteriascores = '{'.implode(',', $criteriascores).'}';
         $usercriteriascores = '{'.implode(',', $usercriteriascores).'}';
-        $criterialevelscores = '{'.implode(',', $criterialevelscores).'}';
 
         $js .= '    PTS.gradingmethod         = "'.$custom->grading->method.'";'."\n";
         $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
@@ -751,7 +789,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $js .= '    PTS.showguidetotal        = '.$showguidetotal.";\n";
 
         $js .= '    PTS.usercriteriascores    = '.$usercriteriascores.";\n";
-        $js .= '    PTS.criterialevelscores   = '.$criterialevelscores.";\n";
+        $js .= '    PTS.criteriascores        = '.$criteriascores.";\n";
 
         $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
         $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
@@ -895,7 +933,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $output = '';
 
         // check if link is required or not ...
-        if ($this->get_config('showlink')) {
+        if (true || $this->get_config('showlink')) {
 
             // create URL of the page for awarding incremental points
             $cm = $this->assignment->get_course_module();
@@ -995,8 +1033,9 @@ class assign_feedback_points extends assign_feedback_plugin {
             'awardto'    => $userlist,
             'feedback'   => $feedback,
             'grading'    => $grading,
-            'sortby'     => self::get_sortby($userlist)
+            'namefields' => self::get_activenamefields($userlist)
         );
+        $custom->sortby = self::get_sortby($userlist, $custom);
         $mform = new assignfeedback_points_award_points_form(null, $custom);
 
         $output = '';
@@ -1037,6 +1076,9 @@ class assign_feedback_points extends assign_feedback_plugin {
                                   'userlist'   => array(),
                                   'values'     => array(),
                                   'undo'       => array());
+        if ($grading->method) {
+            $feedback->type = get_string('pluginname', 'gradingform_'.$grading->method);
+        }
 
         // get multipleusers setting that was used to create incoming form data
         if ($ajax) {
@@ -1105,8 +1147,8 @@ class assign_feedback_points extends assign_feedback_plugin {
 
                 $feedback->userlist = implode(', ', $feedback->userlist);
                 switch (true) {
-                    case ($feedback->points==0 && $feedback->usercount==1): $feedback->stringname = 'upgradescoresoneuser'; break;
-                    case ($feedback->points==0 && $feedback->usercount >1): $feedback->stringname = 'upgradescoresmanyusers'; break;
+                    case ($feedback->points==0 && $feedback->usercount==1): $feedback->stringname = 'updatescoresoneuser'; break;
+                    case ($feedback->points==0 && $feedback->usercount >1): $feedback->stringname = 'updatescoresmanyusers'; break;
                     case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'awardonepointoneuser'; break;
                     case ($feedback->points==1 && $feedback->usercount >1): $feedback->stringname = 'awardonepointmanyusers'; break;
                     case ($feedback->points >1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
@@ -1167,7 +1209,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         if ($feedback->text) {
             $feedback->text = html_writer::tag('span', $feedback->text, array('id' => 'feedback'));
         }
-        if (empty($feedback->values)) {
+        if (empty($feedback->values) || $ajax==0) {
             $feedback = $feedback->text;
         } else {
             unset($feedback->stringname);
@@ -1175,6 +1217,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             unset($feedback->usercount);
             unset($feedback->userlist);
             unset($feedback->undo);
+            unset($feedback->type);
         }
 
         return array($multipleusers, $groupid, $map, $feedback, $userlist, $grading);
@@ -1198,6 +1241,10 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // format the display names for these users
         foreach ($userlist as $id => $user) {
+
+            // setup cache of name tokens for this user
+            // this will be required later to setup "sortby"
+            $userlist[$id]->nametokens = array();
 
             // $defaultname will be fetched only if needed
             $defaultname = null;
@@ -1244,12 +1291,12 @@ class assign_feedback_points extends assign_feedback_plugin {
                             }
                             break;
                         case self::ROMANIZE_KATAKANA_FULL:
-                            if (preg_match(self::KATAKANA_STRING, $text)) {
+                            if (preg_match(self::KATAKANA_FULL_STRING, $text)) {
                                 $text = self::romanize_katakana_full($text);
                             }
                             break;
                         case self::ROMANIZE_KATAKANA_HALF:
-                            if (preg_match(self::KATAKANA_STRING, $text)) {
+                            if (preg_match(self::KATAKANA_HALF_STRING, $text)) {
                                 $text = self::romanize_katakana_half($text);
                             }
                             break;
@@ -1285,6 +1332,8 @@ class assign_feedback_points extends assign_feedback_plugin {
                         case self::CASE_LOWER:  $text = self::textlib('strtolower', $text); break;
                     }
                 }
+                // cache the plain text nametoken value for this user
+                $userlist[$id]->nametokens[$i] = $text;
 
                 if ($nametoken->length) {
                     $text = self::shorten_text($text, $nametoken->length, $nametoken->head, $nametoken->tail, $nametoken->join);
@@ -1307,6 +1356,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 // https://pureform.wordpress.com/2008/01/04/matching-a-word-characters-outside-of-html-tags/
                 $search = '/('.preg_quote($config->newlinetoken, '/').')+(?!([^<]+)?>)/u';
                 $displayname = preg_replace($search, $br, $displayname);
+                $feedbackname = str_replace($config->newlinetoken, ' ', $feedbackname);
             }
 
             $userlist[$id]->displayname = $displayname;
@@ -2557,6 +2607,29 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * format_grade
+     *
+     * @param object $grade
+     * @param string $showgrade
+     * @return string
+     */
+    static public function format_grade($showgrade, $grade, $maxgrade, $gradeprecision, $gradeitem=null) {
+        if ($showgrade==self::SHOWGRADE_GRADE) {
+            return round($grade, $gradeprecision);
+        }
+        if ($showgrade==self::SHOWGRADE_PERCENT) {
+            return round(100 * ($grade / $maxgrade), $gradeprecision).'%';
+        }
+        if ($showgrade==self::SHOWGRADE_FRACTION) {
+            return round($grade, $gradeprecision).'/'.round($maxgrade, $gradeprecision);
+        }
+        if ($showgrade==self::SHOWGRADE_GRADEBOOK) {
+            return str_replace(' ', '', grade_format_gradevalue($grade, $gradeitem));
+        }
+        return $grade; // shouldn't happen !!
+    }
+
+    /**
      * romanize_romaji
      *
      * @return string
@@ -2747,34 +2820,75 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_sortby
+     * get_activenamefields
      *
      * @param  object $custom
-     * @return string json string of sortby object
+     * @return array of name fields that are active in this $userlist
      */
-    static public function get_sortby($userlist) {
-        $sortby = array();
-
+    static public function get_activenamefields($userlist) {
+        $activenamefields = array();
         $namefields = self::get_all_user_name_fields();
         $namefields['username'] = 'username';
-
         foreach ($namefields as $namefield) {
-            $count = 0;
-            $ids = array();
+            $active = false;
             foreach ($userlist as $userid => $user) {
                 if ($user->$namefield===null || $user->$namefield==='') {
-                    $ids[$userid] = '';
-                } else {
-                    $ids[$userid] = $user->$namefield;
-                    $count++;
+                    continue;
                 }
+                $active = true;
+                break;
             }
-            if ($count) {
-                asort($ids); // sort but maintain keys
-                $sortby[$namefield] = array_keys($ids);
+            if ($active) {
+                $activenamefields[] = $namefield;
             }
         }
+        return $activenamefields;
+    }
 
+    /**
+     * get_sortby
+     *
+     * @param  arrat  $userlist
+     * @param  object $custom
+     * @return string array of sortby sequences
+     */
+    static public function get_sortby($userlist, $custom) {
+        $sortby = array();
+        if (empty($custom->config->nametokens)) {
+            foreach ($custom->namefields as $namefield) {
+                $count = 0;
+                $ids = array();
+                foreach ($userlist as $userid => $user) {
+                    if ($user->$namefield===null || $user->$namefield==='') {
+                        $ids[$userid] = '';
+                    } else {
+                        $ids[$userid] = $user->$namefield;
+                        $count++;
+                    }
+                }
+                if ($count) {
+                    asort($ids);
+                    $sortby[$namefield] = array_keys($ids);
+                }
+            }
+        } else {
+            foreach ($custom->config->nametokens as $i => $nametoken) {
+                $count = 0;
+                $ids = array();
+                foreach ($userlist as $userid => $user) {
+                    if ($user->nametokens[$i]===null || $user->nametokens[$i]==='') {
+                        $ids[$userid] = '';
+                    } else {
+                        $ids[$userid] = $user->nametokens[$i];
+                        $count++;
+                    }
+                }
+                if ($count) {
+                    asort($ids);
+                    $sortby[$nametoken['token']] = array_keys($ids);
+                }
+            }
+        }
         return $sortby;
     }
 
@@ -2908,6 +3022,40 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * get_sortby_options
+     *
+     * return an array of formatted sortby options
+     * suitable for use in a Moodle form
+     *
+     * @param  string $plugin name
+     * @param  object $custom settings for the form
+     * @return array of sortby options
+     */
+    static public function get_sortby_options($plugin, $custom) {
+
+        // if there are no name tokens, return a lits of ALL name fields
+        if (empty($custom->config->nametokens)) {
+            return self::get_nametoken_field_options($plugin, $custom, false);
+        }
+
+        // otherwise, cache formatted fields names
+        $fields = self::get_nametoken_field_options($plugin, $custom, true);
+
+        $options = array();
+        foreach ($custom->config->nametokens as $i => $nametoken) {
+            // $string['tokenbasedonfield'] = '{$a->token} (based on {$a->field})';
+            //$a = (object)array(
+            //    'nametoken' => get_string('nametoken', $plugin, $i),
+            //    'token' => $nametoken['token'],
+            //    'field' => $fields[$nametoken['field']]
+            //);
+            //$text = get_string('tokenbasedonfield', $plugin, $a);
+            $options[$nametoken['token']] = $nametoken['token'];
+        }
+        return $options;
+    }
+
+    /**
      * get_nametoken_field_options
      *
      * return an array of formatted name field options
@@ -2969,7 +3117,7 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // remove $fields that are not used by this group of users
         foreach (array_keys($fields) as $field) {
-            if ($field=='' || $field=='default' || array_key_exists($field, $custom->sortby)) {
+            if ($field=='' || $field=='default' || in_array($field, $custom->namefields)) {
                 // do nothing
             } else {
                 unset($fields[$field]);
@@ -3056,17 +3204,26 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_showfeedback_options
+     * get_showgrade_options
      *
-     * return an array of formatted showfeedback options
+     * return an array of formatted alignscoresgrades options
      * suitable for use in a Moodle form
      *
      * @return array of field names
      */
-    static public function get_showfeedback_options($plugin) {
-        return array(0 => get_string('no'),
-                     1 => get_string('yes'),
-                     2 => get_string('automatically', $plugin));
+    static public function get_showgrade_options($plugin, $includegradebook=true) {
+        $yes = get_string('yes');
+        $grade = get_string('grade', 'grades');
+        $total = get_string('total', 'grades');
+        $percent = get_string('percent', 'grades');
+        $options = array(self::SHOWGRADE_NONE => get_string('no'),
+                         self::SHOWGRADE_GRADE => "$yes - $grade",
+                         self::SHOWGRADE_PERCENT => "$yes - $percent %",
+                         self::SHOWGRADE_FRACTION => "$yes - $grade / $total");
+        if ($includegradebook) {
+             $options[self::SHOWGRADE_GRADEBOOK] = "$yes - ".get_string('gradebook', 'grades');
+        }
+        return $options;
     }
 
     /**
@@ -3079,9 +3236,9 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_alignscoresgrades_options($plugin) {
         return array(self::ALIGN_NONE    => get_string('default'),
-                     self::ALIGN_LEFT    => get_string('alignleft',    $plugin),
-                     self::ALIGN_RIGHT   => get_string('alignright',   $plugin),
-                     self::ALIGN_CENTER  => get_string('aligncenter',  $plugin),
+                     self::ALIGN_LEFT    => get_string('alignleft', $plugin),
+                     self::ALIGN_RIGHT   => get_string('alignright', $plugin),
+                     self::ALIGN_CENTER  => get_string('aligncenter', $plugin),
                      self::ALIGN_JUSTIFY => get_string('alignjustify', $plugin));
     }
 
@@ -3095,6 +3252,20 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_gradeprecision_options($plugin) {
         return range(0, 3);
+    }
+
+    /**
+     * get_showfeedback_options
+     *
+     * return an array of formatted showfeedback options
+     * suitable for use in a Moodle form
+     *
+     * @return array of field names
+     */
+    static public function get_showfeedback_options($plugin) {
+        return array(0 => get_string('no'),
+                     1 => get_string('yes'),
+                     2 => get_string('automatically', $plugin));
     }
 
     /**
@@ -3179,7 +3350,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             $text = self::format_text($grading->definition, $name);
             $grading->definition->{$name.'text'} = $text;
 
-            $grading->definition->totalscore = 0;
+            $grading->definition->minscore = 0;
+            $grading->definition->maxscore = 0;
 
             // shortcuts to text length settings
             $length = $config->textlength;
@@ -3201,7 +3373,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                         $name = 'description';
                         $text = self::format_text($criterion, $name);
                         if ($length) {
-                            $text = self::shorten_text($text, $length, $head, $tail, $join);
+                            $text = self::shorten_text($text, $length, $head, $tail, $join, true);
                         }
                         $criteria[$criterionid][$name.'text'] = $text;
 
@@ -3211,7 +3383,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                             $name = 'definition';
                             $text = self::format_text($level, $name);
                             if ($length) {
-                                $text = self::shorten_text($text, $length, $head, $tail, $join);
+                                $text = self::shorten_text($text, $length, $head, $tail, $join, true);
                             }
                             $levels[$levelid][$name.'text'] = $text;
 
@@ -3229,16 +3401,18 @@ class assign_feedback_points extends assign_feedback_plugin {
                         $name = 'shortname';
                         $text = $criterion[$name];
                         if ($length) {
-                            $text = self::shorten_text($text, $length, $head, $tail, $join);
+                            $text = self::shorten_text($text, $length, $head, $tail, $join, true);
                         }
                         $criteria[$criterionid][$name.'text'] = $text;
                         $maxscore = $criterion['maxscore'];
+                        $minscore = 0;
                         break;
                 }
 
                 $criteria[$criterionid]['minscore'] = ($minscore===null ? 0 : $minscore);
                 $criteria[$criterionid]['maxscore'] = ($maxscore===null ? 0 : $maxscore);
-                $grading->definition->totalscore += $criteria[$criterionid]['maxscore'];
+                $grading->definition->minscore += $criteria[$criterionid]['minscore'];
+                $grading->definition->maxscore += $criteria[$criterionid]['maxscore'];
             }
             unset($criteria);
         }
@@ -3298,9 +3472,13 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param   integer  $textlength (optional, default=28)
      * @param   integer  $headlength (optional, default=10)
      * @param   integer  $taillength (optional, default=10)
+     * @param   boolean  $singleline (optional, default=false)
      * @return  string
      */
-    static public function shorten_text($text, $textlength=28, $headlength=10, $taillength=10, $join=' ... ') {
+    static public function shorten_text($text, $textlength=28, $headlength=10, $taillength=10, $join=' ... ', $singleline=false) {
+        if ($singleline) {
+            $text = preg_replace("/\s*(?:\t|\n|\r|(?:<br\b[^>]*>))+\s*/", ' ', $text);
+        }
         $strlen = self::textlib('strlen', $text);
         if ($strlen > $textlength) {
             $head = self::textlib('substr', $text, 0, $headlength);

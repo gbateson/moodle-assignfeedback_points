@@ -222,7 +222,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         foreach ($mapactions as $value => $text) {
             $elements[] = $mform->createElement('radio', $name, '', $text, $value);
             if ($value=='sortby') {
-                $options = assign_feedback_points::get_nametoken_field_options($plugin, $custom, false);
+                $options = assign_feedback_points::get_sortby_options($plugin, $custom);
                 $elements[] = $mform->createElement('select', $value.'menu', '', $options);
             }
         }
@@ -474,7 +474,15 @@ class assignfeedback_points_award_points_form extends moodleform {
             list($where, $params) = $DB->get_in_or_equal($userids);
             $where = "assignment = ? AND userid $where";
             array_unshift($params, $custom->assignid);
+            $maxgrade = $DB->get_field('assign', 'grade', array('id' => $custom->assignid));
             $assigngrade = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where", $params);
+            foreach ($assigngrade as $userid => $grade) {
+                $assigngrade[$userid] = assign_feedback_points::format_grade(
+                                        $custom->config->showassigngrade,
+                                        $grade,
+                                        $maxgrade,
+                                        $gradeprecision);
+            }
         } else {
             $assigngrade = false;
         }
@@ -484,13 +492,18 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         // get module grades, if required
         if ($usersfound && $custom->config->showmodulegrade) {
-            $modulegrade = grade_item::fetch(array('courseid' => $custom->courseid,
-                                                   'itemtype' => 'mod',
-                                                   'itemmodule' => 'assign',
-                                                   'iteminstance' => $custom->cm->instance));
-            $modulegrade = grade_grade::fetch_users_grades($modulegrade, $userids, true);
+            $gradeitem = grade_item::fetch(array('courseid' => $custom->courseid,
+                                                 'itemtype' => 'mod',
+                                                 'itemmodule' => 'assign',
+                                                 'iteminstance' => $custom->cm->instance));
+            $modulegrade = grade_grade::fetch_users_grades($gradeitem, $userids, true);
             foreach ($modulegrade as $userid => $grade) {
-                $modulegrade[$userid] = $grade->finalgrade;
+                $modulegrade[$userid] = assign_feedback_points::format_grade(
+                                        $custom->config->showmodulegrade,
+                                        $grade->rawgrade,
+                                        $grade->rawgrademax,
+                                        $gradeprecision,
+                                        $gradeitem);
             }
         } else {
             $modulegrade = array();
@@ -498,10 +511,15 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         // get course grades, if required
         if ($usersfound && $custom->config->showcoursegrade) {
-            $coursegrade = grade_item::fetch_course_item($custom->courseid);
-            $coursegrade = grade_grade::fetch_users_grades($coursegrade, $userids, true);
+            $gradeitem = grade_item::fetch_course_item($custom->courseid);
+            $coursegrade = grade_grade::fetch_users_grades($gradeitem, $userids, true);
             foreach ($coursegrade as $userid => $grade) {
-                $coursegrade[$userid] = $grade->finalgrade;
+                $coursegrade[$userid] = assign_feedback_points::format_grade(
+                                        $custom->config->showcoursegrade,
+                                        $grade->finalgrade, // rawgrade is empty
+                                        $grade->rawgrademax,
+                                        $gradeprecision,
+                                        $gradeitem);
             }
         } else {
             $coursegrade = array();
@@ -543,16 +561,16 @@ class assignfeedback_points_award_points_form extends moodleform {
                 $criteria =& $custom->grading->definition->rubric_criteria;
                 foreach ($criteria as $criterionid => $criterion) {
                     if (empty($rubricscores[$userid][$criterionid])) {
-                        $score = 0;
+                        $score = $criterion['minscore'];
                         $remark = '';
                     } else {
                         $levelid = $rubricscores[$userid][$criterionid]->levelid;
-                        $score = $criterion['levels'][$levelid]['score'];
+                        $score = $criterion['levels'][$levelid]['score'] - $criterion['minscore'];
                         $remark = $rubricscores[$userid][$criterionid]->remark;
                     }
                     $score = round($score, $gradeprecision);
                     if ($criterion['maxscore']) {
-                        $score .= '/'.round($criterion['maxscore'], $gradeprecision);
+                        $score .= '/'.round($criterion['maxscore'] - $criterion['minscore'], $gradeprecision);
                     }
                     $value = $criterion['descriptiontext'].': '.$score;
                     $text[] = html_writer::tag('em', $value, array('class' => "$numericalign rubricscores criterion-$criterionid"));
@@ -560,10 +578,14 @@ class assignfeedback_points_award_points_form extends moodleform {
                 unset($criteria);
             }
             if ($custom->config->showrubrictotal && $custom->grading->method=='rubric') {
-                $value = (isset($rubrictotal[$userid]) ? $rubrictotal[$userid] : 0);
-                if ($custom->grading->definition->totalscore) {
-                    $value .= '/'.round($custom->grading->definition->totalscore, $gradeprecision);
+                $minscore = $custom->grading->definition->minscore;
+                $maxscore = $custom->grading->definition->maxscore;
+                if (isset($rubrictotal[$userid])) {
+                    $value = round($rubrictotal[$userid] - $minscore, $gradeprecision);
+                } else {
+                    $value = 0;
                 }
+                $value .= '/'.round($maxscore - $minscore, $gradeprecision);
                 $value = get_string('rubrictotal', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign rubrictotal"));
             }
@@ -587,26 +609,29 @@ class assignfeedback_points_award_points_form extends moodleform {
                 unset($criteria);
             }
             if ($custom->config->showguidetotal && $custom->grading->method=='guide') {
-                $value = (isset($guidetotal[$userid]) ? $guidetotal[$userid] : 0);
-                if ($custom->grading->definition->totalscore) {
-                    $value .= '/'.round($custom->grading->definition->totalscore, $gradeprecision);
+                $maxscore = $custom->grading->definition->maxscore;
+                if (isset($guidetotal[$userid])) {
+                    $value = round($guidetotal[$userid], $gradeprecision);
+                } else {
+                    $value = 0;
                 }
+                $value .= '/'.round($maxscore, $gradeprecision);
                 $value = get_string('guidetotal', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign guidetotal"));
             }
             if ($custom->config->showassigngrade) {
                 $value = (isset($assigngrade[$userid]) ? $assigngrade[$userid] : 0);
-                $value = get_string('assigngrade', $plugin, round($value, $gradeprecision));
+                $value = get_string('assigngrade', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign assigngrade"));
             }
             if ($custom->config->showmodulegrade) {
                 $value = (isset($modulegrade[$userid]) ? $modulegrade[$userid] : 0);
-                $value = get_string('modulegrade', $plugin, round($value, $gradeprecision));
+                $value = get_string('modulegrade', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign modulegrade"));
             }
             if ($custom->config->showcoursegrade) {
                 $value = (isset($coursegrade[$userid]) ? $coursegrade[$userid] : 0);
-                $value = get_string('coursegrade', $plugin, round($value, $gradeprecision));
+                $value = get_string('coursegrade', $plugin, $value);
                 $text[] = html_writer::tag('em', $value, array('class' => "$numericalign coursegrade"));
             }
 

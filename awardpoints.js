@@ -844,8 +844,8 @@ PTS.send_points_via_ajax = function(input) {
         // e.g. Report 1: 3/5
         // $1 : the criterion description
         // $2 : the current score for this criterion
-        // $3 : the maximum score for this criterion
-        var regexp = new RegExp("^(.*): (-?[0-9.]+)/([0-9.]+)$");
+        // $3 : the maximum score for this criterion (optional)
+        var regexp = new RegExp("^(.*): (-?[0-9.]+)(/[0-9.]+)?$");
 
         if (PTS.gradingmethod=="rubric") {
             if (typeof(userid)=="string") {
@@ -887,7 +887,7 @@ PTS.send_points_via_ajax = function(input) {
     }).done(function(feedback){
         input.prop("checked", false);
         input.parent().removeClass("checked");
-        if (feedback.charAt(0)=="{" && feedback.slice(-1)=="}") {
+        if (feedback.match(new RegExp("^\{.*\}$"))) {
             feedback = $.parseJSON(feedback);
             var regexp = new RegExp("^(.*): (-?[0-9.]+)(/[0-9.]+)?$");
             for (var userid in feedback.values) {
@@ -945,7 +945,7 @@ PTS.set_rubric_levels = function(uid, regexp) {
     }
 
     var total = null;
-    for (var cid in PTS.criterialevelscores) {
+    for (var cid in PTS.criteriascores) {
 
         // get score from rubric form
         var score = PTS.get_rubric_form_score(cid);
@@ -981,7 +981,7 @@ PTS.set_guide_scores = function(uid, regexp) {
     }
 
     var total = null;
-    for (var cid in PTS.criterialevelscores) {
+    for (var cid in PTS.criteriascores) {
 
         // get score from advanced grading form
         var score = PTS.get_guide_form_score(cid);
@@ -1015,7 +1015,7 @@ PTS.set_criteria_total = function(input, regexp, total) {
     if (em.length) {
         em = em.first();
         var oldhtml = em.html();
-        var newhtml = "$1: " + total + "/$3";
+        var newhtml = "$1: " + total + "$3";
         em.html(oldhtml.replace(regexp, newhtml));
     }
 }
@@ -1046,7 +1046,7 @@ PTS.get_criterion_score = function(input, cid, score, regexp) {
         if (score===null) {
             score = oldhtml.replace(regexp, "$2");
         } else {
-            var newhtml = "$1: " + score + "/$3";
+            var newhtml = "$1: " + score + "$3";
             em.html(oldhtml.replace(regexp, newhtml));
         }
     } else if (score===null) {
@@ -1066,12 +1066,11 @@ PTS.get_criterion_score = function(input, cid, score, regexp) {
  * @return integer (or null)
  */
 PTS.get_rubric_form_score = function(cid) {
-    for (var lid in PTS.criterialevelscores[cid]) {
-        var id = "#advancedgrading-criteria-" + cid
-               + "-levels-" + lid + "-definition";
-        if ($(id).first().prop("checked")) {
-            return PTS.criterialevelscores[cid][lid];
-        }
+    var name = "advancedgrading[criteria][" + cid + "][levelid]";
+    var input = $("input[type=radio][name='" + name + "']:checked");
+    if (input.length) {
+        var lid = input.first().val();
+        return PTS.criteriascores[cid]["levels"][lid] - PTS.criteriascores[cid]["min"];
     }
     return null; // no level is selected in form
 }
@@ -1100,7 +1099,7 @@ PTS.get_guide_form_score = function(cid) {
 PTS.get_user_criteria_score = function(uid, cid) {
     if (uid in PTS.usercriteriascores) {
         if (cid in PTS.usercriteriascores[uid]) {
-            return PTS.usercriteriascores[uid][cid];
+            return PTS.usercriteriascores[uid][cid] - PTS.criteriascores[cid]["min"];
         }
     }
     return 0; // shouldn't happen !!
