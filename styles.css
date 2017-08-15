@@ -181,6 +181,11 @@ body.path-mod-assign #fgroup_id_mapactionelements fieldset.fgroup span.checked,
     background-color : #c266ff; /* dark purple */
 }
 
+#id_awardpoints_hdr #id_sortbymenu {
+    background-color : #ffffff;
+    border-color     : #999999;
+}
+
 /***********************************
 ** mapmode: normal, hover, checked
 ***********************************/

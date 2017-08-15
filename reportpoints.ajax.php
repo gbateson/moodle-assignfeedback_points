@@ -82,8 +82,7 @@ if ($userid = optional_param('userid', 0, PARAM_INT)) {
 
         // get the points type and description strings
         $pointstype = $points->get_config('pointstype');
-        $pointstypes = array(0 => get_string('pointstypenewest', $plugin),
-                             1 => get_string('pointstypesum',       $plugin));
+        $pointstypes = assign_feedback_points::get_pointstype_options($plugin);
 
         // the date formats for the timeawarded + timecancelled
         $newdateformat = get_string('strftimerecent'); // e.g. 26 Aug, 09:16

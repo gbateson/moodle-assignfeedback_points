@@ -549,8 +549,7 @@ PTS.do_map_shuffle = function() {
         PTS.shuffle_user(elms[x], elms[i]);
     }
 
-    // send new map settings to server
-    // if any of the SPANs were moved
+    // if any of the SPANs moved, send new map settings to server
     setTimeout(PTS.update_usermap_via_ajax, PTS.shuffle.duration);
 
     // clear the mapaction
@@ -669,13 +668,15 @@ PTS.do_map_sortby = function() {
 
     var field = $("#id_sortbymenu").val();
     if (field=="") {
-        return false; // show message?
+        // should we show some kind of message (PTS.str.selectsortbyfield):
+        // Select a sort field from the menu, then click the "Sort by" button
+        return false;
     }
     if (PTS.sortby[field]==null) {
         return false; // shouldn't happen !!
     }
 
-    // create array of elms ordered by position
+    // create array of elms ordered by position, elms[y][x]
     var elms = {};
     $(PTS.user_container + " > " + PTS.group_element_tag).each(function(){
         if ($(this).hasClass("ui-draggable")) {
@@ -702,8 +703,7 @@ PTS.do_map_sortby = function() {
         }
     }
 
-    // send new map settings to server
-    // if any of the SPANs were moved
+    // if any of the SPANs moved, send new map settings to server
     setTimeout(PTS.update_usermap_via_ajax, PTS.shuffle.duration);
 
     // clear the mapaction
@@ -1166,22 +1166,72 @@ PTS.set_usermap_size = function(usermap) {
 }
 
 /**
- * set_points_width
+ * format_mapaction_row
  *
- * param object points_container
- * param object points_elements
- * param object action_elements
+ * param object mapaction_container
+ * param object mapaction_buttons
+ * param object mapaction_buttons
  * @return void
  */
-PTS.set_points_width = function(points_container, points_elements, action_elements) {
+PTS.format_mapaction_row = function(mapaction_container, mapaction_buttons, points_buttons) {
+    if (PTS.mapactionsperrow) {
+        PTS.format_buttons_row(PTS.mapactionsperrow, mapaction_container, mapaction_buttons, points_buttons);
+    } else {
+        var w = 0;
+        var w_max = mapaction_container.width();
+
+        var i = 1;
+        var i_max = (Math.floor(mapaction_buttons.length / 2) - 1);
+
+        var sortbymenu = $("#id_sortbymenu");
+        w += sortbymenu.outerWidth(true);
+
+        var elm = mapaction_buttons.last();
+        while (elm && (i < i_max) && ((w + elm.outerWidth(true)) < w_max)) {
+            w += elm.outerWidth(true);
+            elm = elm.prev();
+            i++;
+        }
+
+        if (w < mapaction_container.width()) {
+            // there is enough room adjust the buttons
+            var div = document.createElement("DIV");
+            $(div).css("clear", "both");
+            elm.before(div);
+        }
+    }
+}
+
+/**
+ * format_points_row
+ *
+ * param object points_container
+ * param object points_buttons
+ * param object mapaction_buttons
+ * @return void
+ */
+PTS.format_points_row = function(points_container, points_buttons, mapaction_buttons) {
+    PTS.format_buttons_row(PTS.pointsperrow, points_container, points_buttons, mapaction_buttons);
+}
+
+/**
+ * format_buttons_row
+ *
+ * param integer buttonsperrow
+ * param object  container
+ * param object  buttons1
+ * param object  buttons2
+ * @return void
+ */
+PTS.format_buttons_row = function(buttonsperrow, container, buttons1, buttons2) {
     var l = null;
     var r = null;
     var w = 0; // width
     var i = 0; // index on elms
-    if (PTS.pointsperrow) {
-        var elms = points_elements;
+    if (buttonsperrow) {
+        var elms = buttons1;
     } else {
-        var elms = action_elements;
+        var elms = buttons2;
     }
     elms.each(function(){
         var p = $(this).position();
@@ -1192,7 +1242,7 @@ PTS.set_points_width = function(points_container, points_elements, action_elemen
         if (r===null || r < p.right) {
             r = p.right;
         }
-        if (i < PTS.pointsperrow) {
+        if (i < buttonsperrow) {
             i++;
             if (w < (r - l)) {
                 w = (r - l);
@@ -1205,7 +1255,7 @@ PTS.set_points_width = function(points_container, points_elements, action_elemen
             w = (r - l);
         }
     }
-    points_container.css("max-width", w + "px");
+    container.css("max-width", w + "px");
 }
 
 /**
@@ -1331,18 +1381,18 @@ PTS.set_user_size = function(elms) {
     }
 }
 
-PTS.get_mapmode_elements = function() {
+PTS.get_mapmode_buttons = function() {
     return PTS.mapmode_container + " > " + PTS.group_element_tag + " > input[name=mapmode]";
 }
 
 PTS.get_mapmode_value = function() {
-    return $(PTS.get_mapmode_elements() + ":checked").val();
+    return $(PTS.get_mapmode_buttons() + ":checked").val();
 }
 
 PTS.set_mapmode_value = function(value) {
     if (PTS.get_mapmode_value() != value) {
-        $(PTS.get_mapmode_elements()).val([value]);
-        $(PTS.get_mapmode_elements() + "[value=" + value + "]").click();
+        $(PTS.get_mapmode_buttons()).val([value]);
+        $(PTS.get_mapmode_buttons() + "[value=" + value + "]").click();
     }
 }
 
@@ -1696,14 +1746,14 @@ $(document).ready(function() {
     PTS.hideshow_name_fields();
 
     var mapaction_container = $(PTS.mapaction_container);
-    var mapmode_container = $(PTS.mapmode_container);
-    var user_container   = $(PTS.user_container);
-    var points_container = $(PTS.points_container);
+    var mapmode_container   = $(PTS.mapmode_container);
+    var user_container      = $(PTS.user_container);
+    var points_container    = $(PTS.points_container);
 
-    var action_elements  = $(PTS.mapaction_container + " > " + PTS.group_element_tag);
-    var mode_elements    = $(PTS.mapmode_container   + " > " + PTS.group_element_tag);
-    var user_elements    = $(PTS.user_container      + " > " + PTS.group_element_tag);
-    var points_elements  = $(PTS.points_container    + " > " + PTS.group_element_tag);
+    var mapaction_buttons = $(PTS.mapaction_container + " > " + PTS.group_element_tag);
+    var mapmode_buttons   = $(PTS.mapmode_container   + " > " + PTS.group_element_tag);
+    var user_tiles        = $(PTS.user_container      + " > " + PTS.group_element_tag);
+    var points_buttons    = $(PTS.points_container    + " > " + PTS.group_element_tag);
 
     // this flag will be set to true
     // if the user map changes size
@@ -1713,20 +1763,21 @@ $(document).ready(function() {
     PTS.set_feedback_visibility();
     PTS.set_usermap_size(user_container);
 
-    PTS.set_elm_size_color(action_elements, PTS.mapaction_min_width, PTS.mapaction_min_height, "none");
-    PTS.set_elm_size_color(mode_elements,   PTS.mapmode_min_width,   PTS.mapmode_min_height,   "none");
-    PTS.set_elm_size_color(user_elements,   PTS.user_min_width,      PTS.user_min_height,      PTS.elementdisplay);
-    PTS.set_elm_size_color(points_elements, PTS.points_min_width,    PTS.points_min_height,    "none", "debug");
+    PTS.set_elm_size_color(mapaction_buttons, PTS.mapaction_min_width, PTS.mapaction_min_height, "none");
+    PTS.set_elm_size_color(mapmode_buttons,   PTS.mapmode_min_width,   PTS.mapmode_min_height,   "none");
+    PTS.set_elm_size_color(user_tiles,        PTS.user_min_width,      PTS.user_min_height,      PTS.elementdisplay);
+    PTS.set_elm_size_color(points_buttons,    PTS.points_min_width,    PTS.points_min_height,    "none", "debug");
 
-    PTS.set_user_size(user_elements);
-    PTS.set_elm_position(user_elements);
+    PTS.set_user_size(user_tiles);
+    PTS.set_elm_position(user_tiles);
 
-    PTS.set_points_width(points_container, points_elements, action_elements);
+    PTS.format_mapaction_row(mapaction_container, mapaction_buttons, points_buttons);
+    PTS.format_points_row(points_container, points_buttons, mapaction_buttons);
 
-    PTS.set_elm_event_handlers(action_elements, PTS.do_map_action);
-    PTS.set_elm_event_handlers(mode_elements,   false);
-    PTS.set_elm_event_handlers(user_elements,   PTS.do_user_click);
-    PTS.set_elm_event_handlers(points_elements, false);
+    PTS.set_elm_event_handlers(mapaction_buttons, PTS.do_map_action);
+    PTS.set_elm_event_handlers(mapmode_buttons,   false);
+    PTS.set_elm_event_handlers(user_tiles,      PTS.do_user_click);
+    PTS.set_elm_event_handlers(points_buttons,    false);
 
     // send new map settings to server
     // if PTS.update_usermap was set to TRUE
@@ -1751,7 +1802,7 @@ $(document).ready(function() {
         }
     });
 
-    user_elements.draggable({
+    user_tiles.draggable({
         "containment" : PTS.user_container,
         "scroll" : true,
         "stack" : PTS.group_element_tag,
@@ -1918,23 +1969,26 @@ $(document).ready(function() {
         $("#assignfeedback_points_award_points_form #fgroup_id_buttonar").css("position", "static");
     }
 
-    // add reset button to criteria form
-    $("#advancedgrading-criteria tr.criterion").each(function(){
-        var txt = document.createTextNode(PTS.str.reset);
-        var btn = document.createElement("BUTTON");
-        btn.appendChild(txt);
-        $(btn).click(function(event){
+    // add reset buttons to Advanced grading form
+    if (PTS.gradingmethod && PTS.showresetbuttons) {
+        var resetcriterion = function(event){
             var tr = $(this).closest("tr");
             tr.find("input[type=radio]:checked").prop("checked", false);
             tr.find("td.checked").removeClass("checked");
             tr.find("textarea, input[type=text]").val("");
             event.preventDefault();
             event.stopPropagation();
+        };
+        $("#advancedgrading-criteria tr.criterion").each(function(){
+            var txt = document.createTextNode(PTS.str.reset);
+            var btn = document.createElement("BUTTON");
+            btn.appendChild(txt);
+            $(btn).click(resetcriterion);
+            $(btn).addClass("criteria-reset-button");
+            var td = document.createElement("TD");
+            $(td).addClass("criteria-reset-cell");
+            td.appendChild(btn);
+            this.appendChild(td);
         });
-        $(btn).addClass("criteria-reset-button");
-        var td = document.createElement("TD");
-        $(td).addClass("criteria-reset-cell");
-        td.appendChild(btn);
-        this.appendChild(td);
-    });
+    }
 });

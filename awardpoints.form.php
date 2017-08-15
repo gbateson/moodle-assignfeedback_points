@@ -560,11 +560,10 @@ class assignfeedback_points_award_points_form extends moodleform {
             if ($custom->config->showrubricscores && $custom->grading->method=='rubric') {
                 $criteria =& $custom->grading->definition->rubric_criteria;
                 foreach ($criteria as $criterionid => $criterion) {
-                    if (empty($rubricscores[$userid][$criterionid])) {
-                        $score = $criterion['minscore'];
+                    if (empty($rubricscores[$userid][$criterionid]) || empty($rubricscores[$userid][$criterionid]->levelid)) {
+                        $score = 0;
                         $remark = '';
                     } else {
-                        $levelid = $rubricscores[$userid][$criterionid]->levelid;
                         $score = $criterion['levels'][$levelid]['score'] - $criterion['minscore'];
                         $remark = $rubricscores[$userid][$criterionid]->remark;
                     }

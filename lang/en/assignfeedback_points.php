@@ -285,7 +285,7 @@ $string['showcoursegrade_help'] = 'If this setting is enabled, each student\'s c
 
 The grade can be displayed as a raw grade, as a percent, as a fraction of the total, or exactly as it appears in the gradebook.';
 $string['showcoursegrade'] = 'Show course grades';
-$string['showelement_help'] = 'If this setting is enabled, the checkbox or radio button used to select each student will be shown alongside the name and/or picture of the student.';
+$string['showelement_help'] = 'If this setting is enabled, the checkboxes or radio buttons used to select users will be shown in the user tiles.';
 $string['showelement'] = 'Show form element';
 $string['showfeedback_help'] = 'This setting controls whether feedback about AJAX operations is displayed.
 
@@ -320,6 +320,8 @@ $string['showpointstotal_help'] = 'If this setting is enabled, the total number 
 
 Usually, this setting is only required when using Simple Direct Grading method, but it may also be useful after switching from the using Simple Direct Grading to using another grading method.';
 $string['showpointstotal'] = 'Show points (total)';
+$string['showresetbuttons_help'] = 'If this setting is enabled, Reset buttons will be added to each row in the Advanced grading form. Clicking a Reset button will deselect the score and remove the comment in that row.';
+$string['showresetbuttons'] = 'Show Reset buttons';
 $string['showrubricremarks_help'] = 'If this setting is enabled, the feedback remarks for each Rubric criteria for each student will be displayed.';
 $string['showrubricremarks'] = 'Show Rubric remarks';
 $string['showrubricscores_help'] = 'If this setting is enabled, the individual scores for each Rubric criteria for each student will be displayed.';
