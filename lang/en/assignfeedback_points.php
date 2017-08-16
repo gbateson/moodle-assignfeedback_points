@@ -160,16 +160,21 @@ $string['nametoken'] = 'Name token [{$a}]';
 $string['nametokenjoindefault'] = ' ... ';
 $string['nametokentokendefault'] = 'name';
 $string['nametokensadd'] = 'Add a name token';
-$string['nameformat_help'] = 'This string defines the display format for student names. The name format string can include name tokens, newline tokens, and any other characters.
+$string['nameformat_help'] = 'This string defines the display format for student names. The name format string can include field names, name tokens, newline tokens, and any other characters.
+
+**Field names**
+: A field name is one of the following fields from the user profile: firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename
 
 **Name tokens**
-: A name token is a short string of characters that acts as a placeholder in the name format string. Each name token is defined in a "Name token [...]" defintion. A name token definition defines which name field from the user profile to display and may also specify how the name field should be shortened and formatted.
+: A name token is a short string of characters that acts as a placeholder in the name format string. Each name token is defined in a "Name token [...]" defintion. A name token definition defines which field from the user profile to display and may also specify how the field should be shortened and formatted.
 
 **Newline tokens**
 : A newline token is a short string that acts as a placeholder for a newline, or line break, in the format string. Usually, a newline token is just one character, but it can be any string of any length.
 
 **Other characters**
-: Character strings other than those defined as name tokens or newline tokens will appear unchanged in the student names. Such characters may be useful for separating parts of names, and adding titles and punctuation to names.';
+: Character strings other than those defined as name tokens or newline tokens will appear unchanged in the student names. Such characters may be useful for separating parts of names, and adding titles and punctuation to names.
+
+If the format string is empty, then a default name is generated based on the "fullnamedisplay" string for the current display language.';
 $string['nameformat'] = 'Name format';
 $string['newlinetoken_help'] = 'A newline token is a short string that acts as a placeholder for a newline, or line break, in the format string. Usually, a newline token is just one character, but it can be any string of any length.
 

@@ -22,58 +22,42 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+require_once($CFG->dirroot.'/mod/assign/assignmentplugin.php');
+require_once($CFG->dirroot.'/mod/assign/feedbackplugin.php');
+require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
+
 $pluginname = 'assignfeedback_points';
+$pluginclass = 'assign_feedback_points';
 
 $name    = 'default';
-$default = 0;
+$default = 0; // i.e. disabled
 $label   = new lang_string($name, $pluginname);
 $help    = new lang_string($name.'_help', $pluginname);
-$setting = "$pluginname/$name";
-$setting = new admin_setting_configcheckbox($setting, $label, $help, $default);
+$setting = new admin_setting_configcheckbox("$pluginname/$name", $label, $help, $default);
 $settings->add($setting);
 
-$defaults = array(
-    // $name => array($type, $length, $default)
-    'pointstype'         => array(PARAM_INT, 1, 0),
-    'minpoints'          => array(PARAM_INT, 4, 1),
-    'increment'          => array(PARAM_INT, 4, 1),
-    'maxpoints'          => array(PARAM_INT, 4, 2),
-    'pointsperrow'       => array(PARAM_INT, 4, 0),
-    'showcomments'       => array(PARAM_INT, 1, 1),
-    'nameformat'         => array(PARAM_TEXT, 12, ''),
-    'newlinetoken'       => array(PARAM_TEXT, 4, ''),
-    //'nametokens'         => array(PARAM_TEXT, 4, ''),
-    'showpicture'        => array(PARAM_INT, 1, 0),
-    'textlength'         => array(PARAM_INT, 4, 0),
-    'texthead'           => array(PARAM_INT, 4, 0),
-    'textjoin'           => array(PARAM_TEXT, 4, '...'),
-    'texttail'           => array(PARAM_INT, 4, 0),
-    'alignscoresgrades'  => array(PARAM_INT, 1, 0),
-    'showresetbuttons'   => array(PARAM_INT, 1, 0),
-    'showpointstoday'    => array(PARAM_INT, 1, 1),
-    'showpointstotal'    => array(PARAM_INT, 1, 1),
-    'showrubricscores'   => array(PARAM_INT, 1, 0),
-    'showrubricremarks'  => array(PARAM_INT, 1, 0),
-    'showrubrictotal'    => array(PARAM_INT, 1, 1),
-    'showguidescores'    => array(PARAM_INT, 1, 0),
-    'showguideremarks'   => array(PARAM_INT, 1, 0),
-    'showguidetotal'     => array(PARAM_INT, 1, 1),
-    'showassigngrade'    => array(PARAM_INT, 1, 0),
-    'showmodulegrade'    => array(PARAM_INT, 1, 0),
-    'showcoursegrade'    => array(PARAM_INT, 1, 0),
-    'gradeprecision'     => array(PARAM_INT, 4, 0),
-    'showfeedback'       => array(PARAM_INT, 1, 0),
-    'showelement'        => array(PARAM_INT, 1, 0),
-    'multipleusers'      => array(PARAM_INT, 1, 0),
-    'sendimmediately'    => array(PARAM_INT, 1, 1),
-    'allowselectable'    => array(PARAM_INT, 1, 1),
-    'showlink'           => array(PARAM_INT, 1, 1));
+$method = 'get_text_options';
+$textsize = call_user_func(array($pluginclass, $method));
+$textsize = $textsize['size'];
+
+$method = 'get_defaultvalues';
+$defaults = call_user_func(array($pluginclass, $method), $pluginname);
+
+$checkboxes = array(
+    'showpicture',      'showresetbuttons',
+    'showpointstoday',  'showpointstotal',   'showcomments',
+    'showrubricscores', 'showrubricremarks', 'showrubrictotal',
+    'showguidescores',  'showguideremarks',  'showguidetotal',
+    'showassigngrade',  'showmodulegrade',   'showcoursegrade',
+    'showfeedback',     'showelement',       'multipleusers',
+    'sendimmediately',  'allowselectable',    'showlink',
+);
 
 foreach ($defaults as $name => $default) {
 
-    $type = $default[0];
-    $length = $default[1];
-    $default = $default[2];
+    if ($name=='nametokens') {
+        continue;
+    }
 
     if (substr($name, 0, 4)=='text') {
         $label = new lang_string(substr($name, 4), $pluginname);
@@ -82,31 +66,40 @@ foreach ($defaults as $name => $default) {
         $label = new lang_string($name, $pluginname);
         $help  = new lang_string($name.'_help', $pluginname);
     }
-    $name = "$pluginname/$name";
 
+    if (substr($name, 0, 4)=='show' && substr($name, -5)=='grade') {
+        $method = 'get_showgrade_options';
+    } else {
+        $method = 'get_'.$name.'_options';
+    }
+
+    $setting = "$pluginname/$name";
     switch (true) {
-        case ($type==PARAM_INT && $length==1):
-            $setting = new admin_setting_configcheckbox($name, $label, $help, $default, $type);
+        case (in_array($name, $checkboxes)):
+            $setting = new admin_setting_configcheckbox($setting, $label, $help, $default);
             break;
-        case ($type==PARAM_INT && $length==4):
-            $setting = new admin_setting_configtext($name, $label, $help, $default, $type, $length);
+        case method_exists($pluginclass, $method):
+            $options = call_user_func(array($pluginclass, $method), $pluginname);
+            $setting = new admin_setting_configselect($setting, $label, $help, $default, $options);
             break;
-        case ($type==PARAM_TEXT):
-            $setting = new admin_setting_configtext($name, $label, $help, $default, $type, $length);
+        case (is_integer($default)):
+            $setting = new admin_setting_configtext($setting, $label, $help, $default, PARAM_INT, $textsize);
+            break;
+        case (is_string($default)):
+            $setting = new admin_setting_configtext($setting, $label, $help, $default, PARAM_TEXT, $textsize);
             break;
         default:
             $setting = null; // shouldn't happen !!
     }
 
-    if ($setting && method_exists($setting, 'set_advanced_flag_options')) {
-        // Moodle >= 2.6
-        $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
-        $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
-    }
-
     if ($setting) {
+        if (method_exists($setting, 'set_advanced_flag_options')) {
+            // Moodle >= 2.6
+            $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, false);
+            $setting->set_locked_flag_options(admin_setting_flag::ENABLED, false);
+        }
         $settings->add($setting);
     }
 }
 
-unset($pluginname, $defaults, $default, $name, $length, $label, $help, $setting);
+unset($pluginname, $checkboxes, $textsize, $defaults, $default, $setting, $name, $label, $help, $size, $options);

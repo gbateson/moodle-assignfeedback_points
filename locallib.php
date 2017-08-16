@@ -78,7 +78,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     const HIRAGANA_STRING = '/^[ \x{3000}-\x{303F}\x{3040}-\x{309F}]+$/u';
     const KATAKANA_FULL_STRING = '/^[ \x{3000}-\x{303F}\x{30A0}-\x{30FF}]+$/u';
     const KATAKANA_HALF_STRING = '/^[ \x{3000}-\x{303F}\x{31F0}-\x{31FF}\x{FF61}-\x{FF9F}]+$/u';
-    const ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((b?by|t?ch|hy|jy|k?ky|p?py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/';
+    const ROMAJI_STRING = '/^( |(t?chi|s?shi|t?tsu)|((b?by|t?ch|hy|jy|k?ky|p?py|ry|s?sh|s?sy|w|y)[auo])|((b?b|d|f|g|h|j|k?k|m|n|p?p|r|s?s|t?t|z)[aiueo])|[aiueo]|[mn])+$/i';
 
     //const HANGUL_FULL_STRING = '/^[ \x{3000}-\x{303F}\x{3130}-\x{318F}]+$/u';
     //const HANGUL_HALF_STRING = '/^[ \x{3000}-\x{303F}\x{FF61}-\x{FF64}\x{FFA0}-\x{FFDF}]+$/u';
@@ -116,6 +116,9 @@ class assign_feedback_points extends assign_feedback_plugin {
     const SHOWGRADE_PERCENT = 2;
     const SHOWGRADE_FRACTION = 3;
     const SHOWGRADE_GRADEBOOK = 4;
+
+    /** cache of current user's capabilities **/
+    protected $can = null;
 
     /**
      * Get the name of the feedback points plugin.
@@ -544,6 +547,9 @@ class assign_feedback_points extends assign_feedback_plugin {
             $mform->disabledIf("nametokens[$i][head]", "nametokens[$i][length]", 'eq', '0');
             $mform->disabledIf("nametokens[$i][tail]", "nametokens[$i][length]", 'eq', '0');
             $mform->disabledIf("nametokens[$i][join]", "nametokens[$i][length]", 'eq', '0');
+
+            // if "romanize" is zero, disable "fixvowels"
+            $mform->disabledIf("nametokens[$i][fixvowels]", "nametokens[$i][romanize]", 'eq', '0');
         }
 
         // button to add more "nametokens"
@@ -1287,7 +1293,6 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // valid name fields in user object
         $namefields = self::get_all_user_name_fields();
-        $namefields['username'] = 'username';
 
         // format the display names for these users
         foreach ($userlist as $id => $user) {
@@ -1311,7 +1316,11 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $field = $nametoken->field;
 
                 if (array_key_exists($field, $namefields) && property_exists($user, $field)) {
-                    $text = $user->$field;
+                    if (property_exists($user, $field.'format')) {
+                        $text = self::format_text($user, $field); // e.g. description
+                    } else {
+                        $text = $user->$field;
+                    }
                 } else if ($field=='default') {
                     if ($defaultname===null) {
                         $defaultname = fullname($user);
@@ -1372,6 +1381,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                                 'oo'  => 'oh',   'ou'  => 'o',    'uu'  => 'u'
                             ));
                             break;
+                        default:
                     }
                 }
 
@@ -1399,21 +1409,28 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
             }
 
+            // the nameformat may also contain names of fields from the user profile
+            $fields = array();
+            foreach (array_keys($namefields) as $field) {
+                $fields[$field] = (isset($user->$field) ? $user->$field : '');
+            }
+            $displayname = strtr($displayname, $fields);
+
             // use plain text $displayname as $feedbackname
             $feedbackname = strip_tags($displayname);
             if ($feedbackname=='') {
-                if ($defaultname) {
-                    $feedbackname = $defaultname;
-                } else {
-                    $feedbackname = $user->username;
-                }
+                $feedbackname = get_string('fullnamedisplay', 'moodle', $user);
+            }
+
+            if ($displayname=='') {
+                $displayname = $feedbackname;
             }
 
             if ($config->newlinetoken) {
                 // https://pureform.wordpress.com/2008/01/04/matching-a-word-characters-outside-of-html-tags/
                 $search = '/('.preg_quote($config->newlinetoken, '/').')+(?!([^<]+)?>)/u';
                 $displayname = preg_replace($search, $br, $displayname);
-                $feedbackname = str_replace($config->newlinetoken, ' ', $feedbackname);
+                $feedbackname = preg_replace($search, ' ', $feedbackname);
             }
 
             $userlist[$id]->displayname = $displayname;
@@ -2010,23 +2027,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             // but which can only be calculated here, on the server.
             $feedback->values[$userid] = array();
 
-            // get associated assign_grades record id
-            $params = array('assignment' => $instance->id,
-                            'userid'     => $userid);
-            if ($assigngrade = $DB->get_records('assign_grades', $params, 'attemptnumber DESC')) {
-                $assigngrade = reset($assigngrade); // most recent assignment grade
-            } else {
-                $assigngrade = (object)array(
-                    'assignment'    => $instance->id,
-                    'userid'        => $userid,
-                    'timecreated'   => $time,
-                    'timemodified'  => $time,
-                    'grader'        => $USER->id,
-                    'grade'         => 0.00,
-                    'attemptnumber' => 0
-                );
-                $assigngrade->id = $DB->insert_record('assign_grades', $assigngrade);
-            }
+            // get associated assign_grades record id ($create=true)
+            $assigngrade = $this->assignment->get_user_grade($userid, true);
 
             if ($grading->method=='') {
 
@@ -2455,7 +2457,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     $award->timeawarded = userdate($award->timeawarded, $dateformat);
                     $award->points      = number_format($award->points);
                     $award->title       = format_text($award->commenttext, $award->commentformat);
-                    $award->title       = strip_tags($award->title); // neutralize title text
+                    $award->title       = html_to_text($award->title, 0, false); // neutralize title text
 
                     // truncate long comments, if necessary
                     // (the full comment is used as the title)
@@ -2693,7 +2695,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function romanize_romaji($name, $field) {
 
-        // convert to lower case
+        // convert to lowercase
         $name= self::textlib('strtolower', $name);
 
         // fix "si", "ti", "tu", "sy(a|u|o)", "jy(a|u|o)" and "nanba"
@@ -2880,12 +2882,12 @@ class assign_feedback_points extends assign_feedback_plugin {
      * get_activenamefields
      *
      * @param  object $custom
+     * @param  object $can
      * @return array of name fields that are active in this $userlist
      */
     static public function get_activenamefields($userlist) {
         $activenamefields = array();
         $namefields = self::get_all_user_name_fields();
-        $namefields['username'] = 'username';
         foreach ($namefields as $namefield) {
             $active = false;
             foreach ($userlist as $userid => $user) {
@@ -3136,7 +3138,6 @@ class assign_feedback_points extends assign_feedback_plugin {
             $fields = array();
         }
         $fields += self::get_all_user_name_fields();
-        $fields['username'] = '';
 
         $default = array_filter(array_keys($fields));
         $default = array_combine($default, $default);
@@ -3152,7 +3153,15 @@ class assign_feedback_points extends assign_feedback_plugin {
         $char = ''; // a punctuation char
         foreach (array_keys($fields) as $field) {
             if ($field) {
-                $string = get_string($field);
+                switch ($field) {
+                    case 'aim': $string = 'aimid'; break;
+                    case 'msn': $string = 'msnid'; break;
+                    case 'icq': $string = 'icqnumber'; break;
+                    case 'skype': $string = 'skypeid'; break;
+                    case 'yahoo': $string = 'yahooid'; break;
+                    default: $string = $field;
+                }
+                $string = get_string($string);
                 if ($is_ascii) {
                     $is_ascii = preg_match($ascii, $string);
                 }
@@ -3507,7 +3516,8 @@ class assign_feedback_points extends assign_feedback_plugin {
         if (is_numeric($value)) {
             return $value;
         }
-        return html_to_text(format_text($value, $format));
+        $value = strip_tags($value); // remove @@PLUGINFILE@@
+        return html_to_text(format_text($value, $format), 0, false);
     }
 
     /**
@@ -3519,13 +3529,106 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array of field names
      */
     static public function get_all_user_name_fields() {
-       $fields = array('firstname' => 'firstname',
-                       'lastname'  => 'lastname');
-       if (function_exists('get_all_user_name_fields')) {
-           // Moodle >= 2.6
-           $fields += get_all_user_name_fields();
-       }
-       return $fields;
+        static $fields = null;
+
+        if ($fields===null) {
+            $visiblefields = array();
+
+            $can = self::get_capabilities();
+
+            if ($can->viewalldetails) {
+                $visiblefields += array('username' => 'username');
+            }
+
+            if ($can->viewfullnames) {
+                $visiblefields += array('firstname' => 'firstname',
+                                        'lastname'  => 'lastname');
+            }
+
+            // we need these fields to get fullname($user)
+            if (function_exists('get_all_user_name_fields')) {
+                // Moodle >= 2.6
+                $visiblefields += get_all_user_name_fields();
+            }
+
+            // these fields are sometimes hidden
+            $fields = array('description', 'city', 'country',
+                            'icq', 'skype', 'yahoo', 'aim', 'msn');
+            $fields = array_combine($fields, $fields);
+
+            if ($can->viewhiddendetails==false && isset($CFG->hiddenuserfields)) {
+                foreach (array_explode(',', $CFG->hiddenuserfields) as $field) {
+                    switch ($field) {
+                        case 'icqnumber': $field = 'icq';   break;
+                        case 'skypeid':   $field = 'skype'; break;
+                        case 'yahooid':   $field = 'yahoo'; break;
+                        case 'aimid':     $field = 'aim';   break;
+                        case 'msnid':     $field = 'msn';   break;
+                    }
+                    unset($fields[$field]);
+                }
+            }
+            $visiblefields += $fields;
+
+            // these fields are also considered "hidden",
+            // but do not appear in $CFG->hiddenuserfields
+            if ($can->viewhiddendetails) {
+                $fields = array('address', 'phone1', 'phone2');
+                $visiblefields += array_combine($fields, $fields);
+            }
+
+            // add identity fields from $visiblefields
+            if ($can->viewalldetails || $can->viewuseridentity) {
+                $fields = array('idnumber', 'email', 'phone1', 'phone2', 'department', 'institution');
+            } else if (isset($CFG->showuseridentity)) {
+                $fields = array_explode(',', $CFG->showuseridentity);
+                if (array_search('email', $fields)===false && $can->useremail) {
+                    $fields[] = 'email';
+                }
+            }
+            $visiblefields += array_combine($fields, $fields);
+
+            // we want the fields in this order
+            $fields = array('username', 'idnumber', 'firstname', 'firstnamephonetic',
+                            'lastname', 'lastnamephonetic', 'middlename', 'alternatename',
+                            'email', 'phone1', 'phone2', 'icq', 'skype', 'yahoo', 'aim', 'msn',
+                            'department', 'institution', 'address', 'city', 'country', 'description');
+            $fields = array_combine($fields, $fields);
+
+            $fields = array_intersect_assoc($fields, $visiblefields);
+        }
+
+        return $fields;
+    }
+
+    /**
+     * get_capabilities
+     *
+     * @param   object  $context
+     * @return  object  capabilities
+     */
+    static function get_capabilities() {
+        global $PAGE;
+        static $can = null;
+        if ($can===null) {
+            $can = (object)array(
+                // can we view all fields on a user profile ?
+                'viewalldetails' => has_capability('moodle/user:viewalldetails', $PAGE->context),
+
+                // can we view hidden fields on a user profile ?
+                'viewhiddendetails' => has_capability('moodle/user:viewhiddendetails', $PAGE->context),
+
+                // can we view fullnames?
+                'viewfullnames' => has_capability('moodle/site:viewfullnames', $PAGE->context),
+
+                // can we view identity fields ?
+                'viewuseridentity' => has_capability('moodle/site:viewuseridentity', $PAGE->context),
+
+                // can we view email addresses ?
+                'useremail' => has_capability('moodle/course:useremail', $PAGE->context)
+            );
+        }
+        return $can;
     }
 
     /**

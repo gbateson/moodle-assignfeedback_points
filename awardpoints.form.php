@@ -212,11 +212,11 @@ class assignfeedback_points_award_points_form extends moodleform {
         $label = get_string($name, $plugin);
         $mapactions = array('none'     => get_string('none'),
                             'reset'    => get_string('reset',    $plugin),
+                            'resize'   => get_string('resize',   $plugin),
                             'cleanup'  => get_string('cleanup',  $plugin),
                             'separate' => get_string('separate', $plugin),
-                            'shuffle'  => get_string('shuffle',  $plugin),
-                            'resize'   => get_string('resize',   $plugin),
                             'rotate'   => get_string('rotate',   $plugin),
+                            'shuffle'  => get_string('shuffle',  $plugin),
                             'sortby'   => get_string('sortby',   $plugin));
         $elements = array();
         foreach ($mapactions as $value => $text) {
@@ -536,16 +536,14 @@ class assignfeedback_points_award_points_form extends moodleform {
 
         $elements = array();
         foreach ($custom->$name as $userid => $user) {
+
             $text = array();
             if ($custom->config->showpicture) {
                 $params = array('courseid' => $custom->courseid, 'link' => false);
                 $text[] = $OUTPUT->user_picture($user, $params);
             }
-            if ($custom->config->nameformat) {
+            if ($user->displayname) {
                 $text[] = html_writer::tag('em', $user->displayname, array('class' => 'name'));
-            }
-            if ($custom->config->showusername || count($text)==0) {
-                $text[] = html_writer::tag('em', $user->username, array('class' => 'name'));
             }
             if ($custom->config->showpointstotal && $custom->grading->method=='') {
                 $value = (isset($pointstotal[$userid]) ? $pointstotal[$userid] : 0);
@@ -560,12 +558,14 @@ class assignfeedback_points_award_points_form extends moodleform {
             if ($custom->config->showrubricscores && $custom->grading->method=='rubric') {
                 $criteria =& $custom->grading->definition->rubric_criteria;
                 foreach ($criteria as $criterionid => $criterion) {
-                    if (empty($rubricscores[$userid][$criterionid]) || empty($rubricscores[$userid][$criterionid]->levelid)) {
-                        $score = 0;
-                        $remark = '';
-                    } else {
-                        $score = $criterion['levels'][$levelid]['score'] - $criterion['minscore'];
-                        $remark = $rubricscores[$userid][$criterionid]->remark;
+                    $score = 0;
+                    $remark = '';
+                    if (isset($rubricscores[$userid][$criterionid])) {
+                        $levelid = $rubricscores[$userid][$criterionid]->levelid;
+                        if (isset($criterion['levels'][$levelid])) {
+                            $score = $criterion['levels'][$levelid]['score'] - $criterion['minscore'];
+                            $remark = $rubricscores[$userid][$criterionid]->remark;
+                        }
                     }
                     $score = round($score, $gradeprecision);
                     if ($criterion['maxscore']) {

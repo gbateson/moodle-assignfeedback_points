@@ -359,6 +359,45 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2017081628;
+    if ($result && $oldversion < $newversion) {
+
+        // ==================================================
+        // fix set sitewide default settings
+        // ==================================================
+
+        set_config('nameformat',       '', $plugin);
+        set_config('newlinetoken',     '', $plugin);
+        set_config('showelement',     '0', $plugin);
+        set_config('multipleusers',   '0', $plugin);
+        set_config('sendimmediately', '1', $plugin);
+        set_config('allowselectable', '1', $plugin);
+        set_config('showlink',        '1', $plugin);
+
+        // ==================================================
+        // fix settings in individual Assign(ment) activities
+        // ==================================================
+        //
+        $table = 'assign_plugin_config';
+
+        // ensure "nameformat" and "nameformat" do not contain "0"
+        $select = 'plugin = ? AND subtype = ? AND (name = ? OR name = ?) AND value = ?';
+        $params = array($pluginname, $plugintype, 'nameformat', 'newlinetoken', '0');
+        $DB->set_field_select($table, 'value', '', $select, $params);
+
+        // ensure "showelement" and "multipleusers" are switched OFF
+        $select = 'plugin = ? AND subtype = ? AND (name = ? OR name = ?)';
+        $params = array($pluginname, $plugintype, 'showelement', 'multipleusers');
+        $DB->set_field_select($table, 'value', '0', $select, $params);
+
+        // ensure "sendimmediately", "allowselectable" and "showlink" are switched ON
+        $select = 'plugin = ? AND subtype = ? AND (name = ? OR name = ? OR name = ?)';
+        $params = array($pluginname, $plugintype, 'sendimmediately', 'allowselectable', 'showlink');
+        $DB->set_field_select($table, 'value', '1', $select, $params);
+
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
     return $result;
 }
 
