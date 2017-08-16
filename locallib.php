@@ -3534,7 +3534,13 @@ class assign_feedback_points extends assign_feedback_plugin {
         if ($fields===null) {
             $visiblefields = array();
 
-            $can = self::get_capabilities();
+            // get capabilities (see "user/lib.php")
+            $can = (object)array(
+                'viewalldetails'    => has_capability('moodle/user:viewalldetails',    $PAGE->context),
+                'viewhiddendetails' => has_capability('moodle/user:viewhiddendetails', $PAGE->context),
+                'viewfullnames'     => has_capability('moodle/site:viewfullnames',     $PAGE->context),
+                'viewuseridentity'  => has_capability('moodle/site:viewuseridentity',  $PAGE->context),
+            );
 
             if ($can->viewalldetails) {
                 $visiblefields += array('username' => 'username');
@@ -3582,9 +3588,6 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $fields = array('idnumber', 'email', 'phone1', 'phone2', 'department', 'institution');
             } else if (isset($CFG->showuseridentity)) {
                 $fields = array_explode(',', $CFG->showuseridentity);
-                if (array_search('email', $fields)===false && $can->useremail) {
-                    $fields[] = 'email';
-                }
             }
             $visiblefields += array_combine($fields, $fields);
 
@@ -3599,36 +3602,6 @@ class assign_feedback_points extends assign_feedback_plugin {
         }
 
         return $fields;
-    }
-
-    /**
-     * get_capabilities
-     *
-     * @param   object  $context
-     * @return  object  capabilities
-     */
-    static function get_capabilities() {
-        global $PAGE;
-        static $can = null;
-        if ($can===null) {
-            $can = (object)array(
-                // can we view all fields on a user profile ?
-                'viewalldetails' => has_capability('moodle/user:viewalldetails', $PAGE->context),
-
-                // can we view hidden fields on a user profile ?
-                'viewhiddendetails' => has_capability('moodle/user:viewhiddendetails', $PAGE->context),
-
-                // can we view fullnames?
-                'viewfullnames' => has_capability('moodle/site:viewfullnames', $PAGE->context),
-
-                // can we view identity fields ?
-                'viewuseridentity' => has_capability('moodle/site:viewuseridentity', $PAGE->context),
-
-                // can we view email addresses ?
-                'useremail' => has_capability('moodle/course:useremail', $PAGE->context)
-            );
-        }
-        return $can;
     }
 
     /**
