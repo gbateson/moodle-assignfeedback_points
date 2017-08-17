@@ -1294,6 +1294,18 @@ class assign_feedback_points extends assign_feedback_plugin {
         // valid name fields in user object
         $namefields = self::get_all_user_name_fields();
 
+        // check to see if the nameformat string contains any $namefields
+        if (empty($config->nameformat)) {
+            $usernamefields = array();
+        } else {
+            $usernamefields = $namefields;
+            foreach (array_keys($usernamefields) as $field) {
+                if (strpos($config->nameformat, $field)===false) {
+                    unset($usernamefields[$field]);
+                }
+            }
+        }
+
         // format the display names for these users
         foreach ($userlist as $id => $user) {
 
@@ -1409,12 +1421,13 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
             }
 
-            // the nameformat may also contain names of fields from the user profile
-            $fields = array();
-            foreach (array_keys($namefields) as $field) {
-                $fields[$field] = (isset($user->$field) ? $user->$field : '');
+            // insert standard user name fields, if any
+            if (count($usernamefields)) {
+                foreach (array_keys($usernamefields) as $field) {
+                    $usernamefields[$field] = $user->$field;
+                }
+                $displayname = strtr($displayname, $usernamefields);
             }
-            $displayname = strtr($displayname, $fields);
 
             // use plain text $displayname as $feedbackname
             $feedbackname = strip_tags($displayname);
@@ -2027,7 +2040,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             // but which can only be calculated here, on the server.
             $feedback->values[$userid] = array();
 
-            // get associated assign_grades record id ($create=true)
+            // get associated assign_grades record id (create if necessary)
             $assigngrade = $this->assignment->get_user_grade($userid, true);
 
             if ($grading->method=='') {
@@ -2070,7 +2083,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     case self::POINTSTYPE_MEDIAN:  $orderby = 'points ASC'; break;
                     case self::POINTSTYPE_MODE:    $groupby = 'points'; break;
                     // any thing else, including POINTSTYPE_NEWEST,
-                    // will default $grade = $points
+                    // will default to $grade = $points
                 }
 
                 $from = '{assignfeedback_points}';
@@ -3529,6 +3542,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array of field names
      */
     static public function get_all_user_name_fields() {
+        global $PAGE;
         static $fields = null;
 
         if ($fields===null) {
@@ -3616,7 +3630,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function shorten_text($text, $textlength=28, $headlength=10, $taillength=10, $join=' ... ', $singleline=false) {
         if ($singleline) {
-            $text = preg_replace("/\s*(?:\t|\n|\r|(?:<br\b[^>]*>))+\s*/", ' ', $text);
+            $text = preg_replace("/(?: |\t|\r|\n|(?:<br\b[^>]*>))+/", ' ', $text);
         }
         $strlen = self::textlib('strlen', $text);
         if ($strlen > $textlength) {
