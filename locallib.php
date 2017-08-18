@@ -736,16 +736,15 @@ class assign_feedback_points extends assign_feedback_plugin {
         // templatable forms on Moodle >= 2.9 use "LABEL" tags
         // non-templatable forms use "SPAN" tags
 
+        $group_element_tag = 'span';
         if (method_exists($OUTPUT, 'mform_element')) {
             // Moodle >= 2.9
             $element = $mform->getElement('mapmodeelements'); // group of radio elements
             $element = $element->getElements();               // array of radio elements
             $element = $element[0];                           // the first radio element
-            $element = $OUTPUT->mform_element($element, false, false, '', true);
-            $group_element_tag = preg_replace('/^.*?<(\w+)[^>]*>.*$/s', '$1', $element);
-        } else {
-            // Moodle <= 2.8
-            $group_element_tag = 'span';
+            if ($element = $OUTPUT->mform_element($element, false, false, '', true)) {
+                $group_element_tag = preg_replace('/^.*?<(\w+)[^>]*>.*$/s', '$1', $element);
+            }
         }
 
         if ($group_element_tag=='label') {
@@ -1118,7 +1117,30 @@ class assign_feedback_points extends assign_feedback_plugin {
         $ajax = optional_param('ajax', 0, PARAM_INT);
         $undo = optional_param('undo', 0, PARAM_INT);
 
+        switch (true) {
+            case optional_param('submitbutton', null, PARAM_RAW): $action = 'submit'; break;
+            case optional_param('importbutton', null, PARAM_RAW): $action = 'import'; break;
+            case optional_param('exportbutton', null, PARAM_RAW): $action = 'export'; break;
+            default: $action = '';
+        }
+        if ($action=='' && count($_POST)) {
+            $action = 'submit'; // auto submit
+        }
+
         $config = $this->get_all_config($plugin);
+
+        if ($action=='import') {
+            $config = self::import_settings($plugin, $config);
+            foreach ($config as $name => $value) {
+                if (is_array($value)) {
+                    $value = base64_encode(serialize($value));
+                }
+                if (isset($value)) {
+                    $this->set_config($name, $value);
+                }
+            }
+        }
+
         $grading = self::get_grading_instance($config, $context);
 
         // cache the current time
@@ -1160,17 +1182,24 @@ class assign_feedback_points extends assign_feedback_plugin {
         $userlist = $this->assignment->list_participants($groupid, false);
         $this->format_userlist_names($userlist, $config);
 
+        if ($action=='export') {
+            self::export_settings($plugin, $config, $instance, $this->get_version());
+        }
+
         if ($undo) {
             // Handle an "undo" request - i.e. cancel previously awarded points.
             // Note that "undo" is available only for simple grading using points.
             $this->process_undo($feedback, $userlist, $instance, $plugin, $time);
-
-        } else if ($data = data_submitted()) {
+        } else if ($action=='import') {
+            // do nothing
+        } else if ($action=='export') {
+            // do nothing
+        } else if ($action=='submit') {
 
             if ($ajax) {
                 // don't save settings
             } else {
-                $this->save_settings_allowmissing($data, false);
+                $this->save_settings_allowmissing(data_submitted(), false);
             }
 
             // get (x, y) coordinates
@@ -1245,8 +1274,9 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
 
             if ($groupid != $map->groupid) {
-                $userlist = $this->assignment->list_participants($groupid, false);
                 $map = $this->get_usermap($cm, $USER->id, $groupid, $instance->id);
+                $userlist = $this->assignment->list_participants($groupid, false);
+                $this->format_userlist_names($userlist, $config);
                 // it is necessary to adjust $_POST so that old map
                 // coordinates are not used for new user maps in
                 // _process_submission() in "lib/formslib.php"
@@ -1276,6 +1306,10 @@ class assign_feedback_points extends assign_feedback_plugin {
             unset($feedback->type);
         }
 
+        if ($action=='export') {
+            self::export_settings($plugin, $config, $instance, $this->get_version());
+        }
+
         return array($multipleusers, $groupid, $map, $feedback, $userlist, $grading);
     }
 
@@ -1291,8 +1325,8 @@ class assign_feedback_points extends assign_feedback_plugin {
         // cache the <br /> tag
         $br = html_writer::empty_tag('br');
 
-        // valid name fields in user object
-        $namefields = self::get_all_user_name_fields();
+        // valid fields in user object
+        $namefields = self::get_all_user_fields();
 
         // check to see if the nameformat string contains any $namefields
         if (empty($config->nameformat)) {
@@ -2900,7 +2934,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_activenamefields($userlist) {
         $activenamefields = array();
-        $namefields = self::get_all_user_name_fields();
+        $namefields = self::get_all_user_fields();
         foreach ($namefields as $namefield) {
             $active = false;
             foreach ($userlist as $userid => $user) {
@@ -3150,7 +3184,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         } else {
             $fields = array();
         }
-        $fields += self::get_all_user_name_fields();
+        $fields += self::get_all_user_fields();
 
         $default = array_filter(array_keys($fields));
         $default = array_combine($default, $default);
@@ -3534,14 +3568,14 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_all_user_name_fields
+     * get_all_user_fields
      *
      * return an array of user field names
      * suitable for use in a Moodle form
      *
      * @return array of field names
      */
-    static public function get_all_user_name_fields() {
+    static public function get_all_user_fields() {
         global $PAGE;
         static $fields = null;
 
@@ -3658,6 +3692,180 @@ class assign_feedback_points extends assign_feedback_plugin {
             return true;
         }
         return false;
+    }
+
+    /**
+     * xml_tag
+     *
+     * @param string  $name
+     * @return string UPPERCASE version of $name, with underscores removed
+     */
+    static public function xml_tag($name) {
+        return strtr(strtoupper($name), array('_' => ''));
+    }
+
+    /**
+     * export_settings
+     *
+     * @param string  $plugin
+     * @param object  $config
+     * @param object  $instance of assignment from DB
+     * @param string  $version
+     * @return void, but will send XML file to browser
+     */
+    static public function export_settings($plugin, $config, $instance, $version) {
+
+        $filename = optional_param('exportfilename', '', PARAM_RAW);
+        if ($filename=='') {
+            $filename = strip_tags(format_string($instance->name, true));
+            $filename = preg_replace('/(\s|\x{3000})+/u', '-', $filename);
+            $filename = get_string('defaultfilename', $plugin, $filename);
+            $filename = clean_filename($filename.'.xml');
+        } else if (substr($filename, -4)=='.xml') {
+            // do nothing
+        } else {
+            $filename .= '.xml';
+        }
+
+        // set main XML tag name for this plugin
+        $PLUGIN = self::xml_tag($plugin);
+
+        $content = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
+        $content .= "<$PLUGIN>\n";
+        $content .= '  <VERSION>'.$version."</VERSION>\n";
+
+        $defaults = self::get_defaultvalues($plugin);
+        foreach (array_keys($defaults) as $name) {
+
+            $content .= "  <SETTING>\n";
+            $content .= '    <NAME>'.self::xml_tag_safe_content($name)."</NAME>\n";
+
+            if (is_scalar($config->$name)) {
+                $content .= '    <VALUE>'.self::xml_tag_safe_content($config->$name)."</VALUE>\n";
+            } else if ($name=='nametokens') {
+                foreach ($config->$name as $i => $token) {
+                    $content .= "    <TOKEN>\n";
+                    foreach ($token as $n => $v) {
+                        $content .= "      <TOKENSETTING>\n";
+                        $content .= '        <NAME>'.self::xml_tag_safe_content($n)."</NAME>\n";
+                        $content .= '        <VALUE>'.self::xml_tag_safe_content($v)."</VALUE>\n";
+                        $content .= "      </TOKENSETTING>\n";
+                    }
+                    $content .= "    </TOKEN>\n";
+                }
+            }
+
+            $content .= "  </SETTING>\n";
+        }
+        $content .= "</$PLUGIN>\n";
+
+        send_file($content, $filename, 0, 0, true, true);
+    }
+
+    /**
+     * import_settings
+     *
+     * @param string  $plugin
+     * @param object  $config
+     * @return object config settings (old overwritten by new)
+     */
+    static public function import_settings($plugin, $config) {
+        global $CFG, $USER;
+        require_once($CFG->dirroot.'/lib/xmlize.php');
+
+        $fs = get_file_storage();
+        $component = 'user';
+        $filearea = 'draft';
+        $context = context_user::instance($USER->id);
+
+        $xml = '';
+
+        // get content of uploaded file
+        $paramname = 'importfile';
+        if ($importfile = optional_param($paramname, 0, PARAM_INT)) {
+            if ($xml = $fs->get_area_files($context->id, $component, $filearea, $importfile, 'id DESC', false)) {
+                if ($xml = reset($xml)) {
+                    $xml = $xml->get_content();
+                }
+            }
+        } else if (isset($_FILES[$paramname])) {
+            $xml = file_get_contents($_FILES[$paramname]['tmp_name']);
+        }
+
+        // remove uploaded file from server
+        if ($importfile) {
+            $fs->delete_area_files($context->id, $component, $filearea, $importfile);
+        } else if (isset($_FILES[$paramname])) {
+            unlink($_FILES[$paramname]['tmp_name']);
+        }
+
+        if (empty($xml)) {
+            return $config;
+        }
+
+        if (! $xml = xmlize($xml, 0)) {
+            return $config;
+        }
+
+        // set main XML tag name for this plugin
+        $PLUGIN = self::xml_tag($plugin);
+
+        if (empty($xml[$PLUGIN]['#']['SETTING'])) {
+            return $config;
+        }
+
+        // shortcut to $SETTING array
+        $SETTING = &$xml[$PLUGIN]['#']['SETTING'];
+
+        $i = 0;
+        while (isset($SETTING[$i]['#'])) {
+            if ($name = $SETTING[$i]['#']['NAME'][0]['#']) {
+                if (isset($SETTING[$i]['#']['VALUE'][0]['#'])) {
+                    $config->$name = $SETTING[$i]['#']['VALUE'][0]['#'];
+                } else if ($name=='nametokens') {
+                    $config->$name = array();
+                    if (isset($SETTING[$i]['#']['TOKEN'])) {
+                        $ii = 0;
+                        while (isset($SETTING[$i]['#']['TOKEN'][$ii]['#'])) {
+                            $token = array();
+                            $iii = 0;
+                            while (isset($SETTING[$i]['#']['TOKEN'][$ii]['#']['TOKENSETTING'][$iii]['#'])) {
+                                $n = $SETTING[$i]['#']['TOKEN'][$ii]['#']['TOKENSETTING'][$iii]['#']['NAME'][0]['#'];
+                                $v = $SETTING[$i]['#']['TOKEN'][$ii]['#']['TOKENSETTING'][$iii]['#']['VALUE'][0]['#'];
+                                if ($n) {
+                                    $token[$n] = $v;
+                                }
+                                $iii++;
+                            }
+                            $config->$name[] = $token;
+                            $ii++;
+                        }
+                    }
+                }
+                // remove from incoming form data so that
+                // the outgoing form uses the new config setting
+                unset($_POST[$name]);
+            }
+            $i++;
+        }
+        unset($SETTING);
+        return $config;
+    }
+
+    /**
+     * xml_tag_safe_content
+     *
+     * copied from Moodle 1.9 backup/backuplib.php
+     */
+    static public function xml_tag_safe_content($content) {
+        global $CFG;
+        //If enabled, we strip all the control chars (\x0-\x1f) from the text but tabs (\x9),
+        //newlines (\xa) and returns (\xd). The delete control char (\x7f) is also included.
+        //because they are forbiden in XML 1.0 specs. The expression below seems to be
+        //UTF-8 safe too because it simply ignores the rest of characters.
+        $content = preg_replace('/[\x0-\x8\xb-\xc\xe-\x1f\x7f]/s','',$content);
+        $content = preg_replace('/\r\n|\r/', "\n", htmlspecialchars($content));
+        return $content;
     }
 
     /**

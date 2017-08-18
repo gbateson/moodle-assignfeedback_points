@@ -115,6 +115,37 @@ class assignfeedback_points_award_points_form extends moodleform {
         $this->add_field_report($mform, $custom, $plugin);
 
         // ========================
+        // export section
+        // ========================
+        //
+        assign_feedback_points::add_heading($mform, 'export', 'grades', false);
+
+        $name = 'exportfilename';
+        $mform->addElement('text', $name, get_string($name, $plugin));
+        $mform->setType($name, PARAM_FILE);
+        $mform->addHelpButton($name, $name, $plugin);
+
+        $name = 'export';
+        $label = get_string($name, 'grades');
+        $mform->addElement('submit', $name.'button', $label);
+
+        // ========================
+        // import section
+        // ========================
+        //
+        assign_feedback_points::add_heading($mform, 'import', 'grades', false);
+
+        $name = 'importfile';
+        $mform->addElement('filepicker', 'importfile', get_string($name, $plugin));
+        $mform->addHelpButton($name, $name, $plugin);
+
+        $name = 'import';
+        $mform->addElement('submit', $name.'button', get_string($name));
+
+        // for details of how to access the uploaded file, see ...
+        // https://docs.moodle.org/dev/Using_the_File_API_in_Moodle_forms#filepicker
+
+        // ========================
         // hidden fields
         // ========================
         //

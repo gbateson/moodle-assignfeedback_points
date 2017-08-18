@@ -1750,10 +1750,10 @@ $(document).ready(function() {
     var user_container      = $(PTS.user_container);
     var points_container    = $(PTS.points_container);
 
-    var mapaction_buttons = $(PTS.mapaction_container + " > " + PTS.group_element_tag);
-    var mapmode_buttons   = $(PTS.mapmode_container   + " > " + PTS.group_element_tag);
-    var user_tiles        = $(PTS.user_container      + " > " + PTS.group_element_tag);
-    var points_buttons    = $(PTS.points_container    + " > " + PTS.group_element_tag);
+    var mapaction_buttons = mapaction_container.children(PTS.group_element_tag);
+    var mapmode_buttons   = mapmode_container.children(PTS.group_element_tag);
+    var user_tiles        = user_container.children(PTS.group_element_tag);
+    var points_buttons    = points_container.children(PTS.group_element_tag);
 
     // this flag will be set to true
     // if the user map changes size
@@ -1906,7 +1906,7 @@ $(document).ready(function() {
         "width"    : "auto"
     });
 
-    // and remove the "report" section header
+    // remove the "report" section header
     $("#id_report_hdr").remove();
 
     // cache for auto width of TEXT input elements

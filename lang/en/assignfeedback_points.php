@@ -374,3 +374,9 @@ $string['updatescoresmanyusers'] = '{$a->type} scores were updated for {$a->user
 $string['updatescoresoneuser'] = '{$a->type} scores were upgraded for {$a->userlist}';
 $string['uppercase'] = 'UPPER CASE';
 $string['vertical'] = 'Vertical';
+
+$string['exportfilename_help'] = 'A name for the settings file for this plugin. The file will be created and sent to your browser when you click the "Import" button. The file is an XML file, so the extension ".xml" will be added to the file name automatically.';
+$string['exportfilename'] = 'Export file name';
+$string['importfile_help'] = 'A settings file that was created previously using the "Export" functionality of this plugin. Settings from the import file will overwrite the current settings for this plugin.';
+$string['importfile'] = 'Import file';
+$string['defaultfilename'] = '{$a}.settings';
