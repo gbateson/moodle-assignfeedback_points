@@ -1088,7 +1088,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             'awardto'    => $userlist,
             'feedback'   => $feedback,
             'grading'    => $grading,
-            'namefields' => self::get_activenamefields($userlist)
+            'namefields' => self::get_activenamefields($userlist),
+            'exportfilename' => self::get_default_filename($plugin, $instance)
         );
         $custom->sortby = self::get_sortby($userlist, $custom);
         $mform = new assignfeedback_points_award_points_form(null, $custom);
@@ -3705,6 +3706,22 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
+     * get_default_filename
+     *
+     * @param string  $plugin
+     * @param string  $name of assignment
+     * @param string  $type of file (optional, default=".xml")
+     * @return string, suitable for use as a filename
+     */
+    static public function get_default_filename($plugin, $instance, $filetype='.xml') {
+        $filename = strip_tags(format_string($instance->name, true));
+        $filename = preg_replace('/(\s|\x{3000})+/u', '-', $filename);
+        $filename = get_string('defaultfilename', $plugin, $filename);
+        $filename = clean_filename($filename.$filetype);
+        return $filename;
+    }
+
+    /**
      * export_settings
      *
      * @param string  $plugin
@@ -3717,10 +3734,7 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         $filename = optional_param('exportfilename', '', PARAM_RAW);
         if ($filename=='') {
-            $filename = strip_tags(format_string($instance->name, true));
-            $filename = preg_replace('/(\s|\x{3000})+/u', '-', $filename);
-            $filename = get_string('defaultfilename', $plugin, $filename);
-            $filename = clean_filename($filename.'.xml');
+            self::get_default_filename($plugin, $instance);
         } else if (substr($filename, -4)=='.xml') {
             // do nothing
         } else {

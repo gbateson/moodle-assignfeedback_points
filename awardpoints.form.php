@@ -54,14 +54,6 @@ class assignfeedback_points_award_points_form extends moodleform {
             $mform->disable_form_change_checker();
         }
 
-        if ($custom->grading->method) {
-            // if we are using advanced grading,
-            // we must use "total points"
-            // and disable "points awarded today"
-            $custom->config->pointstype = 1;
-            $custom->config->showpointstoday = 0;
-        }
-
         // ========================
         // set form id (for CSS)
         // ========================
@@ -121,8 +113,9 @@ class assignfeedback_points_award_points_form extends moodleform {
         assign_feedback_points::add_heading($mform, 'export', 'grades', false);
 
         $name = 'exportfilename';
-        $mform->addElement('text', $name, get_string($name, $plugin));
+        $mform->addElement('text', $name, get_string($name, $plugin), array('size' => 40));
         $mform->setType($name, PARAM_FILE);
+        $mform->setDefault($name, $custom->$name);
         $mform->addHelpButton($name, $name, $plugin);
 
         $name = 'export';
@@ -136,7 +129,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         assign_feedback_points::add_heading($mform, 'import', 'grades', false);
 
         $name = 'importfile';
-        $mform->addElement('filepicker', 'importfile', get_string($name, $plugin));
+        $mform->addElement('filepicker', $name, get_string($name, $plugin));
         $mform->addHelpButton($name, $name, $plugin);
 
         $name = 'import';
