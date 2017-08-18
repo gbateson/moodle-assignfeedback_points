@@ -1704,9 +1704,10 @@ PTS.hideshow_name_fields = function() {
     // set URL of the first available help icon
     // this will be used to generate URLs for other images
     var helpiconurl = $("img.iconhelp").first().prop("src");
-    if (helpiconurl=='') {
+    if (helpiconurl==null || helpiconurl=='') {
+        // templatable themes (e.g. Boost) don't have help icons, so extract from URL
         helpiconurl = location.href.replace(new RegExp("^(.*?)/mod/assign.*$"), "$1");
-        helpiconurl = wwwroot + "/pix/help.gif";
+        helpiconurl += "/pix/help.gif";
     }
 
     // add hide/show toggle functionality to "name" settings
