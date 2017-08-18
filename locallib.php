@@ -1154,7 +1154,8 @@ class assign_feedback_points extends assign_feedback_plugin {
                                   'usercount'  => 0,
                                   'userlist'   => array(),
                                   'values'     => array(),
-                                  'undo'       => array());
+                                  'undo'       => array(),
+                                  'type'       => $grading->method);
         if ($grading->method) {
             $feedback->type = get_string('pluginname', 'gradingform_'.$grading->method);
         }
@@ -1233,8 +1234,8 @@ class assign_feedback_points extends assign_feedback_plugin {
 
                 $feedback->userlist = implode(', ', $feedback->userlist);
                 switch (true) {
-                    case ($feedback->points==0 && $feedback->usercount==1): $feedback->stringname = 'updatescoresoneuser'; break;
-                    case ($feedback->points==0 && $feedback->usercount >1): $feedback->stringname = 'updatescoresmanyusers'; break;
+                    case ($grading->method && $feedback->usercount==1): $feedback->stringname = 'updatescoresoneuser'; break;
+                    case ($grading->method && $feedback->usercount >1): $feedback->stringname = 'updatescoresmanyusers'; break;
                     case ($feedback->points==1 && $feedback->usercount==1): $feedback->stringname = 'awardonepointoneuser'; break;
                     case ($feedback->points==1 && $feedback->usercount >1): $feedback->stringname = 'awardonepointmanyusers'; break;
                     case ($feedback->points >1 && $feedback->usercount==1): $feedback->stringname = 'awardmanypointsoneuser'; break;
@@ -2222,7 +2223,11 @@ class assign_feedback_points extends assign_feedback_plugin {
                 foreach ($criteria as $criterionid => $criterion) {
 
                     // cache flag showing if $formdata exists for this criterionid
-                    $exists = array_key_exists($criterionid, $formdata['criteria']);
+                    if (array_key_exists('criteria', $formdata)) {
+                        $exists = array_key_exists($criterionid, $formdata['criteria']);
+                    } else {
+                        $exists = false;
+                    }
 
                     $new = array();
                     foreach ($defaults as $name => $default) {
@@ -3715,7 +3720,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_default_filename($plugin, $instance, $filetype='.xml') {
         $filename = strip_tags(format_string($instance->name, true));
-        $filename = preg_replace('/(\s|\x{3000})+/u', '-', $filename);
+        $filename = preg_replace('/(,|-|\s|\x{3000})+/u', '-', $filename);
         $filename = get_string('defaultfilename', $plugin, $filename);
         $filename = clean_filename($filename.$filetype);
         return $filename;

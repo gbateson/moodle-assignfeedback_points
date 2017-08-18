@@ -1068,11 +1068,11 @@ PTS.get_criterion_score = function(input, cid, score, regexp) {
 PTS.get_rubric_form_score = function(cid) {
     var name = "advancedgrading[criteria][" + cid + "][levelid]";
     var input = $("input[type=radio][name='" + name + "']:checked");
-    if (input.length) {
-        var lid = input.first().val();
-        return PTS.criteriascores[cid]["levels"][lid] - PTS.criteriascores[cid]["min"];
+    if (input.length==0) {
+        return null; // no level is selected in form
     }
-    return null; // no level is selected in form
+    var lid = input.first().val();
+    return PTS.criteriascores[cid]["levels"][lid] - PTS.criteriascores[cid]["min"];
 }
 
 /**
@@ -1082,10 +1082,14 @@ PTS.get_rubric_form_score = function(cid) {
  * @return integer (or null)
  */
 PTS.get_guide_form_score = function(cid) {
-    var id = "#advancedgrading-criteria-" + cid + "-score";
-    var score = $(id).first().val();
+    var name = "advancedgrading[criteria][" + cid + "][score]";
+    var input = $("input[type=text][name='" + name + "']");
+    if (input.length==0) {
+        return null; // shouldn't happen !!
+    }
+    var score = input.first().val();
     if (score===null || score===false || score==="" || isNaN(score)) {
-        return null;
+        return null; // value is missing or invalid
     }
     return score;
 }

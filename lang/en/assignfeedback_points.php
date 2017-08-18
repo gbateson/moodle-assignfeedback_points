@@ -371,7 +371,7 @@ $string['undomanypointsoneuser'] = 'Cancelled award of {$a->points} points to {$
 $string['undoonepointmanyusers'] = 'Cancelled award of {$a->points} point to {$a->usercount} users: {$a->userlist}';
 $string['undoonepointoneuser'] = 'Cancelled award of {$a->points} point to {$a->usercount} user: {$a->userlist}';
 $string['updatescoresmanyusers'] = '{$a->type} scores were updated for {$a->usercount} users: {$a->userlist}';
-$string['updatescoresoneuser'] = '{$a->type} scores were upgraded for {$a->userlist}';
+$string['updatescoresoneuser'] = '{$a->type} scores were updated for {$a->userlist}';
 $string['uppercase'] = 'UPPER CASE';
 $string['vertical'] = 'Vertical';
 
