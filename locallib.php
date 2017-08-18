@@ -3837,7 +3837,9 @@ class assign_feedback_points extends assign_feedback_plugin {
                                 }
                                 $iii++;
                             }
-                            $config->$name[] = $token;
+                            if (count($token)) {
+                                array_push($config->$name, $token);
+                            }
                             $ii++;
                         }
                     }
