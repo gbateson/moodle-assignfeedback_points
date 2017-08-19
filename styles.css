@@ -474,6 +474,25 @@ body.path-mod-assign .ui-button-icon-only .ui-button-text, .ui-button-icons-only
     padding : 0px;
 }
 
+body.path-mod-assign #id_assignfeedback_points_report caption {
+    background-color: #eeeeee;
+    border: 1px solid #cccccc;
+    /* css3    */ border-radius: 4px;
+    /* Opera   */ -o-border-radius: 4px;
+    /* Firefox */ -moz-border-radius: 4px;
+    /* Webkit  */ -webkit-border-radius: 4px;
+    color:            #e08703;
+    font-size:           18px;
+    font-weight:       normal;
+    line-height:      initial;
+    padding:          4px 8px;
+    text-align:        center;
+}
+
+body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.totals {
+    text-transform: uppercase;
+}
+
 body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>th,
 body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>td {
     background-color: #fff5e6; /* light orange */

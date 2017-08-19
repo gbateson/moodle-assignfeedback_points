@@ -462,7 +462,7 @@ class assignfeedback_points_award_points_form extends moodleform {
                         $remark = html_to_text(format_text($remark, $guidescores[$id]->remarkformat));
                     }
                     $guidescores[$userid][$criterionid] = (object)array('score' => $score,
-                                                                         'remark' => $remark);
+                                                                        'remark' => $remark);
                     unset($guidescores[$id]);
                 }
             }
@@ -984,8 +984,13 @@ class assignfeedback_points_award_points_form extends moodleform {
      * @param string  $plugin
      */
     private function add_field_report($mform, $custom, $plugin) {
+        if ($custom->grading->method=='') {
+            $title = 'reporttitlepoints';
+        } else {
+            $title = 'reporttitle'.$custom->grading->method;
+        }
         $params = array('id' => 'id_report_container',
-                        'title' => get_string('pointsreporttitle', $plugin));
+                        'title' => get_string($title, $plugin));
         $report = html_writer::tag('div', '', $params);
         $mform->addElement('html', $report);
     }

@@ -2077,7 +2077,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $feedback->values[$userid] = array();
 
             // get associated assign_grades record id (create if necessary)
-            $assigngrade = $this->assignment->get_user_grade($userid, true);
+            $assigngrade = $this->get_assign_grade($userid, true);
 
             if ($grading->method=='') {
 
@@ -2300,6 +2300,37 @@ class assign_feedback_points extends assign_feedback_plugin {
         if (isset($formdata)) {
             unset($formdata);
         }
+    }
+
+
+    /**
+     * Retrieve the assign(ment) id
+     *
+     * @return integer The id of an assign record in the DB
+     */
+    public function get_assign_id() {
+        return $this->assignment->get_instance()->id;
+    }
+
+    /**
+     * Retrieve the course module id
+     *
+     * @return integer The id of a course_module record in the DB
+     */
+    public function get_course_module_id() {
+        return $this->assignment->get_course_module()->id;
+    }
+
+    /**
+     * Retrieve an assign_grade object from the DB, optionally creating it if required.
+     *
+     * @param integer $userid
+     * @param boolean $create If true the grade will be created if it does not exist
+     * @param integer $attemptnumber The attempt number to retrieve the grade for. -1 means the latest submission.
+     * @return stdClass The grade record
+     */
+    public function get_assign_grade($userid, $create, $attemptnumber=-1) {
+        return $this->assignment->get_user_grade($userid, $create, $attemptnumber);
     }
 
     /**
