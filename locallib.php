@@ -621,7 +621,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $plugin = 'assignfeedback_points';
         $label = get_string($name, $plugin);
         if ($type=='checkbox') {
-            $mform->addElement($type, $name, $label, '', $options);
+            $mform->addElement($type, $name, $label, ' ', $options);
         } else {
             $mform->addElement($type, $name, $label, $options);
         }
@@ -1089,7 +1089,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             'feedback'   => $feedback,
             'grading'    => $grading,
             'namefields' => self::get_activenamefields($userlist),
-            'exportfilename' => self::get_default_filename($plugin, $instance)
+            'exportfilename' => self::get_default_filename($plugin, $instance, $grading)
         );
         $custom->sortby = self::get_sortby($userlist, $custom);
         $mform = new assignfeedback_points_award_points_form(null, $custom);
@@ -2184,39 +2184,50 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $olddata = false;
                 $defaults = array();
 
-                if ($grading->method=='rubric') {
-                    // fetch $olddata about this user from $DB
-                    $select = 'grf.criterionid, grf.levelid, grf.remark, grf.remarkformat';
-                    $from   = '{gradingform_rubric_fillings} grf'.
-                              ' JOIN {grading_instances} gi ON gi.id = grf.instanceid'.
-                              ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
-                    $where  = 'ag.assignment = ? AND gi.status = ? AND ag.userid = ?';
-                    $params = array($instance->id, gradingform_instance::INSTANCE_STATUS_ACTIVE, $userid);
-                    $olddata = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params);
+                // get most recent grading instance id for this user + assignment
+                $select = 'gi.id, gi.status, gi.timemodified';
+                $from   = '{grading_instances} gi '.
+                          'JOIN {assign_grades} ag ON ag.id = gi.itemid '.
+                          'JOIN {grading_definitions} gd ON gd.id = gi.definitionid '.
+                          'JOIN {grading_areas} ga ON ga.id = gd.areaid AND ga.activemethod = gd.method';
+                $where  = 'ga.contextid = ? AND ag.assignment = ? AND ag.userid = ? AND gi.status IN (?, ?, ?)';
+                $order  = 'gi.status ASC, gi.timemodified DESC';
+                $params = array($this->assignment->get_context()->id, $instance->id, $userid,
+                                    gradingform_instance::INSTANCE_STATUS_ACTIVE,
+                                    gradingform_instance::INSTANCE_STATUS_NEEDUPDATE,
+                                    gradingform_instance::INSTANCE_STATUS_ARCHIVE);
 
+                if ($gradinginstanceid = $DB->get_records_sql("SELECT $select FROM $from WHERE $where ORDER BY $order", $params)) {
+                    $gradinginstanceid = reset($gradinginstanceid);
+                    $gradinginstanceid = $gradinginstanceid->id;
+                }
+
+                if ($grading->method=='rubric') {
                     // specify $defaults for new data
                     $defaults = array('levelid' => 0,
                                       'remark'  => '',
                                       'remarkformat' => 0);
+                    // fetch $olddata about this user from $DB
+                    if ($gradinginstanceid) {
+                        $params = array('instanceid' => $gradinginstanceid);
+                        $select = 'criterionid, levelid, remark, remarkformat';
+                        $olddata = $DB->get_records('gradingform_rubric_fillings', $params, null, $select);
+                    }
                 }
 
                 if ($grading->method=='guide') {
-                    $gradingdata->showmarkerdesc = $grading->data->showmarkerdesc;
-                    $gradingdata->showstudentdesc = $grading->data->showstudentdesc;
-
-                    // fetch $olddata about this user from $DB
-                    $select = 'ggf.criterionid, ggf.score, ggf.remark, ggf.remarkformat';
-                    $from   = '{gradingform_guide_fillings} ggf'.
-                              ' JOIN {grading_instances} gi ON gi.id = ggf.instanceid'.
-                              ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
-                    $where  = 'ag.assignment = ? AND gi.status = ? AND ag.userid = ?';
-                    $params = array($instance->id, gradingform_instance::INSTANCE_STATUS_ACTIVE, $userid);
-                    $olddata = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params);
-
                     // specify $defaults for new data
                     $defaults = array('score' => 0,
                                       'remark' => '',
                                       'remarkformat' => 0);
+                    // fetch $olddata about this user from $DB
+                    if ($gradinginstanceid) {
+                        $params = array('instanceid' => $gradinginstanceid);
+                        $select = 'criterionid, score, remark, remarkformat';
+                        $olddata = $DB->get_records('gradingform_guide_fillings', $params, null, $select);
+                    }
+                    $gradingdata->showmarkerdesc = $grading->data->showmarkerdesc;
+                    $gradingdata->showstudentdesc = $grading->data->showstudentdesc;
                 }
 
                 $grade = 0;
@@ -2237,6 +2248,10 @@ class assign_feedback_points extends assign_feedback_plugin {
                             $value = $olddata[$criterionid]->$name;
                         } else {
                             $value = $default;
+                        }
+                        if ($value==0 && $name=='levelid') {
+                            $value = reset($criterion['levels']);
+                            $value = $value['id'];
                         }
                         $new[$name] = $value;
                         if ($name=='score') {
@@ -2595,7 +2610,12 @@ class assign_feedback_points extends assign_feedback_plugin {
             $average = get_string('averagepoints', $plugin, (object)$average);
 
             // append icon to expand list
-            $img = $PAGE->theme->pix_url('t/switch_plus', 'core')->out();
+            if (method_exists($PAGE->theme, 'image_url')) {
+                $image_url = 'image_url'; // Moodle >= 3.3
+            } else {
+                $image_url = 'pix_url'; // Moodle <= 3.2
+            }
+            $img = $PAGE->theme->$image_url('t/switch_plus', 'core')->out();
             $img = array('src' => $img, 'onclick' => 'toggleawardlist(this, "'.$listid.'")');
             $img = ' '.html_writer::empty_tag('img', $img);
             $average = html_writer::tag('p', "$average $img", array('class' => 'averagepoints'));
@@ -3528,9 +3548,7 @@ class assign_feedback_points extends assign_feedback_plugin {
 
                         $name = 'description';
                         $text = self::format_text($criterion, $name);
-                        if ($length) {
-                            $text = self::shorten_text($text, $length, $head, $tail, $join, true);
-                        }
+                        $text = self::shorten_text($text, $length, $head, $tail, $join, true);
                         $criteria[$criterionid][$name.'text'] = $text;
 
                         $levels =& $criteria[$criterionid]['levels'];
@@ -3538,9 +3556,7 @@ class assign_feedback_points extends assign_feedback_plugin {
 
                             $name = 'definition';
                             $text = self::format_text($level, $name);
-                            if ($length) {
-                                $text = self::shorten_text($text, $length, $head, $tail, $join, true);
-                            }
+                            $text = self::shorten_text($text, $length, $head, $tail, $join, true);
                             $levels[$levelid][$name.'text'] = $text;
 
                             if ($minscore===null || $minscore > $level['score']) {
@@ -3556,9 +3572,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                     case 'guide':
                         $name = 'shortname';
                         $text = $criterion[$name];
-                        if ($length) {
-                            $text = self::shorten_text($text, $length, $head, $tail, $join, true);
-                        }
+                        $text = self::shorten_text($text, $length, $head, $tail, $join, true);
                         $criteria[$criterionid][$name.'text'] = $text;
                         $maxscore = $criterion['maxscore'];
                         $minscore = 0;
@@ -3703,11 +3717,13 @@ class assign_feedback_points extends assign_feedback_plugin {
         if ($singleline) {
             $text = preg_replace("/(?: |\t|\r|\n|(?:<br\b[^>]*>))+/", ' ', $text);
         }
-        $strlen = self::textlib('strlen', $text);
-        if ($strlen > $textlength) {
-            $head = self::textlib('substr', $text, 0, $headlength);
-            $tail = self::textlib('substr', $text, $strlen - $taillength, $taillength);
-            $text = $head.$join.$tail;
+        if ($textlength && ($headlength || $taillength)) {
+            $strlen = self::textlib('strlen', $text);
+            if ($strlen > $textlength) {
+                $head = self::textlib('substr', $text, 0, $headlength);
+                $tail = self::textlib('substr', $text, $strlen - $taillength, $taillength);
+                $text = $head.$join.$tail;
+            }
         }
         return $text;
     }
@@ -3749,10 +3765,31 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param string  $type of file (optional, default=".xml")
      * @return string, suitable for use as a filename
      */
-    static public function get_default_filename($plugin, $instance, $filetype='.xml') {
+    static public function get_default_filename($plugin, $instance, $grading, $filetype='.xml') {
+        $search = '/(,|-|\s|\x{3000})+/u';
+        $replace = '-';
+
+        if ($grading->method) {
+            $method = 'gradingform_'.$grading->method;
+            $method = get_string('pluginname', $method);
+        } else {
+            $method = get_string($grading->method, $plugin);
+        }
+        $method = preg_replace($search, $replace, $method);
+        $method = assign_feedback_points::textlib('strtolower', $method);
+
+        $settings = get_string('settings');
+        $settings = preg_replace($search, $replace, $settings);
+        $settings = assign_feedback_points::textlib('strtolower', $settings);
+
         $filename = strip_tags(format_string($instance->name, true));
-        $filename = preg_replace('/(,|-|\s|\x{3000})+/u', '-', $filename);
-        $filename = get_string('defaultfilename', $plugin, $filename);
+        $filename = preg_replace($search, $replace, $filename);
+
+        $a = (object)array('method' => $method,
+                           'settings' => $settings,
+                           'filename' => $filename);
+        $filename = get_string('defaultfilename', $plugin, $a);
+
         $filename = clean_filename($filename.$filetype);
         return $filename;
     }

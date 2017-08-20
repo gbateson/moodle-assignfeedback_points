@@ -395,7 +395,7 @@ class assignfeedback_points_renderer extends plugin_renderer_base {
             $table->data[] = $row;
         }
 
-        // set up a $link to grading page for this user
+        // set up a $link to the grading page for this user
         $params = array('id' => $points->get_course_module_id(),
                         'userid' => $userid,
                         'action' => 'grade');

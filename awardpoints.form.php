@@ -113,7 +113,8 @@ class assignfeedback_points_award_points_form extends moodleform {
         assign_feedback_points::add_heading($mform, 'export', 'grades', false);
 
         $name = 'exportfilename';
-        $mform->addElement('text', $name, get_string($name, $plugin), array('size' => 40));
+        $label = get_string($name, $plugin);
+        $mform->addElement('text', $name, $label, array('size' => 60));
         $mform->setType($name, PARAM_FILE);
         $mform->setDefault($name, $custom->$name);
         $mform->addHelpButton($name, $name, $plugin);
@@ -129,14 +130,13 @@ class assignfeedback_points_award_points_form extends moodleform {
         assign_feedback_points::add_heading($mform, 'import', 'grades', false);
 
         $name = 'importfile';
-        $mform->addElement('filepicker', $name, get_string($name, $plugin));
+        $label = get_string($name, $plugin);
+        $mform->addElement('filepicker', $name, $label);
         $mform->addHelpButton($name, $name, $plugin);
 
         $name = 'import';
-        $mform->addElement('submit', $name.'button', get_string($name));
-
-        // for details of how to access the uploaded file, see ...
-        // https://docs.moodle.org/dev/Using_the_File_API_in_Moodle_forms#filepicker
+        $label = get_string($name, 'grades');
+        $mform->addElement('submit', $name.'button', $label);
 
         // ========================
         // hidden fields
@@ -384,53 +384,85 @@ class assignfeedback_points_award_points_form extends moodleform {
             $pointstotal = array();
         }
 
+        // get advanced grading instances, if necessary
+        // these are used to fetch rubric/guide scores
+        $gradingwhere = '';
+        $gradingparams = array();
+        if ($usersfound && $custom->grading->method) {
+
+            // get most recent grading instances for all users
+            $select = 'gi.id, gi.status, gi.timemodified, ag.userid';
+            $from   = '{grading_instances} gi '.
+                      'JOIN {assign_grades} ag ON ag.id = gi.itemid '.
+                      'JOIN {grading_definitions} gd ON gd.id = gi.definitionid '.
+                      'JOIN {grading_areas} ga ON ga.id = gd.areaid AND ga.activemethod = gd.method';
+            list($where, $params) = $DB->get_in_or_equal($userids);
+            $where  = "ga.contextid = ? AND ag.assignment = ? AND gi.status IN (?, ?, ?) AND ag.userid $where";
+            array_unshift($params, $custom->context->id, $custom->assignid,
+                            gradingform_instance::INSTANCE_STATUS_ACTIVE,
+                            gradingform_instance::INSTANCE_STATUS_NEEDUPDATE,
+                            gradingform_instance::INSTANCE_STATUS_ARCHIVE);
+            $order  = 'ag.userid ASC, gi.status ASC, gi.timemodified DESC';
+
+            if ($instances = $DB->get_records_sql("SELECT $select FROM $from WHERE $where ORDER BY $order", $params)) {
+                $userid = 0;
+                foreach ($instances as $id => $instance) {
+                    if ($instance->userid==$userid) {
+                        unset($instances[$id]);
+                    } else {
+                        $userid = $instance->userid;
+                        $instances[$id] = $userid;
+                    }
+                }
+                $instances = array_flip($instances);
+
+                list($gradingwhere, $gradingparams) = $DB->get_in_or_equal($instances);
+            }
+        }
+
         // get rubric scores for each user, if required
-        if ($usersfound && $custom->config->showrubricscores && $custom->grading->method=='rubric') {
+        if ($gradingwhere && $custom->config->showrubricscores && $custom->grading->method=='rubric') {
             $select = $DB->sql_concat('grf.id', "'_'", 'ag.userid');
             $select = "$select as id, ag.userid AS $name, ".
                       'grf.criterionid, grf.levelid, grf.remark, grf.remarkformat';
             $from   = '{gradingform_rubric_fillings} grf'.
                       ' JOIN {grading_instances} gi ON gi.id = grf.instanceid'.
                       ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
-            $order  = 'ag.userid';
-            list($where, $params) = $DB->get_in_or_equal($userids);
-            $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where ORDER BY $order";
-            array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
-            if ($rubricscores = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
-                foreach (array_keys($rubricscores) as $id) {
-                    $userid = substr($id, strpos($id, '_') + 1);
-                    if (empty($rubricscores[$userid])) {
-                        $rubricscores[$userid] = array();
-                    }
-                    $criterionid = $rubricscores[$id]->criterionid;
-                    $levelid = $rubricscores[$id]->levelid;
-                    if ($remark = $rubricscores[$id]->remark) {
-                        $remark = html_to_text(format_text($remark, $rubricscores[$id]->remarkformat));
-                    }
-                    $rubricscores[$userid][$criterionid] = (object)array('levelid' => $levelid,
-                                                                         'remark' => $remark);
-                    unset($rubricscores[$id]);
-                }
-            }
+            $order  = 'ag.userid ASC, grf.id ASC';
+            $rubricscores = $DB->get_records_sql("SELECT $select FROM $from WHERE gi.id $gradingwhere ORDER BY $order", $gradingparams);
         } else {
             $rubricscores = false;
         }
+
         if ($rubricscores===false) {
             $rubricscores = array();
+        } else {
+            // format the rubric scores
+            foreach (array_keys($rubricscores) as $id) {
+                $userid = substr($id, strpos($id, '_') + 1);
+                if (empty($rubricscores[$userid])) {
+                    $rubricscores[$userid] = array();
+                }
+                $criterionid = $rubricscores[$id]->criterionid;
+                $levelid = $rubricscores[$id]->levelid;
+                if ($remark = $rubricscores[$id]->remark) {
+                    $remark = html_to_text(format_text($remark, $rubricscores[$id]->remarkformat));
+                }
+                $rubricscores[$userid][$criterionid] = (object)array('levelid' => $levelid,
+                                                                     'remark' => $remark);
+                unset($rubricscores[$id]);
+            }
         }
 
-        // get total of rubric scores for each user, if required
-        if ($usersfound && $custom->config->showrubrictotal && $custom->grading->method=='rubric') {
-            $select = "ag.userid AS $name, ROUND(SUM(grl.score),0) AS pointstotal";
+        // get total of rubric totals for each user, if required
+        if ($gradingwhere && $custom->config->showrubrictotal && $custom->grading->method=='rubric') {
+            $select = "ag.userid AS $name, ROUND(SUM(grl.score),0) AS rubrictotal";
             $from   = '{gradingform_rubric_levels} grl'.
                       ' JOIN {gradingform_rubric_fillings} grf ON grl.id = grf.levelid'.
                       ' JOIN {grading_instances} gi ON grf.instanceid = gi.id'.
                       ' JOIN {assign_grades} ag ON gi.itemid = ag.id';
-            list($where, $params) = $DB->get_in_or_equal($userids);
-            $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where";
-            array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
             $group  = 'ag.userid';
-            $rubrictotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
+            $rubrictotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE gi.id $gradingwhere GROUP BY $group", $gradingparams);
         } else {
             $rubrictotal = false;
         }
@@ -439,7 +471,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         }
 
         // get guide scores for each user, if required
-        if ($usersfound && $custom->config->showguidescores && $custom->grading->method=='guide') {
+        if ($gradingwhere && $custom->config->showguidescores && $custom->grading->method=='guide') {
             $select = $DB->sql_concat('ggf.id', "'_'", 'ag.userid');
             $select = "$select as id, ag.userid AS $name, ".
                       'ggf.criterionid, ggf.score, ggf.remark, ggf.remarkformat';
@@ -447,43 +479,38 @@ class assignfeedback_points_award_points_form extends moodleform {
                       ' JOIN {grading_instances} gi ON gi.id = ggf.instanceid'.
                       ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
             $order  = 'ag.userid';
-            list($where, $params) = $DB->get_in_or_equal($userids);
-            $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where ORDER BY $order";
-            array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
-            if ($guidescores = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
-                foreach (array_keys($guidescores) as $id) {
-                    $userid = substr($id, strpos($id, '_') + 1);
-                    if (empty($guidescores[$userid])) {
-                        $guidescores[$userid] = array();
-                    }
-                    $criterionid = $guidescores[$id]->criterionid;
-                    $score = $guidescores[$id]->score;
-                    if ($remark = $guidescores[$id]->remark) {
-                        $remark = html_to_text(format_text($remark, $guidescores[$id]->remarkformat));
-                    }
-                    $guidescores[$userid][$criterionid] = (object)array('score' => $score,
-                                                                        'remark' => $remark);
-                    unset($guidescores[$id]);
-                }
-            }
+            $guidescores = $DB->get_records_sql("SELECT $select FROM $from WHERE gi.id $gradingwhere", $gradingparams);
         } else {
             $guidescores = false;
         }
+
         if ($guidescores===false) {
             $guidescores = array();
+        } else {
+            foreach (array_keys($guidescores) as $id) {
+                $userid = substr($id, strpos($id, '_') + 1);
+                if (empty($guidescores[$userid])) {
+                    $guidescores[$userid] = array();
+                }
+                $criterionid = $guidescores[$id]->criterionid;
+                $score = $guidescores[$id]->score;
+                if ($remark = $guidescores[$id]->remark) {
+                    $remark = html_to_text(format_text($remark, $guidescores[$id]->remarkformat));
+                }
+                $guidescores[$userid][$criterionid] = (object)array('score' => $score,
+                                                                    'remark' => $remark);
+                unset($guidescores[$id]);
+            }
         }
 
         // get total of guide scores for each user, if required
         if ($usersfound && $custom->config->showguidetotal && $custom->grading->method=='guide') {
-            $select = "ag.userid AS $name, ROUND(SUM(ggf.score),0) AS pointstotal";
+            $select = "ag.userid AS $name, ROUND(SUM(ggf.score),0) AS guidetotal";
             $from   = '{gradingform_guide_fillings} ggf'.
                       ' JOIN {grading_instances} gi ON ggf.instanceid = gi.id'.
                       ' JOIN {assign_grades} ag ON gi.itemid = ag.id';
-            list($where, $params) = $DB->get_in_or_equal($userids);
-            $where  = "ag.assignment = ? AND gi.status = ? AND ag.userid $where";
-            array_unshift($params, $custom->assignid, gradingform_instance::INSTANCE_STATUS_ACTIVE);
             $group  = 'ag.userid';
-            $guidetotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE $where GROUP BY $group", $params);
+            $guidetotal = $DB->get_records_sql_menu("SELECT $select FROM $from WHERE gi.id $gradingwhere GROUP BY $group", $gradingparams);
         } else {
             $guidetotal = false;
         }

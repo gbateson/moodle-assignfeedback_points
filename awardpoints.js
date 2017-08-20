@@ -61,7 +61,7 @@ PTS.set_feedback = function(msg) {
  * @return void
  */
 PTS.set_ajax_feedback = function(msg) {
-    if (msg=="") {
+    if (msg=="" || msg.indexOf('id="feedback"') < 0) {
         $("#feedback").html(msg);
     } else {
         $("#feedback").parent().html(msg);
@@ -1707,7 +1707,7 @@ PTS.hideshow_name_fields = function() {
     if (helpiconurl==null || helpiconurl=='') {
         // templatable themes (e.g. Boost) don't have help icons, so extract from URL
         helpiconurl = location.href.replace(new RegExp("^(.*?)/mod/assign.*$"), "$1");
-        helpiconurl += "/pix/help.gif";
+        helpiconurl += "/pix/help.png";
     }
 
     // add hide/show toggle functionality to "name" settings
@@ -1721,15 +1721,23 @@ PTS.hideshow_name_fields = function() {
 
         // add IMG click event handler
         $(img).click(function(evt){
+            if (PTS.theme_type==PTS.THEME_TYPE_SPAN) {
+                // Moodle <= 3.1
+                var elm = $(this);
+            } else {
+                // Moodle >= 3.2
+                // template theme e.g. "Boost"
+                var elm = $(this).closest("div");
+            }
             var src = $(this).prop("src");
             if (src.indexOf("minus") >= 0) {
                 $(this).prop("src", src.replace("minus", "plus"));
                 $(this).prop("title", PTS.str.showmore);
-                $(this).nextAll().hide("fast");
+                elm.nextAll().hide("fast");
             } else {
                 $(this).prop("src", src.replace("plus", "minus"));
                 $(this).prop("title", PTS.str.showless);
-                $(this).nextAll().show("slow");
+                elm.nextAll().show("slow");
             }
         });
 
@@ -1738,7 +1746,13 @@ PTS.hideshow_name_fields = function() {
         $(this).after(document.createTextNode(" "));
 
         // initially, we hide the name settings
-        $(img).trigger("click");
+        if (PTS.theme_type==PTS.THEME_TYPE_SPAN) {
+            $(img).trigger('click');
+        } else {
+            // in Boost et al. we must wait
+            // until after fields have been disabled
+            setTimeout(function(){$(img).trigger('click');}, 2000);
+        }
     });
 }
 
