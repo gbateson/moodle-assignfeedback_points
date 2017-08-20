@@ -3052,7 +3052,19 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
             }
             if ($count) {
-                asort($ids, SORT_LOCALE_STRING);
+                if (class_exists('Collator')) {
+                    if (empty($custom->config->nametokens[$i]->sortlocale)) {
+                        // ToDo: add a sortlocale setting to name tokens
+                        // e.g. ja_JP.UTF-8, ko_KR.UTF-8, zh_CN.UTF-8
+                        // https://docs.moodle.org/dev/Table_of_locales
+                        $locale = null;
+                    } else {
+                        $locale = $custom->config->nametokens[$i]->sortlocale;
+                    }
+                    Collator::create($locale)->asort($ids);
+                } else {
+                    asort($ids, SORT_LOCALE_STRING);
+                }
                 $sortby[$sortfield] = array_keys($ids);
             }
         }
