@@ -3052,17 +3052,24 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
             }
             if ($count) {
-                if (class_exists('Collator')) {
-                    if (empty($custom->config->nametokens[$i]->sortlocale)) {
-                        // ToDo: add a sortlocale setting to name tokens
-                        // e.g. ja_JP.UTF-8, ko_KR.UTF-8, zh_CN.UTF-8
-                        // https://docs.moodle.org/dev/Table_of_locales
-                        $locale = null;
-                    } else {
-                        $locale = $custom->config->nametokens[$i]->sortlocale;
-                    }
+                // ToDo: add a sortlocale setting to name tokens
+                // e.g. ja_JP.UTF-8, ko_KR.UTF-8, zh_CN.UTF-8
+                // https://docs.moodle.org/dev/Table_of_locales
+                if ($nametokens && isset($custom->config->nametokens[$i]->sortlocale)) {
+                    $locale = $custom->config->nametokens[$i]->sortlocale;
+                } else {
+                    $locale = null;
+                }
+                if (class_exists('core_collator')) {
+                    // Moodle >= 2.6
+                    core_collator::asort($ids, core_collator::SORT_STRING);
+                } else if (class_exists('Collator')) {
+                    // PHP >= 5.3
                     Collator::create($locale)->asort($ids);
                 } else {
+                    // this is unlikely to work with Asian locales
+                    // and may well have problems on Windows :-(
+                    setlocale(LC_COLLATE, $locale);
                     asort($ids, SORT_LOCALE_STRING);
                 }
                 $sortby[$sortfield] = array_keys($ids);
