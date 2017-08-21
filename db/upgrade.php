@@ -342,7 +342,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
-    $newversion = 2017070607;
+    $newversion = 2017070608;
     if ($result && $oldversion < $newversion) {
         $fields = array('showrubricscores'   => 'showrubrictotal',
                         'showrubriccriteria' => 'showrubricscores',
