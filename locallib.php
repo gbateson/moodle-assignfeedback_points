@@ -3792,7 +3792,7 @@ class assign_feedback_points extends assign_feedback_plugin {
             $method = 'gradingform_'.$grading->method;
             $method = get_string('pluginname', $method);
         } else {
-            $method = get_string($grading->method, $plugin);
+            $method = get_string('points', $plugin);
         }
         $method = preg_replace($search, $replace, $method);
         $method = assign_feedback_points::textlib('strtolower', $method);
