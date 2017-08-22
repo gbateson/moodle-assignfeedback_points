@@ -406,11 +406,9 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
 #assignfeedback_points_award_points_form #guide-advancedgrading {
     max-width : 640px;
 }
-
 #assignfeedback_points_award_points_form #guide-advancedgrading label.hidden {
     display:     none;
 }
-
 #assignfeedback_points_award_points_form #guide-advancedgrading textarea,
 #assignfeedback_points_award_points_form #rubric-advancedgrading textarea {
     max-width : 320px;
