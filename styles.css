@@ -398,21 +398,56 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
 /***********************************
 ** Advanced grading: Criteria
 ***********************************/
-
-#assignfeedback_points_award_points_form .gradingform_rubric {
-    max-width : 100%;
+#assignfeedback_points_award_points_form #guide-advancedgrading,
+#assignfeedback_points_award_points_form #rubric-advancedgrading {
+    overflow: visible;
+    width :      100%;
+}
+#assignfeedback_points_award_points_form #guide-advancedgrading {
+    max-width : 640px;
 }
 
-#advancedgrading-criteria .criteria-reset-cell {
+#assignfeedback_points_award_points_form #guide-advancedgrading label.hidden {
+    display:     none;
+}
+
+#assignfeedback_points_award_points_form #guide-advancedgrading textarea,
+#assignfeedback_points_award_points_form #rubric-advancedgrading textarea {
+    max-width : 320px;
+    width :       85%;
+}
+#assignfeedback_points_award_points_form #guide-advancedgrading textarea {
+    height     : 60px;
+}
+#assignfeedback_points_award_points_form #rubric-advancedgrading textarea {
+    height     : 20px;
+}
+
+#assignfeedback_points_award_points_form #guide-advancedgrading .criterion .score {
+    min-width:     80px;
+    vertical-align: top;
+}
+#assignfeedback_points_award_points_form #guide-advancedgrading .criterion .score div {
+    display: inline;
+    margin-left: 6px;
+}
+
+#assignfeedback_points_award_points_form #advancedgrading-criteria .criteria-reset-cell {
     text-align :  center;
     vertical-align : top;
 }
 
-#advancedgrading-criteria .criteria-reset-button {
+#assignfeedback_points_award_points_form #advancedgrading-criteria .criteria-reset-button {
     margin  :     0px;
     padding : 4px 8px;
 }
 
+/** override marking guide width on narrow screens **/
+@media only screen and (max-width: 600px) {
+    #assignfeedback_points_award_points_form #guide-advancedgrading .criteriondescriptionmarkers {
+        width : 100%;
+    }
+}
 /***********************************
 ** layouts
 ***********************************/
