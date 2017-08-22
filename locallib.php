@@ -3786,7 +3786,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_default_filename($plugin, $instance, $grading, $filetype='.xml') {
         $search = '/([[:space:]]|[[:punct:]]|\x{3000})+/u';
-        $replace = '-';
+        $replace = get_string('filenameseparator', $plugin);
 
         if ($grading->method) {
             $method = 'gradingform_'.$grading->method;
@@ -3803,7 +3803,19 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         $filename = strip_tags(format_string($instance->name, true));
         $filename = preg_replace($search, $replace, $filename);
-        $filename = trim($filename, '-');
+
+        // trim separator, if necessary
+        if ($length = self::textlib('strlen', $replace)) {
+            // remove separator from start of filename
+            if (self::textlib('substr', $filename, 0, $length)==$replace) {
+                $filename = self::textlib('substr', $filename, $length);
+            }
+            // remove separator from end of filename
+            if (self::textlib('substr', $filename, -$length)==$replace) {
+                $length = (self::textlib('strlen', $filename) - $length);
+                $filename = self::textlib('substr', $filename, 0, $length);
+            }
+        }
 
         $a = (object)array('method' => $method,
                            'settings' => $settings,

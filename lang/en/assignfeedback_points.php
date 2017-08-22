@@ -70,6 +70,7 @@ $string['feedback_help'] = 'Messages will be displayed here regarding the transf
 
 You can control whether this item is visible or hidden using the "Show AJAX feedback" item in the "Settings" section at the bottom of this page.';
 $string['feedback'] = 'Feedback';
+$string['filenameseparator'] = '-';
 $string['fixvowels_help'] = 'This setting specifies how to treat long vowels, specifically "ou", "aa", "ii", "uu", "ee", "oo", in romanized Japanese.
 
 **No**
