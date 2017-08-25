@@ -50,7 +50,7 @@ $checkboxes = array(
     'showguidescores',  'showguideremarks',  'showguidetotal',
     'showassigngrade',  'showmodulegrade',   'showcoursegrade',
     'showfeedback',     'showelement',       'multipleusers',
-    'sendimmediately',  'allowselectable',    'showlink',
+    'sendimmediately',  'allowselectable',   'showlink',
 );
 
 foreach ($defaults as $name => $default) {

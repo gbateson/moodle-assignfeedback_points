@@ -409,18 +409,16 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
 #assignfeedback_points_award_points_form #guide-advancedgrading label.hidden {
     display:     none;
 }
-#assignfeedback_points_award_points_form #guide-advancedgrading textarea,
-#assignfeedback_points_award_points_form #rubric-advancedgrading textarea {
+#assignfeedback_points_award_points_form #guide-advancedgrading textarea {
+    height     : 60px;
     max-width : 320px;
     width :       85%;
 }
-#assignfeedback_points_award_points_form #guide-advancedgrading textarea {
-    height     : 60px;
-}
 #assignfeedback_points_award_points_form #rubric-advancedgrading textarea {
     height     : 20px;
+    max-width : 320px;
+    width :      auto;
 }
-
 #assignfeedback_points_award_points_form #guide-advancedgrading .criterion .score {
     min-width:     80px;
     vertical-align: top;

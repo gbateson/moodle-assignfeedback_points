@@ -292,6 +292,7 @@ $string['sendimmediately'] = 'Send points immediately';
 $string['separate'] = 'Separate';
 $string['settings'] = 'Settings for Feedback points';
 $string['setup'] = 'Setup';
+$string['shorten'] = 'Shorten';
 $string['showassigngrade_help'] = 'If this setting is enabled, each student\'s raw grade for this assignment will be displayed.
 
 The grade can be displayed as a raw grade, as a percent, or as a fraction of the total.';
@@ -315,6 +316,8 @@ $string['showfeedback_help'] = 'This setting controls whether feedback about AJA
 **Automatic**
 : Feedback about AJAX operations appears only when an AJAX operation is in progress. Otherwise, it is hidden.';
 $string['showfeedback'] = 'Show AJAX feedback';
+$string['showguideformcriteria_help'] = 'This setting specifies whether each criterion on the Marking guide should be shown in full, truncated, or hidden.';
+$string['showguideformcriteria'] = 'Show criteria on Marking guide';
 $string['showguideremarks_help'] = 'If this setting is enabled, the feeback remarks for each Marking Guide criteria score for each student will be displayed.';
 $string['showguideremarks'] = 'Show Marking Guide remarks';
 $string['showguidescores_help'] = 'If this setting is enabled, the individual scores for each Marking Guide criteria for each student will be displayed.';
@@ -329,16 +332,18 @@ The grade can be displayed as a raw grade, as a percent, as a fraction of the to
 $string['showmodulegrade'] = 'Show activity grades';
 $string['showpicture_help'] = 'If this setting is enabled, the students\' pictures will be shown in the list of students to whom points are awarded.';
 $string['showpicture'] = 'Show user pictures';
-$string['showpointstoday_help'] = 'If this setting is enabled, the number of points awarded today to each student will be displayed.
-
-Usually, this setting is only required when using Simple Direct Grading method with incremental points, but it may also be useful after switching from the using Simple Direct Grading to using another grading method.';
+$string['showpointstoday_help'] = 'If this setting is enabled, the number of points awarded today to each student will be displayed.';
 $string['showpointstoday'] = 'Show points (today)';
-$string['showpointstotal_help'] = 'If this setting is enabled, the total number of points awarded will be displayed.
-
-Usually, this setting is only required when using Simple Direct Grading method, but it may also be useful after switching from the using Simple Direct Grading to using another grading method.';
+$string['showpointstotal_help'] = 'If this setting is enabled, the total number of points awarded to each student will be displayed.';
 $string['showpointstotal'] = 'Show points (total)';
 $string['showresetbuttons_help'] = 'If this setting is enabled, Reset buttons will be added to each row in the Advanced grading form. Clicking a Reset button will deselect the score and remove the comment in that row.';
 $string['showresetbuttons'] = 'Show Reset buttons';
+$string['showrubricformcriteria_help'] = 'This setting specifies whether each criterion on the Rubric form should be shown in full, truncated, or hidden.';
+$string['showrubricformcriteria'] = 'Show criteria on Rubric';
+$string['showrubricformlevels_help'] = 'This setting specifies whether the text description of each level on the Rubric form should be shown in full, truncated, or hidden.';
+$string['showrubricformlevels'] = 'Show levels on Rubric';
+$string['showrubricformscores_help'] = 'This setting specifies whether the scores for each level on the Rubric form should be shown or hidden.';
+$string['showrubricformscores'] = 'Show scores on Rubric';
 $string['showrubricremarks_help'] = 'If this setting is enabled, the feedback remarks for each Rubric criteria for each student will be displayed.';
 $string['showrubricremarks'] = 'Show Rubric remarks';
 $string['showrubricscores_help'] = 'If this setting is enabled, the individual scores for each Rubric criteria for each student will be displayed.';
