@@ -2010,4 +2010,11 @@ $(document).ready(function() {
             this.appendChild(td);
         });
     }
+
+    // shorten scores in Rubric form, e.g. "10 points", by removing text, e.g. "points"
+    if (PTS.gradingmethod=="rubric" && PTS.showrubricformscores==PTS.GRADINGTEXT_SHORTEN) {
+        $("#advancedgrading-criteria span.scorevalue").parent().contents().filter(function(){
+            return this.nodeType==3
+        }).remove();
+    }
 });

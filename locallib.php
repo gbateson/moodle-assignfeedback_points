@@ -816,6 +816,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         $showrubricscores = 0;
         $showrubricremarks = 0;
         $showrubrictotal = 0;
+        $showrubricformscores = 0;
 
         $usercriteriascores = array();
         $criteriascores = array();
@@ -841,6 +842,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $showrubricscores = intval($custom->config->showrubricscores);
                 $showrubricremarks = intval($custom->config->showrubricremarks);
                 $showrubrictotal = intval($custom->config->showrubrictotal);
+                $showrubricformscores = intval($custom->config->showrubricformscores);
                 $criteria = $custom->grading->method.'_criteria';
                 $criteria = $custom->grading->definition->$criteria;
                 foreach ($criteria as $criterionid => $criterion) {
@@ -879,6 +881,9 @@ class assign_feedback_points extends assign_feedback_plugin {
         $js .= '    PTS.showrubricscores      = '.$showrubricscores.";\n";
         $js .= '    PTS.showrubricremarks     = '.$showrubricremarks.";\n";
         $js .= '    PTS.showrubrictotal       = '.$showrubrictotal.";\n";
+
+        $js .= '    PTS.showrubricformscores  = '.$showrubricformscores.";\n";
+        $js .= '    PTS.GRADINGTEXT_SHORTEN   = '.self::GRADINGTEXT_SHORTEN.";\n";
 
         $js .= '    PTS.showguidescores       = '.$showguidescores.";\n";
         $js .= '    PTS.showguideremarks      = '.$showguideremarks.";\n";
@@ -3293,9 +3298,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array of field names
      */
     static public function get_showrubricformscores_options($plugin) {
-        $options = self::get_gradingtext_options($plugin, false);
-        unset($options[self::GRADINGTEXT_SHORTEN]);
-        return $options;
+        return self::get_gradingtext_options($plugin, false);
     }
 
     /**
@@ -3317,9 +3320,9 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array of field names
      */
     static public function get_gradingtext_options($plugin, $showshorten=true) {
-        return array(self::GRADINGTEXT_HIDE => get_string('hide'),
-                     self::GRADINGTEXT_SHOW => get_string('show'),
-                     self::GRADINGTEXT_SHORTEN => get_string('shorten', $plugin));
+        return array(self::GRADINGTEXT_SHOW    => get_string('show'),
+                     self::GRADINGTEXT_SHORTEN => get_string('shorten', $plugin),
+                     self::GRADINGTEXT_HIDE    => get_string('hide'));
     }
 
     /**
