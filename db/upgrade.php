@@ -185,7 +185,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         require_once($CFG->dirroot.'/mod/assign/feedback/points/locallib.php');
 
         // get name fields used in default name format for this Moodle site
-        $defaultnames = assign_feedback_points::get_all_user_name_fields();
+        $defaultnames = assign_feedback_points::get_all_user_fields();
         $defaultnames = fullname((object)$defaultnames);
         $defaultnames = explode(' ', $defaultnames);
 
