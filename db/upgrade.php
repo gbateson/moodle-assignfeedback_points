@@ -398,6 +398,39 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2017092761;
+    if ($result && $oldversion < $newversion) {
+
+        // ==================================================
+        // Rename "showrubricformcriteria" config settings
+        // because "showrubricformcriteria_locked" is too
+        // long for the "name" field in "assign_plugin_config".
+        // For consistency, we also rename the corresponding
+        // fields for marking guides, "showguideformcriteria".
+        // ==================================================
+
+        $names = array('guide', 'rubric');
+        $types = array('', '_adv', '_locked');
+
+        foreach ($names as $name) {
+            $oldname = 'show'.$name.'formcriteria';
+            $newname = 'show'.$name.'formlabels';
+            foreach ($types as $type) {
+                $DB->set_field('assign_plugin_config',
+                               'name', $newname.$type,
+                               array('plugin'  => $pluginname,
+                                     'subtype' => $plugintype,
+                                     'name'    => $oldname.$type));
+                $DB->set_field('config_plugins',
+                               'name', $newname.$type,
+                                array('plugin' => $plugin,
+                                      'name'   => $oldname.$type));
+            }
+        }
+
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
     return $result;
 }
 

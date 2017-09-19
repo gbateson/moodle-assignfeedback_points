@@ -349,9 +349,9 @@ class assign_feedback_points extends assign_feedback_plugin {
             self::add_heading($mform, 'pluginname', $name, false);
         }
 
-        $name = 'showrubricformcriteria';
+        $name = 'showrubricformlabels';
         if ($custom->grading->method=='rubric') {
-            $options = self::get_showrubricformcriteria_options($plugin);
+            $options = self::get_showrubricformlabels_options($plugin);
             self::add_setting($mform, $config, $name, 'select', $options);
         } else {
             $hiddenfields[$name] = PARAM_INT;
@@ -373,9 +373,9 @@ class assign_feedback_points extends assign_feedback_plugin {
             $hiddenfields[$name] = PARAM_INT;
         }
 
-        $name = 'showguideformcriteria';
+        $name = 'showguideformlabels';
         if ($custom->grading->method=='guide') {
-            $options = self::get_showguideformcriteria_options($plugin);
+            $options = self::get_showguideformlabels_options($plugin);
             self::add_setting($mform, $config, $name, 'select', $options);
         } else {
             $hiddenfields[$name] = PARAM_INT;
@@ -3139,8 +3139,8 @@ class assign_feedback_points extends assign_feedback_plugin {
                      'showcomments'       => 1,
 
                      // Advanced grading (Rubric + Guide)
-                     'showguideformcriteria'  => 1,
-                     'showrubricformcriteria' => 1,
+                     'showguideformlabels'  => 1,
+                     'showrubricformlabels' => 1,
                      'showrubricformlevels' => 1,
                      'showrubricformscores' => 1,
                      'showresetbuttons'   => 0,
@@ -3262,23 +3262,23 @@ class assign_feedback_points extends assign_feedback_plugin {
     }
 
     /**
-     * get_showguideformcriteria_options
+     * get_showguideformlabels_options
      *
      * @param  string $plugin name
      * @return array of field names
      */
-    static public function get_showguideformcriteria_options($plugin) {
-        return self::get_showgradingcriteria_options($plugin);
+    static public function get_showguideformlabels_options($plugin) {
+        return self::get_showgradinglabels_options($plugin);
     }
 
     /**
-     * get_showrubricformcriteria_options
+     * get_showrubricformlabels_options
      *
      * @param  string $plugin name
      * @return array of field names
      */
-    static public function get_showrubricformcriteria_options($plugin) {
-        return self::get_showgradingcriteria_options($plugin);
+    static public function get_showrubricformlabels_options($plugin) {
+        return self::get_showgradinglabels_options($plugin);
     }
 
     /**
@@ -3298,17 +3298,17 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return array of field names
      */
     static public function get_showrubricformscores_options($plugin) {
-        return self::get_gradingtext_options($plugin, false);
+        return self::get_gradingtext_options($plugin);
     }
 
     /**
-     * get_showguideformcriteria_options
+     * get_showgradinglabels_options
      *
      * @param  string $plugin name
      * @return array of field names
      */
-    static public function get_showgradingcriteria_options($plugin) {
-        $options = self::get_gradingtext_options($plugin, false);
+    static public function get_showgradinglabels_options($plugin) {
+        $options = self::get_gradingtext_options($plugin);
         unset($options[self::GRADINGTEXT_HIDE]);
         return $options;
     }
@@ -3319,7 +3319,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param  string $plugin name
      * @return array of field names
      */
-    static public function get_gradingtext_options($plugin, $showshorten=true) {
+    static public function get_gradingtext_options($plugin) {
         return array(self::GRADINGTEXT_SHOW    => get_string('show'),
                      self::GRADINGTEXT_SHORTEN => get_string('shorten', $plugin),
                      self::GRADINGTEXT_HIDE    => get_string('hide'));
@@ -3665,11 +3665,11 @@ class assign_feedback_points extends assign_feedback_plugin {
 
                         $name = 'description';
                         $text = self::format_text($criterion, $name);
-                        if ($config->showrubricformcriteria==self::GRADINGTEXT_SHOW) {
+                        if ($config->showrubricformlabels==self::GRADINGTEXT_SHOW) {
                             $criteria[$criterionid][$name] = $text;
                         }
                         $text = self::shorten_text($text, $length, $head, $tail, $join, true);
-                        if ($config->showrubricformcriteria==self::GRADINGTEXT_SHORTEN) {
+                        if ($config->showrubricformlabels==self::GRADINGTEXT_SHORTEN) {
                             $criteria[$criterionid][$name] = $text;
                         }
                         $criteria[$criterionid][$name.'format'] = FORMAT_PLAIN;
@@ -3707,7 +3707,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                         $name = 'shortname';
                         $text = $criterion[$name];
                         $text = self::shorten_text($text, $length, $head, $tail, $join, true);
-                        if ($config->showguideformcriteria==self::GRADINGTEXT_SHORTEN) {
+                        if ($config->showguideformlabels==self::GRADINGTEXT_SHORTEN) {
                             $criteria[$criterionid][$name] = $text;
                         }
                         $criteria[$criterionid][$name.'text'] = $text;
