@@ -518,6 +518,11 @@ class assignfeedback_points_award_points_form extends moodleform {
             $guidetotal = array();
         }
 
+        // cache the DB search values, for easy access later
+        $custom->grading->where = $gradingwhere;
+        $custom->grading->params = $gradingparams;
+        $custom->grading->precision = $gradeprecision;
+
         // get assignment grades, if required
         if ($usersfound && $custom->config->showassigngrade) {
             $select = 'userid, grade';

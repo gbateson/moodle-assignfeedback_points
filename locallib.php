@@ -749,7 +749,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param object  $custom (optional, default=null)
      */
     static public function add_field_jquery($mform, $plugin, $custom) {
-        global $CFG, $OUTPUT;
+        global $CFG, $DB, $OUTPUT;
 
         // add jQuery script to this page
         self::requires_jquery('/mod/assign/feedback/points/awardpoints.js', $plugin);
@@ -818,7 +818,83 @@ class assign_feedback_points extends assign_feedback_plugin {
         $showrubrictotal = 0;
         $showrubricformscores = 0;
 
-        $usercriteriascores = array();
+        // if rubric scores are not displayed in user tiles
+        // then we need the scores to be stored in an JS array
+
+        if ($custom->grading->method=='rubric' && $custom->config->showrubricscores==0 && $custom->grading->where) {
+            $select = $DB->sql_concat('grf.id', "'_'", 'ag.userid');
+            $select = "$select as id, ag.userid AS userid, ".
+                      'grf.criterionid, grf.levelid, grf.remark, grf.remarkformat';
+            $from   = '{gradingform_rubric_fillings} grf'.
+                      ' JOIN {grading_instances} gi ON gi.id = grf.instanceid'.
+                      ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
+            $where  = 'gi.id '.$custom->grading->where;
+            $order  = 'ag.userid ASC, grf.id ASC';
+            $params = $custom->grading->params;
+            $usercriteriascores = $DB->get_records_sql("SELECT $select FROM $from WHERE $where ORDER BY $order", $params);
+        } else {
+            $usercriteriascores = false;
+        }
+
+        if ($usercriteriascores===false) {
+            $usercriteriascores = array();
+        } else {
+            // format the rubric scores
+            $criteria = $custom->grading->method.'_criteria';
+            $criteria = $custom->grading->definition->$criteria;
+            foreach (array_keys($usercriteriascores) as $id) {
+                $userid = substr($id, strpos($id, '_') + 1);
+                if (empty($usercriteriascores[$userid])) {
+                    $usercriteriascores[$userid] = array();
+                }
+                $criterionid = $usercriteriascores[$id]->criterionid;
+                if (array_key_exists($criterionid, $criteria)) {
+                    $levelid = $usercriteriascores[$id]->levelid;
+                    if (array_key_exists($levelid, $criteria[$criterionid]['levels'])) {
+                        $score = $criteria[$criterionid]['levels'][$levelid]['score'];
+                    }
+                }
+                $usercriteriascores[$userid][$criterionid] = $score;
+                unset($usercriteriascores[$id]);
+            }
+            unset($criteria);
+        }
+
+        if ($custom->grading->method=='guide' && $custom->config->showguidescores==0 && $custom->grading->where) {
+            $select = $DB->sql_concat('ggf.id', "'_'", 'ag.userid');
+            $select = "$select as id, ag.userid AS userid, ".
+                      'ggf.criterionid, ggf.score, ggf.remark, ggf.remarkformat';
+            $from   = '{gradingform_guide_fillings} ggf'.
+                      ' JOIN {grading_instances} gi ON gi.id = ggf.instanceid'.
+                      ' JOIN {assign_grades} ag ON ag.id = gi.itemid';
+            $where  = 'gi.id '.$custom->grading->where;
+            $order  = 'ag.userid';
+            $params = $custom->grading->params;
+            $usercriteriascores = $DB->get_records_sql("SELECT $select FROM $from WHERE $where ORDER BY $order", $params);
+        } else {
+            $usercriteriascores = false;
+        }
+
+        if ($usercriteriascores===false) {
+            $usercriteriascores = array();
+        } else {
+            // format the guide scores
+            $criteria = $custom->grading->method.'_criteria';
+            $criteria = $custom->grading->definition->$criteria;
+            foreach (array_keys($usercriteriascores) as $id) {
+                $userid = substr($id, strpos($id, '_') + 1);
+                if (empty($usercriteriascores[$userid])) {
+                    $usercriteriascores[$userid] = array();
+                }
+                $criterionid = $usercriteriascores[$id]->criterionid;
+                $score = $usercriteriascores[$id]->score;
+                $score = round($score, $custom->grading->precision);
+                $usercriteriascores[$userid][$criterionid] = $score;
+                unset($usercriteriascores[$id]);
+            }
+            unset($criteria);
+        }
+
         $criteriascores = array();
         switch ($custom->grading->method) {
 
@@ -834,7 +910,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $criteria = $custom->grading->method.'_criteria';
                 $criteria = $custom->grading->definition->$criteria;
                 foreach ($criteria as $criterionid => $criterion) {
-                    $criteriascores[] = $criterionid.':'.$criterion['maxscore'];
+                    $criteriascores[$criterionid] = $criterion['maxscore'];
                 }
                 break;
 
@@ -848,19 +924,19 @@ class assign_feedback_points extends assign_feedback_plugin {
                 foreach ($criteria as $criterionid => $criterion) {
                     $scores = array();
                     foreach ($criterion['levels'] as $levelid => $level) {
-                        $scores[] = $levelid.':'.$level['score'];
+                        $scores[$levelid] = $level['score'];
                     }
-                    $criteriascores[] = $criterionid.':{'.
-                        '"min":'.$criterion['minscore'].','.
-                        '"max":'.$criterion['maxscore'].','.
-                        '"levels":{'.implode(',', $scores).'}'.
-                    '}';
+                    $criteriascores[$criterionid] = (object)array(
+                        'min' => $criterion['minscore'],
+                        'max' => $criterion['maxscore'],
+                        'levels' => $scores
+                    );
                 }
                 break;
         }
 
-        $criteriascores = '{'.implode(',', $criteriascores).'}';
-        $usercriteriascores = '{'.implode(',', $usercriteriascores).'}';
+        $criteriascores = json_encode($criteriascores);
+        $usercriteriascores = json_encode($usercriteriascores);
 
         $js .= '    PTS.gradingmethod         = "'.$custom->grading->method.'";'."\n";
         $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
@@ -3597,7 +3673,10 @@ class assign_feedback_points extends assign_feedback_plugin {
             'controller' => null,
             'instance'   => null,
             'definition' => null,
-            'data'       => null
+            'data'       => null,
+            'where'      => '',
+            'params'     => null,
+            'precision'  => 0
         );
 
         $component = 'mod_assign';

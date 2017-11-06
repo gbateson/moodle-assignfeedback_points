@@ -951,7 +951,7 @@ PTS.set_rubric_levels = function(uid, regexp) {
         var score = PTS.get_rubric_form_score(cid);
 
         // update/extract score in user tile
-        score = PTS.get_criterion_score(input, cid, score, regexp);
+        score = PTS.get_criterion_score(input, uid, cid, score, regexp);
 
         // increment total
         if (total===null) {
@@ -987,7 +987,7 @@ PTS.set_guide_scores = function(uid, regexp) {
         var score = PTS.get_guide_form_score(cid);
 
         // update/extract score in user tile
-        score = PTS.get_criterion_score(input, cid, score, regexp);
+        score = PTS.get_criterion_score(input, uid, cid, score, regexp);
 
         // increment total
         if (total===null) {
@@ -1023,13 +1023,16 @@ PTS.set_criteria_total = function(input, regexp, total) {
 /**
  * get_criterion_score
  *
- * @param object  cid criterion id
+ * @param object  input element
+ * @param integer uid user id
+ * @param integer cid criterion id
  * @param integer score from advanced grading form
  * @param object  regexp to match score in user tile
  * @return void, but may update criteria total in user tile
  */
-PTS.get_criterion_score = function(input, cid, score, regexp) {
+PTS.get_criterion_score = function(input, uid, cid, score, regexp) {
 
+    // input    : the <input> element for the current user
     // em       : the <em> element used to display the criteria score
     // oldhtml  : the inner html used to display the criteria score
     // score    : the value of the rubric criteria score
@@ -1054,6 +1057,8 @@ PTS.get_criterion_score = function(input, cid, score, regexp) {
         // nor was it available in the display <em>
         // so get it from PTS.usercriteriascores
         score = PTS.get_user_criteria_score(uid, cid);
+    } else {
+        PTS.set_user_criteria_score(uid, cid, score);
     }
 
     return score;
@@ -1101,12 +1106,31 @@ PTS.get_guide_form_score = function(cid) {
  * @return integer (or null)
  */
 PTS.get_user_criteria_score = function(uid, cid) {
+    var score = 0;
     if (uid in PTS.usercriteriascores) {
         if (cid in PTS.usercriteriascores[uid]) {
-            return PTS.usercriteriascores[uid][cid] - PTS.criteriascores[cid]["min"];
+            score = PTS.usercriteriascores[uid][cid];
+            if (PTS.criteriascores[cid]["min"]) {
+                score -= PTS.criteriascores[cid]["min"];
+            }
         }
     }
-    return 0; // shouldn't happen !!
+    return score;
+}
+
+/**
+ * set_user_criteria_score
+ *
+ * @param integer cid
+ * @return integer (or null)
+ */
+PTS.set_user_criteria_score = function(uid, cid, score) {
+    if (uid in PTS.usercriteriascores) {
+        PTS.usercriteriascores[uid][cid] = parseInt(score);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 /**
