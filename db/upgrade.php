@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool
  */
 function xmldb_assignfeedback_points_upgrade($oldversion) {
-    global $CFG, $DB;
+    global $CFG, $DB, $USER;
     $result = true;
 
     $plugintype = 'assignfeedback';
@@ -425,6 +425,59 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                                'name', $newname.$type,
                                 array('plugin' => $plugin,
                                       'name'   => $oldname.$type));
+            }
+        }
+
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
+    $newversion = 2018021265;
+    if ($result && $oldversion < $newversion) {
+
+        // ==================================================
+        // fix values for "field" name in $config->namefields
+        // ==================================================
+
+        $table = 'assign_plugin_config';
+        $select = 'subtype = ? AND plugin = ? AND name = ?';
+        $params = array('assignfeedback', 'points', 'nametokens');
+        if ($configs = $DB->get_records_select($table, $select, $params)) {
+            foreach ($configs as $config) {
+                $tokens = unserialize(base64_decode($config->value));
+                $i_max = count($tokens) - 1;
+                $update = false;
+                for ($i=$i_max; $i>=0; $i--) {
+                    $remove = true;
+                    if (is_array($tokens[$i])) {
+                        if (array_key_exists('field', $tokens[$i])) {
+                            $field = $tokens[$i]['field'];
+                            // fix/remove superflous field text
+                            // e.g. firstname(firstnamephonetic
+                            // e.g. lastnamephonetic)
+                            if ($pos = strpos($field, '(')) {
+                                $field = substr($field, $pos + 1);
+                                $update = true;
+                            }
+                            if (strpos($field, ')')) {
+                                $field = substr($field, 0, $pos - 1);
+                                $update = true;
+                            }
+                            if (property_exists($USER, $field)) {
+                                $remove = false;
+                            } else {
+                                $tokens[$i]['field'] = $field;
+                            }
+                        }
+                    }
+                    if ($remove) {
+                        array_splice($tokens, $i, 1);
+                        $update = true;
+                    }
+                }
+                if ($update) {
+                    $config->value = base64_encode(serialize($tokens));
+                    $DB->update_record($table, $config);
+                }
             }
         }
 

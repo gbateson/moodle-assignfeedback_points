@@ -3154,10 +3154,12 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $sortfield = $sortfield['token'];
             }
             foreach ($userlist as $id => $user) {
-                if ($nametokens) {
+                if ($nametokens && array_key_exists($i, $user->nametokens)) {
                     $value = $user->nametokens[$i];
-                } else {
+                } else if (property_exists($user, $sortfield)) {
                     $value = $user->$sortfield;
+                } else {
+                    $value = '';
                 }
                 if ($value===null || $value==='') {
                     $ids[$id] = '';
