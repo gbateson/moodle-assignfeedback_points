@@ -435,7 +435,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
     if ($result && $oldversion < $newversion) {
 
         // ==================================================
-        // fix values for "field" name in $config->namefields
+        // fix values for "field" name in $config->nametokens
         // ==================================================
 
         $table = 'assign_plugin_config';
@@ -483,6 +483,40 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
 
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
+
+    $newversion = 2018021266;
+    if ($result && $oldversion < $newversion) {
+
+        // ==================================================
+        // remove duplicate plugin config settings
+        // ==================================================
+
+        $select = 'COUNT(*) AS countrecords, '.
+                  $DB->sql_concat('assignment', "'_'", 'name').' AS assignment_name';
+        $from   = 'assign_plugin_config';
+        $where  = 'subtype = ? AND plugin = ?';
+        $group  = 'assignment, name';
+        $having = 'countrecords > ?';
+        $params = array('assignfeedback', 'points', 1);
+        $configs = "SELECT $select FROM $from WHERE $where GROUP BY $group HAVING $having";
+        if ($configs = $DB->get_records_sql($configs, $params)) {
+            foreach ($configs as $config) {
+                list($assignment, $name) = explode('_', $config->assignment_name);
+                $params = array('subtype'    => 'assignfeedback',
+                                'plugin'     => 'points',
+                                'assignment' => $assignment,
+                                'name'       => $name);
+                $ids = $DB->get_records($from, $params, 'id DESC');
+                $ids = array_keys($ids);
+                array_pop($ids); // keep id of most recent record
+                list($select, $where) = $DB->get_in_or_equal($ids);
+                $DB->delete_records_select($from, "id $select", $params);
+            }
+        }
+
+        upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
+    }
+
 
     return $result;
 }
