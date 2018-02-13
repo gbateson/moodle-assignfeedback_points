@@ -1070,6 +1070,8 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @return void
      */
     public function save_setting_allowmissing($data, $name, $default, $allowmissing) {
+        global $DB;
+
         $value = null;
         $plugin = 'assignfeedback_points';
 
@@ -1095,8 +1097,24 @@ class assign_feedback_points extends assign_feedback_plugin {
         if (is_array($value)) {
             $value = base64_encode(serialize($value));
         }
+
+        // set_config (and delete duplicate records, if any)
         if (isset($value)) {
-            $this->set_config($name, $value);
+            $table = 'assign_plugin_config';
+            $params = array('assignment' => $this->assignment->get_instance()->id,
+                            'subtype' => $this->get_subtype(),
+                            'plugin' => $this->get_type(),
+                            'name' => $name);
+            if ($configs = $DB->get_records($table, $params, 'id ASC')) {
+                $config = array_pop($configs); // i.e. update the oldest record
+                $DB->set_field($table, 'value', $value, array('id' => $config->id));
+                foreach ($configs as $config) {
+                    $DB->delete_records($table, array('id' => $config->id));
+                }
+            } else {
+                $params['value'] = $value;
+                $DB->insert_record($table, $params);
+            }
         }
     }
 

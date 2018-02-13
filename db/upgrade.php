@@ -464,7 +464,6 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                             }
                             if (property_exists($USER, $field)) {
                                 $remove = false;
-                            } else {
                                 $tokens[$i]['field'] = $field;
                             }
                         }
@@ -491,11 +490,12 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         // remove duplicate plugin config settings
         // ==================================================
 
-        $select = 'COUNT(*) AS countrecords, '.
-                  $DB->sql_concat('assignment', "'_'", 'name').' AS assignment_name';
-        $from   = 'assign_plugin_config';
+        $table = 'assign_plugin_config';
+        $select = $DB->sql_concat('assignment', "'_'", 'name');
+        $select = "$select AS assignment_name, COUNT(*) AS countrecords";
+        $from   = '{'.$table.'}';
         $where  = 'subtype = ? AND plugin = ?';
-        $group  = 'assignment, name';
+        $group  = 'assignment_name';
         $having = 'countrecords > ?';
         $params = array('assignfeedback', 'points', 1);
         $configs = "SELECT $select FROM $from WHERE $where GROUP BY $group HAVING $having";
@@ -506,11 +506,11 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                                 'plugin'     => 'points',
                                 'assignment' => $assignment,
                                 'name'       => $name);
-                $ids = $DB->get_records($from, $params, 'id DESC');
+                $ids = $DB->get_records($table, $params, 'id DESC');
                 $ids = array_keys($ids);
-                array_pop($ids); // keep id of most recent record
+                array_pop($ids); // i.e. keep oldest record
                 list($select, $where) = $DB->get_in_or_equal($ids);
-                $DB->delete_records_select($from, "id $select", $params);
+                $DB->delete_records_select($table, "id $select", $params);
             }
         }
 
