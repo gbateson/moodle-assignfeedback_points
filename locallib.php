@@ -586,8 +586,8 @@ class assign_feedback_points extends assign_feedback_plugin {
 
             // if "length" is zero, disable "head", "tail" and "join"
             $mform->disabledIf("nametokens[$i][head]", "nametokens[$i][length]", 'eq', '0');
-            $mform->disabledIf("nametokens[$i][tail]", "nametokens[$i][length]", 'eq', '0');
             $mform->disabledIf("nametokens[$i][join]", "nametokens[$i][length]", 'eq', '0');
+            $mform->disabledIf("nametokens[$i][tail]", "nametokens[$i][length]", 'eq', '0');
 
             // if "romanize" is zero, disable "fixvowels"
             $mform->disabledIf("nametokens[$i][fixvowels]", "nametokens[$i][romanize]", 'eq', '0');
@@ -1211,7 +1211,6 @@ class assign_feedback_points extends assign_feedback_plugin {
         // process incoming formdata, and fetch output settings
         // $multipleusers, $groupid, $map, $feedback, $userlist, $grading
         list($multipleusers, $groupid, $map, $feedback, $userlist, $grading) = $this->process_formdata();
-
         $custom = (object)array(
             'cm'         => $cm,
             'cmid'       => $cm->id,
@@ -1687,17 +1686,17 @@ class assign_feedback_points extends assign_feedback_plugin {
      * process_layouts
      *
      * @param  object  $feedback (passed by reference)
-     * @param  array   $userlist
+     * @param  array   $userlist (passed by reference)
      * @param  object  $instance assign(ment) record from DB
      * @param  string  $plugin
      * @param  array   $x
      * @param  array   $y
-     * @param  object  $map
+     * @param  object  $map (passed by reference)
      * @param  integer $mapid
      * @param  integer $ajax
      * @return void
      */
-    protected function process_layouts(&$feedback, &$userlist, $instance, $plugin, $x, $y, $map, $mapid, $ajax) {
+    protected function process_layouts(&$feedback, &$userlist, $instance, $plugin, $x, $y, &$map, $mapid, $ajax) {
         global $DB, $USER;
 
         // set up layouts, if required
@@ -1719,6 +1718,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                         if ($DB->record_exists($table, $params)) {
                             $map = $DB->get_record($table, $params);
                             $mapid = $map->id;
+                            // remove incoming form values
                             $update_form_values = true;
                         }
                     }
@@ -2061,7 +2061,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $table = $plugin.'_maps';
                 if ($name = optional_param($name.'savename', '', PARAM_TEXT)) {
                     if ($name==$map->name) {
-                        $name = ''; // same name as current map
+                    //    $name = ''; // same name as current map
                     }
                 }
                 if ($name) {
@@ -2074,12 +2074,10 @@ class assign_feedback_points extends assign_feedback_plugin {
                             $name = preg_replace('/\([0-9]+\)$/', "($i)", $name);
                         }
                     }
-                    unset($map->id);
                     $map->name = $name;
                     $map->id = $DB->insert_record($table, $map);
                     $mapid = $map->id;
-                    $update_form_values = true;
-                    $update_dimensions  = true;
+                    // set flag to save $x/$y coordinates in the new $map
                     $update_coordinates = true;
                 }
                 break;
@@ -2869,7 +2867,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param array   $y coordinates
      * @param integer $mapwidth
      * @param integer $mapheight
-     * @return void but may update DB table: assignfeedback_points_coords
+     * @return void but may update DB table: assignfeedback_points_maps
      */
     protected function update_dimensions($plugin, $map, $mapwidth, $mapheight) {
         global $DB;

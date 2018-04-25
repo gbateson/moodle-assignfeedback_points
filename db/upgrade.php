@@ -444,34 +444,39 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         if ($configs = $DB->get_records_select($table, $select, $params)) {
             foreach ($configs as $config) {
                 $tokens = unserialize(base64_decode($config->value));
-                $i_max = count($tokens) - 1;
-                $update = false;
-                for ($i=$i_max; $i>=0; $i--) {
-                    $remove = true;
-                    if (is_array($tokens[$i])) {
-                        if (array_key_exists('field', $tokens[$i])) {
-                            $field = $tokens[$i]['field'];
-                            // fix/remove superflous field text
-                            // e.g. firstname(firstnamephonetic
-                            // e.g. lastnamephonetic)
-                            if ($pos = strpos($field, '(')) {
-                                $field = substr($field, $pos + 1);
-                                $update = true;
-                            }
-                            if (strpos($field, ')')) {
-                                $field = substr($field, 0, $pos - 1);
-                                $update = true;
-                            }
-                            if (property_exists($USER, $field)) {
-                                $remove = false;
-                                $tokens[$i]['field'] = $field;
+                if (is_array($tokens)) {
+                    $update = false;
+                    $i_max = count($tokens) - 1;
+                    for ($i=$i_max; $i>=0; $i--) {
+                        $remove = true;
+                        if (is_array($tokens[$i])) {
+                            if (array_key_exists('field', $tokens[$i])) {
+                                $field = $tokens[$i]['field'];
+                                // fix/remove superflous field text
+                                // e.g. firstname(firstnamephonetic
+                                // e.g. lastnamephonetic)
+                                if ($pos = strpos($field, '(')) {
+                                    $field = substr($field, $pos + 1);
+                                    $update = true;
+                                }
+                                if (strpos($field, ')')) {
+                                    $field = substr($field, 0, $pos - 1);
+                                    $update = true;
+                                }
+                                if (property_exists($USER, $field)) {
+                                    $remove = false;
+                                    $tokens[$i]['field'] = $field;
+                                }
                             }
                         }
+                        if ($remove) {
+                            array_splice($tokens, $i, 1);
+                            $update = true;
+                        }
                     }
-                    if ($remove) {
-                        array_splice($tokens, $i, 1);
-                        $update = true;
-                    }
+                } else {
+                    $update = true;
+                    $tokens = array(); // shouldn't happen !!
                 }
                 if ($update) {
                     $config->value = base64_encode(serialize($tokens));
@@ -483,7 +488,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
-    $newversion = 2018021266;
+    $newversion = 2018040669;
     if ($result && $oldversion < $newversion) {
 
         // ==================================================
@@ -509,7 +514,7 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
                 $ids = $DB->get_records($table, $params, 'id DESC');
                 $ids = array_keys($ids);
                 array_pop($ids); // i.e. keep oldest record
-                list($select, $where) = $DB->get_in_or_equal($ids);
+                list($select, $params) = $DB->get_in_or_equal($ids);
                 $DB->delete_records_select($table, "id $select", $params);
             }
         }
@@ -517,6 +522,11 @@ function xmldb_assignfeedback_points_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, $newversion, $plugintype, $pluginname);
     }
 
+    $table = $plugin.'_maps';
+    // remove field: context
+    // add field field: courseid
+    // add index on courseid
+    // initialize field: courseid (set from assignid)
 
     return $result;
 }

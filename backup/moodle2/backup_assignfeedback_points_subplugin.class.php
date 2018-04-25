@@ -61,7 +61,7 @@ class backup_assignfeedback_points_subplugin extends backup_subplugin {
 
         // assignfeedback_points_maps
         $maps       = new backup_nested_element('maps');
-        $fieldnames = array('id', 'assignid'); // excluded fields
+        $fieldnames = array('id', 'assignid', 'courseid'); // excluded fields
         $fieldnames = $this->get_fieldnames('assignfeedback_points_maps', $fieldnames);
         $map        = new backup_nested_element('map', array('id'), $fieldnames);
 

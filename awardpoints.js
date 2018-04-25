@@ -1757,11 +1757,11 @@ PTS.hideshow_name_fields = function() {
             if (src.indexOf("minus") >= 0) {
                 $(this).prop("src", src.replace("minus", "plus"));
                 $(this).prop("title", PTS.str.showmore);
-                elm.nextAll().hide("fast");
+                elm.nextAll().hide("fast").removeClass("showme").addClass("hideme");
             } else {
                 $(this).prop("src", src.replace("plus", "minus"));
                 $(this).prop("title", PTS.str.showless);
-                elm.nextAll().show("slow");
+                elm.nextAll().removeClass("hideme").addClass("showme").show("slow");
             }
         });
 

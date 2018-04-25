@@ -85,6 +85,7 @@ class restore_assignfeedback_points_subplugin extends restore_subplugin {
         $data->assignid = $this->get_new_parentid('assign');
         $data->userid = (empty($data->userid) ? 0 : $this->get_mappingid('user', $data->userid));
         $data->groupid = (empty($data->groupid) ? 0 : $this->get_mappingid('group', $data->groupid));
+        // $data->courseid = $this->task->get_courseid();
         $this->set_mapping('assign_map', $data->id, $DB->insert_record('assignfeedback_points_maps', $data));
     }
 

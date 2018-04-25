@@ -398,6 +398,7 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
 /***********************************
 ** Advanced grading: Criteria
 ***********************************/
+
 #assignfeedback_points_award_points_form #guide-advancedgrading,
 #assignfeedback_points_award_points_form #rubric-advancedgrading {
     overflow: visible;
@@ -444,8 +445,9 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
         width : 100%;
     }
 }
+
 /***********************************
-** layouts
+** Layouts
 ***********************************/
 
 body.path-mod-assign #fgroup_id_layoutselements input[type="radio"],
@@ -469,7 +471,7 @@ body.path-mod-assign #fgroup_id_layoutselements input.indent,
 }
 
 /***********************************
-** settings - displayed on two forms
+** Settings - displayed on two forms
 ** (1) the Assignment settings form
 ** (2) the "Award points" form
 ***********************************/
@@ -495,6 +497,11 @@ body.path-mod-assign #id_settings_hdr .settingtitle.thin,
 
 body.path-mod-assign #id_names_hdr [name^=nametokens].active:not([disabled]) {
     border: 2px solid #65d065;
+}
+
+/** workaround for modified behavior of disabledIf in Moodle >= 3.4 */
+body.path-mod-assign #id_names_hdr [name^=nametokens].hideme {
+	display: none;
 }
 
 /***********************************
