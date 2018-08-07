@@ -1952,45 +1952,43 @@ $(document).ready(function() {
     // remove the "report" section header
     $("#id_report_hdr").remove();
 
-    // cache for auto width of TEXT input elements
-    window.autowidths = new Array();
+    // cache for standard width of TEXT input elements
+    PTS.minwidths = new Array();
 
     // adjust width of newline token text input elements
     var input = $("input[name=nameformat], " +
                   "input[name=newlinetoken], " +
                   "input[name^=nametokens][name$='[token]']");
     input.each(function(){
-
-        // get auto width of an INPUT text box with this size
-        var size = $(this).attr("size");
-        if (! (size in autowidths)) {
-            var elm = document.createElement("INPUT");
-            $(elm).attr("size", size);
-            $(elm).css("width", "auto");
-            $(elm).hide().appendTo("BODY");
-            autowidths[size] = $(elm).outerWidth();
-            $(elm).remove();
-        }
-        $(this).data("autowidth", autowidths[size]);
-
         $(this).keyup(function(){
+            var minwidth = 0;
+            var size = $(this).attr("size");
+            if (size) {
+                if (size in PTS.minwidths) {
+                    minwidth = PTS.minwidths[size];
+                } else {
+                    var elm = document.createElement("INPUT");
+                    $(elm).attr("size", size);
+                    $(elm).css("width", "auto");
+                    $(elm).hide().appendTo("BODY");
+                    minwidth = $(elm).outerWidth();
+                    $(elm).remove();
+                    PTS.minwidths[size] = minwidth;
+                }
+            }
             var value = $(this).val();
             var txt = document.createTextNode(value);
             var elm = document.createElement("SPAN");
             $(elm).append(txt).hide().appendTo("BODY");
             var w = $(elm).width();
             $(elm).remove();
-            var autowidth = $(this).data("autowidth");
-            if (w < autowidth) {
-                w = autowidth
+            if (w < minwidth) {
+                w = minwidth;
             }
             $(this).width(w);
         });
         $(this).triggerHandler("keyup");
     });
-
-    // remove cache of autowidths
-    delete(window.autowidths);
 
     var input = $("#id_names_hdr [name^=nametokens]");
     input = input.not("[name$='[token]']");

@@ -471,6 +471,14 @@ body.path-mod-assign #fgroup_id_layoutselements input.indent,
 }
 
 /***********************************
+** Names
+***********************************/
+
+body.path-mod-assign #assignfeedback_points_award_points_form input[size] {
+    width: initial;
+}
+
+/***********************************
 ** Settings - displayed on two forms
 ** (1) the Assignment settings form
 ** (2) the "Award points" form
@@ -579,4 +587,3 @@ body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.
 
 body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span.comment,
 body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.comment {font-style: italic;}
-

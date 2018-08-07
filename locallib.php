@@ -520,11 +520,11 @@ class assign_feedback_points extends assign_feedback_plugin {
         self::add_setting($mform, $config, 'showpicture', 'checkbox');
 
         $name = 'nameformat';
-        $options = self::get_text_options(20);
+        $options = array('size' => 20);
         self::add_setting($mform, $config, $name, 'text', $options, PARAM_TEXT);
 
         $name = 'newlinetoken';
-        $options = self::get_text_options();
+        $options = array('size' => 4);
         self::add_setting($mform, $config, $name, 'text', $options, PARAM_TEXT);
 
         // nametokens
@@ -2964,11 +2964,13 @@ class assign_feedback_points extends assign_feedback_plugin {
             );
         } else {
             // gasshiyou (GASSHŌ)
+            // miyoujin (MYŌJIN)
             // mukaijiyou (MUKAIJŌ)
             // chiya(da|ta)ani (not UCHIYAMA or TSUCHIYA)
             $replace = array(
                 'shiyou'    => 'shou',
                 'jiyou'     => 'jou',
+                'miyou'     => 'myou',
                 'chiyatani' => 'chatani',
                 'chiyadani' => 'chadani'
             );
