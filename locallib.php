@@ -39,7 +39,7 @@ class assign_feedback_points extends assign_feedback_plugin {
     const CASE_UPPER    = 3;
 
     const NAME_COUNT_MAX = 8;
-    const NAME_COUNT_ADD = 1;
+    const NAME_COUNT_ADD = 2;
 
     // see http://unicode.org/charts/PDF/Uxxxx.pdf
     // where "xxxx" is the start number of a unicode group
@@ -535,7 +535,7 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         $count = (empty($config->$name) ? 0 : count($config->$name));
         if (optional_param($name.'add', '', PARAM_TEXT)){
-            $count += self::NAME_COUNT_ADD;
+            $count += optional_param($name.'addcount', 0, PARAM_INT);
         }
         $count = min(self::NAME_COUNT_MAX, max(0, $count));
         for ($i=0; $i<$count; $i++) {
@@ -595,11 +595,29 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // button to add more "nametokens"
         if ($count < self::NAME_COUNT_MAX) {
-            $label = get_string($name.'add', $plugin);
-            if (self::NAME_COUNT_ADD > 1) {
-                $label = str_ireplace('{no}', self::NAME_COUNT_ADD, $label);
+            $i_max = (self::NAME_COUNT_MAX - $count);
+
+            // define options for select menu
+            $options = array();
+            for ($i=1; $i<=$i_max; $i++) {
+                if ($i==1) {
+                    $options[$i] = get_string($name.'addsingle', $plugin);
+                } else {
+                    $options[$i] = get_string($name.'addmultiple', $plugin, $i);
+                }
             }
-            $mform->addElement('submit', $name.'add', $label);
+
+            // add button + select menu as a "group" element
+            $mform->addGroup(array(
+                $mform->createElement('submit', $name.'add', get_string('add')),
+                $mform->createElement('select', $name.'addcount', '', $options)
+            ), $name.'addgroup', '', ' ', false);
+
+            // set type and default value of select menu
+            $mform->setType($name.'addcount', PARAM_INT);
+            $mform->setDefault($name.'addcount', self::NAME_COUNT_ADD);
+
+            // register button as a "No submit button"
             $mform->registerNoSubmitButton($name.'add');
         }
 

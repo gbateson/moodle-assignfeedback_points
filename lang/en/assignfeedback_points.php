@@ -167,7 +167,8 @@ In addition, the following formatting options are available:
 $string['nametoken'] = 'Name token [{$a}]';
 $string['nametokenjoindefault'] = ' ... ';
 $string['nametokentokendefault'] = 'name';
-$string['nametokensadd'] = 'Add a name token';
+$string['nametokensaddsingle'] = 'Add a name token';
+$string['nametokensaddmultiple'] = 'Add {$a} name tokens';
 $string['nameformat_help'] = 'This string defines the display format for student names. The name format string can include field names, name tokens, newline tokens, and any other characters.
 
 **Field names**

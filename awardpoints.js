@@ -1953,7 +1953,7 @@ $(document).ready(function() {
     $("#id_report_hdr").remove();
 
     // cache for standard width of TEXT input elements
-    PTS.minwidths = new Array();
+    PTS.sizewidths = new Array();
 
     // adjust width of newline token text input elements
     var input = $("input[name=nameformat], " +
@@ -1961,30 +1961,28 @@ $(document).ready(function() {
                   "input[name^=nametokens][name$='[token]']");
     input.each(function(){
         $(this).keyup(function(){
-            var minwidth = 0;
+            // get min width for a box with this size
+            var sizewidth = 0;
             var size = $(this).attr("size");
             if (size) {
-                if (size in PTS.minwidths) {
-                    minwidth = PTS.minwidths[size];
+                if (size in PTS.sizewidths) {
+                    sizewidth = PTS.sizewidths[size];
                 } else {
                     var elm = document.createElement("INPUT");
                     $(elm).attr("size", size);
                     $(elm).css("width", "auto");
                     $(elm).hide().appendTo("BODY");
-                    minwidth = $(elm).outerWidth();
+                    sizewidth = $(elm).outerWidth();
                     $(elm).remove();
-                    PTS.minwidths[size] = minwidth;
+                    PTS.sizewidths[size] = sizewidth;
                 }
             }
-            var value = $(this).val();
-            var txt = document.createTextNode(value);
+            // get required width for this text value
+            var txt = document.createTextNode($(this).val());
             var elm = document.createElement("SPAN");
             $(elm).append(txt).hide().appendTo("BODY");
-            var w = $(elm).width();
+            var w = Math.max($(elm).width(), sizewidth);
             $(elm).remove();
-            if (w < minwidth) {
-                w = minwidth;
-            }
             $(this).width(w);
         });
         $(this).triggerHandler("keyup");
