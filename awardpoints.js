@@ -1989,9 +1989,9 @@ $(document).ready(function() {
     });
 
     var input = $("#id_names_hdr [name^=nametokens]");
+    input = input.not("[name^=nametokensadd]");
     input = input.not("[name$='[token]']");
     input = input.not("[name$='[field]']");
-    input = input.not("[name$=add]");
     input.each(function(){
         $(this).change(function(){
             var v = $(this).val();
