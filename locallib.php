@@ -2023,7 +2023,11 @@ class assign_feedback_points extends assign_feedback_plugin {
                                         $y = (intval($u / 2) * $userheight);
                                         break;
                                     default:
-                                        continue; // shouldn't happen !!
+                                        $x = null;
+                                        $y = null;
+                                }
+                                if ($x===null || $y===null) {
+                                    continue; // shouldn't happen !!
                                 }
                                 $p[] = (object)array('x' => $x, 'y' => $y);
                             }
