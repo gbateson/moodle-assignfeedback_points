@@ -2,632 +2,557 @@
 Change log for assignfeedback_points
 ========================================
 
+2019-11-10 (76)
+ - standardize layout and spelling in CHANGES.txt
+
 2019-06-10 (74)
- -  fix 'continue' statement within 'switch' block 
+ - fix 'continue' statement within 'switch' block
 
 2018-08-08 (73)
- -  assignfeedback/points remove highlight CSS from button and select element to add name tokens 
+ - assignfeedback/points remove highlight CSS from button and select element to add name tokens
 
 2018-08-08 (72)
- -  allow selectable number of nam tokens to be added at one time 
+ - allow selectable number of nam tokens to be added at one time
 
 2018-08-07 (71)
- -  assignfeedback/points  improve behavior of expandable text input elements in main form for awarding points 
+ - assignfeedback/points  improve behavior of expandable text input elements in main form for awarding points
 
 2018-04-25 (70)
- -  add css rules to workaround modified disabledIf behavior in Moodle >= 3.4 
+ - add css rules to workaround modified disabledIf behavior in Moodle >= 3.4
 
 2018-04-06 (69)
- -  fix save/load of custom layout 
+ - fix save/load of custom layout
 
 2018-03-20 (68)
- -  add utility to redo upgrades 
+ - add utility to redo upgrades
 
 2018-02-13 (67)
- -  assignfeedback/points ensure that duplicate config settings do perpetuate in assign_plugin_config 
+ - assignfeedback/points ensure that duplicate config settings do perpetuate in assign_plugin_config
 
 2018-02-12 (66)
- -  remove duplicate settings from assign_plugin_config 
+ - remove duplicate settings from assign_plugin_config
 
 2018-02-12 (65)
- -  fix corrupt config->namefields values 
+ - fix corrupt config->namefields values
 
 2017-09-29 (64)
- -  fix JS error when awarding points via marking guide without individual criteria scores displayed in user tiles 
+ - fix JS error when awarding points via marking guide without individual criteria scores displayed in user tiles
 
 2017-09-29 (62)
- -  fix JS error when awarding points voa rubric without individual criteria scres displayed in uer tiles 
+ - fix JS error when awarding points voa rubric without individual criteria scres displayed in uer tiles
 
 2017-09-27 (61)
- -  fix error caused by 'showrubricformcriteria_locked' being too long for 'name' field in 'assign_plugin_config' table. 
+ - fix error caused by 'showrubricformcriteria_locked' being too long for 'name' field in 'assign_plugin_config' table.
 
 2017-09-27 (59)
- -  reset version number to allow upgrade from incorrect version 2017092758 
+ - reset version number to allow upgrade from incorrect version 2017092758
 
 2017-09-07 (59)
- -  fix error regarding 'undefined method' get_all_user_name_fields in db/upgrade.php 
-
-2017-09-27 (58)
- -  fix error regarding 'undefined method' get_all_user_name_fields in db/upgrade.php 
+ - fix error regarding 'undefined method' get_all_user_name_fields in db/upgrade.php
 
 2017-08-26 (57)
- -  allow Rubric scores, e.g. '10 points', to be shortened by removing text, e.g. ' points' 
+ - allow Rubric scores, e.g. '10 points', to be shortened by removing text, e.g. ' points'
 
 2017-08-25 (56)
- -  add settings to show/shorten/hide criteria, levels and scores on advanced grading forms 
-
-2017-08-25 (56)
- -  add settings to show/shorten/hide criteria, levels and scores on advanced grading forms 
-
-2017-08-25 (56)
- -  add settings to show/shorten/hide criteria, levels and scores on advanced grading forms 
-
-2017-08-25 (56)
- -  add settings to show/shorten/hide criteria, levels and scores on advanced grading forms 
+ - add settings to show/shorten/hide criteria, levels and scores on advanced grading forms
 
 2017-08-23 (55)
- -  allow filenameseparator to be specified in the lang pack. 
+ - allow filenameseparator to be specified in the lang pack.
 
 2017-08-22 (54)
- -  adjust width of textareas on advanced grading forms; and add CSS to improve formatting on small screens 
-
-2017-08-22 (53)
- -  adjust width of textareas on advanced grading forms; and add CSS to improve formatting on small screens 
+ - adjust width of textareas on advanced grading forms; and add CSS to improve formatting on small screens
 
 2017-08-21 (52)
- -  fix error regarding empty string in locallib.php (line 3795) 
+ - fix error regarding empty string in locallib.php (line 3795)
 
 2017-08-21 (51)
- -  fix upgrade error caused by duplicate version number in db/upgrade.php 
+ - fix upgrade error caused by duplicate version number in db/upgrade.php
 
 2017-08-20 (50)
- -  use Moodle core_collator (Moodle >= 2.6) to sort unicode names 
+ - use Moodle core_collator (Moodle >= 2.6) to sort unicode names
 
 2017-08-20 (49)
- -  use Collator to sort unicode names based on suitable locale 
+ - use Collator to sort unicode names based on suitable locale
 
 2017-08-20 (48)
- -  generate popup reports for advanced grading methods with link to main grading page for full grading details 
-
-2017-08-20 (48)
- -  generate popup reports for advanced grading methods with link to main grading page for full grading details 
+ - generate popup reports for advanced grading methods with link to main grading page for full grading details
 
 2017-08-19 (47)
- -  fix layout in Moodle >= 3.2 template themes e.g. Boost 
+ - fix layout in Moodle >= 3.2 template themes e.g. Boost
 
 2017-08-19 (46)
- -  add reports for advanced grading methods 
+ - add reports for advanced grading methods
 
 2017-08-18 (45)
- -  fix display of buttons and tiles on templatable themes e.g. Boost 
+ - fix display of buttons and tiles on templatable themes e.g. Boost
 
 2017-08-18 (44)
- -  fix updating of Marking grade scores on user tiles 
+ - fix updating of Marking grade scores on user tiles
 
 2017-08-18 (43)
- -  assignfeedback insert default export filename into form 
+ - assignfeedback insert default export filename into form
 
 2017-08-18 (42)
- -  use array_push() to fix Cannot use [] for reading in locallib.php on line 3840 
+ - use array_push() to fix Cannot use [] for reading in locallib.php on line 3840
 
 2017-08-18 (41)
- -  fix display of user tiles after changing group 
-
-2017-08-18 (41)
- -  fix display of user tiles after changing group 
+ - fix display of user tiles after changing group
 
 2017-08-18 (40)
- -  add functionality to import/export settings 
+ - add functionality to import/export settings
 
 2017-08-17 (39)
- -  small optimization of code to insert unmodified fields into the name format string directly from user profile 
+ - small optimization of code to insert unmodified fields into the name format string directly from user profile
 
 2017-08-16 (29)
- -  optimze code to determine which user profile fields are accessible 
+ - optimze code to determine which user profile fields are accessible
 
 2017-08-16 (28)
- -  add capability-based checks on which user fields are available, and allow plain field names in the nameformat string 
+ - add capability-based checks on which user fields are available, and allow plain field names in the nameformat string
 
 2017-08-15 (27)
- -  adjust width of action buttons container so that sortby menu is on same line as sortby button 
+ - adjust width of action buttons container so that sortby menu is on same line as sortby button
 
 2017-08-14 (26)
- -  use name tokens in sortby functionality 
+ - use name tokens in sortby functionality
 
 2017-08-12 (25)
- -  add new 'sortby' functionality to user-interface 
+ - add new 'sortby' functionality to user-interface
 
 2017-08-12 (24)
- -  update assignment, module and course grades by returning data from server ajax 
+ - update assignment, module and course grades by returning data from server ajax
 
 2017-08-11 (23)
- -  reduce data transfer from client to server regarding rubric scores, and rationalize code on server to award points via advanced grading 
+ - reduce data transfer from client to server regarding rubric scores, and rationalize code on server to award points via advanced grading
 
 2017-08-10 (22)
- -  fix operation of marking guide with the points GUI 
+ - fix operation of marking guide with the points GUI
 
 2017-08-09 (21)
- -  add new settings to limit width of criteria names in user tiles 
+ - add new settings to limit width of criteria names in user tiles
 
 2017-08-09 (20)
- -  fix awarding of partial rubric grades 
+ - fix awarding of partial rubric grades
 
 2017-08-07 (19)
- -  update rubric criteria scores when using rubric grading 
+ - update rubric criteria scores when using rubric grading
 
 2017-08-07 (19)
- -  rename show(guide|rubric)(scores|criteria) and display rubric scores in user tiles 
+ - rename show(guide|rubric)(scores|criteria) and display rubric scores in user tiles
 
 2017-08-04 (18)
- -  assignfeedback adjust length of nameformat field to accommodate content 
+ - assignfeedback adjust length of nameformat field to accommodate content
 
 2017-08-03 (17)
- -  increase drag handle size on touch screens, remove '(in)active' class from token/field/add elements, and expand toekn fields to accommodate size of content 
+ - increase drag handle size on touch screens, remove '(in)active' class from token/field/add elements, and expand toekn fields to accommodate size of content
 
 2017-08-02 (16)
- -  (1) remove spaces from default name; (2) add green border to 'active' name fields; (3) stretch 'newlinetoken' to accommodate content 
+ - (1) remove spaces from default name; (2) add green border to 'active' name fields; (3) stretch 'newlinetoken' to accommodate content
 
 2017-07-24 (15)
- -  ensure CSS position of submit buttons is set to 'static' so they do not float over user map area 
+ - ensure CSS position of submit buttons is set to 'static' so they do not float over user map area
 
 2017-07-12 (14)
- -  do not show any config settings on the main Assign edit page; instead, add them to the form as hidden fields 
+ - do not show any config settings on the main Assign edit page; instead, add them to the form as hidden fields
 
 2017-07-08 (13)
- -  fix 'undefined variable, $plugin' during upgrade to 2017-07-08 (12) 
+ - fix 'undefined variable, $plugin' during upgrade to 2017-07-08 (12)
 
 2017-07-08 (12)
- -  add new setting to specify how to fix long-vowels in romanized Japanese 
-
-2017-07-08 (12)
- -  add new setting to specify how to fix long-vowels in romanized Japanese 
-
-2017-07-08 (12)
- -  add new setting to specify how to fix long-vowels in romanized Japanese 
+ - add new setting to specify how to fix long-vowels in romanized Japanese
 
 2017-07-07 (11)
- -  add 'hyo|u|a' to list of allowable romaji strings 
+ - add 'hyo|u|a' to list of allowable romaji strings
 
 2017-07-07 (10)
- -  increase maximum number of name tokens to 8 
+ - increase maximum number of name tokens to 8
 
 2017-07-07 (09)
- -  add conversion of katakana/hiragana to romaji for Japanese names 
+ - add conversion of katakana/hiragana to romaji for Japanese names
 
 2017-07-06 (08)
- -  fix size of textboxes on themes such as Essential that set them to something a large width 
+ - fix size of textboxes on themes such as Essential that set them to something a large width
 
 2017-07-06 (07)
- -  add new settings to control display of Rubric and Marking Guide details 
+ - add new settings to control display of Rubric and Marking Guide details
 
 2017-07-03 (06)
- -  re-order sections on settings form 
+ - re-order sections on settings form
 
 2017-07-03 (05)
- -  small improvement to JS code to determine width of points container 
+ - small improvement to JS code to determine width of points container
 
 2017-07-03 (04)
- -  remove deprecated setting from settings.php 
-
-2017-07-03 (04)
- -  remove deprecated setting from settings.php 
+ - remove deprecated setting from settings.php
 
 2017-07-03 (03)
- -  add subheading for awardpoints_form 
+ - add subheading for awardpoints_form
 
 2017-07-02 (02)
- -  fix the calculation of row width for the pointsperrow setting 
+ - fix the calculation of row width for the pointsperrow setting
 
 2017-07-02 (02)
- -  add new setting 'pointsperrow' to improve layout of points buttons 
+ - add new setting 'pointsperrow' to improve layout of points buttons
 
 2017-06-29 (01)
- -  add new setting 'pointsperrow' to improve layout of points buttons 
-
-2017-06-29 (01)
- -  use displayname instead of default name in point reports 
+ - use displayname instead of default name in point reports
 
 2017-06-29 (00)
- -  make name toekn settings expandable on Assign settings page 
+ - make name toekn settings expandable on Assign settings page
 
 2017-06-28 (99)
- -  reorganize form settings so that more useful settings are at the top, and development settings are near the bottom 
+ - reorganize form settings so that more useful settings are at the top, and development settings are near the bottom
 
 2017-06-28 (98)
- -  restore help strings that are need for config settings 
+ - restore help strings that are need for config settings
 
 2017-06-28 (97)
- -  add JS to reduce size of points container to be no wider than the user-map or actions container 
+ - add JS to reduce size of points container to be no wider than the user-map or actions container
 
 2017-06-28 (96)
- -  rebrand pointstype setting as 'Point aggregation' and add several new ways to combine points 
+ - rebrand pointstype setting as 'Point aggregation' and add several new ways to combine points
 
 2017-06-26 (94)
- -  use unicode search pattern when replacing tokens in names 
+ - use unicode search pattern when replacing tokens in names
 
 2017-06-26 (93)
- -  fix syntax error in db/upgrade.php 
+ - fix syntax error in db/upgrade.php
 
 2017-06-26 (92)
- -  force all instances of the 'points' plugin to have a valid set of namefield settings 
+ - force all instances of the 'points' plugin to have a valid set of namefield settings
 
 2017-06-26 (91)
- -  remove deprecated fields form settings.php 
+ - remove deprecated fields form settings.php
 
 2017-06-26 (90)
- -  add split/start/count settings to allow single names to be extracted from name fields that contain several parts 
+ - add split/start/count settings to allow single names to be extracted from name fields that contain several parts
 
 2017-06-26 (89)
- -  fix unassigned variable '$plugin' during upgrade on sites that have instances of 'assignfeedback_points' plugin 
+ - fix unassigned variable '$plugin' during upgrade on sites that have instances of 'assignfeedback_points' plugin
 
 2017-06-26 (88)
- -  fix empty error when saving settings from assign update page 
+ - fix empty error when saving settings from assign update page
 
 2017-06-25 (87)
- -  allow custom string to join HEAD and TAIL of long names 
+ - allow custom string to join HEAD and TAIL of long names
 
 2017-06-25 (86)
- -  allow removal of name fields by setting field name to blank 
-
-2017-06-25 (86)
- -  allow removal of name fields by setting field name to blank 
+ - allow removal of name fields by setting field name to blank
 
 2017-06-23 (85)
- -  implement namefields as repeated elements 
+ - implement namefields as repeated elements
 
 2017-06-23 (85)
- -  fix saving of name details 
+ - fix saving of name details
 
 2017-06-22 (84)
- -  use get_defaultvalues to determine which fields are allowed in return form values. 
+ - use get_defaultvalues to determine which fields are allowed in return form values.
 
 2017-06-22 (84)
- -  standardize name fields: nameformat, nametoken, namechar, namefields 
+ - standardize name fields: nameformat, nametoken, namechar, namefields
 
 2017-06-21 (83)
- -  intermediate commit toward implementing flexible name display 
+ - intermediate commit toward implementing flexible name display
 
 2017-06-20 (81)
- -  add new name fields 
+ - add new name fields
 
 2017-01-31 (80)
- -  add new name fields 
+ - assignfeedback_point fix small typo in comment, and use single quote instead of double quote for static string
 
 2017-01-31 (80)
- -  assignfeedback_point fix small typo in comment, and use single quote instead of double quote for static string 
-
-2017-01-31 (80)
- -  improve detection of templatable form elements on Moodle >= 2.9 
+ - improve detection of templatable form elements on Moodle >= 2.9
 
 2017-01-31 (79)
- -  fix updaing of pointstoday and pointstotal when awarding incremental points 
+ - fix updaing of pointstoday and pointstotal when awarding incremental points
 
 2017-01-31 (79)
- -  attempt to detect THEME tye from rendered html for radio group element 
+ - attempt to detect THEME tye from rendered html for radio group element
 
 2017-01-31 (79)
- -  fix indentation of layout items on main page for awarding points 
+ - fix indentation of layout items on main page for awarding points
 
 2017-01-29 (78)
- -  restrict width of points container for more compact interface when there are manny point values 
+ - restrict width of points container for more compact interface when there are manny point values
 
 2017-01-29 (78)
- -  further improvements to select/award functionality on Moodle >= 3.2 
+ - further improvements to select/award functionality on Moodle >= 3.2
 
 2017-01-29 (78)
- -  fix awarding ofr points to multiple selected students 
+ - fix awarding ofr points to multiple selected students
 
 2017-01-27 (77)
- -  preliminary fix for setting eventhandlers in template-based themes in Moodle >= 3.2, e.g. Boost 
-
-2017-01-27 (77)
- -  preliminary fix for setting eventhandlers in template-based themes in Moodle >= 3.2, e.g. Boost 
+ - preliminary fix for setting eventhandlers in template-based themes in Moodle >= 3.2, e.g. Boost
 
 2017-01-26 (76)
- -  ensure radio elements are hidden in Moodle >= 3.2 
+ - ensure radio elements are hidden in Moodle >= 3.2
 
 2017-01-26 (76)
- -  add new styles and JS to account for template based themes in Moodle >= 3.2 
+ - add new styles and JS to account for template based themes in Moodle >= 3.2
 
 2017-01-26 (75)
- -  add new selectors for template themes, e.g. Boost, in Moodle >= 3.2 
+ - add new selectors for template themes, e.g. Boost, in Moodle >= 3.2
 
 2017-01-26 (75)
- -  remove all labels from createElement('radio') for compatability with Moodle >= 3.2 
+ - remove all labels from createElement('radio') for compatability with Moodle >= 3.2
 
 2017-01-04 (74)
- -  use multiline regex pattern to parse group menu HTML (required for Moodle >= 3.3) 
+ - use multiline regex pattern to parse group menu HTML (required for Moodle >= 3.3)
 
 2016-11-27 (73)
- -  use multiline regex pattern to parse group menu HTML (required for Moodle >= 3.3) 
-
-2016-11-27 (73)
- -  disable form checker when sending results via AJAX 
+ - disable form checker when sending results via AJAX
 
 2016-10-20 (72)
- -  assfeedback_points small improvements in the JS to report rubric data 
+ - assfeedback_points small improvements in the JS to report rubric data
 
 2016-10-20 (72)
- -  fix romanization of surnames containing JIYOU, e.g. MUKAIJIYOU, OKANOJIYOU 
+ - fix romanization of surnames containing JIYOU, e.g. MUKAIJIYOU, OKANOJIYOU
 
 2016-10-20 (72)
- -  incomplete version of new name functionality 
+ - incomplete version of new name functionality
 
 2016-10-20 (72)
- -  begin fleixble name functionality 
+ - begin fleixble name functionality
 
 2016-10-20 (72)
- -  improve detection of romanized Japanese names 
+ - improve detection of romanized Japanese names
 
 2016-10-20 (72)
- -  improve detection of Japanese names when fixing romanization 
+ - improve detection of Japanese names when fixing romanization
 
 2016-10-19 (71)
- -  fix load/setup/save/delete map layouts 
+ - fix load/setup/save/delete map layouts
 
 2016-10-19 (70)
- -  fix bad romanization 
+ - fix bad romanization
 
 2016-10-18 (69)
- -  add settings to specify the case used to display first and last names 
+ - add settings to specify the case used to display first and last names
 
 2016-09-09 (68)
- -  begin functionality romanize and format names 
+ - begin functionality romanize and format names
 
 2016-09-09 (68)
- -  tidy up text strings to describe points, scores and grades 
+ - tidy up text strings to describe points, scores and grades
 
 2016-09-09 (67)
- -  fix awarding of points when releasing mouse after dragging several selected users 
+ - fix awarding of points when releasing mouse after dragging several selected users
 
 2016-08-29 (66)
- -  put report into standard Moodle form section 
+ - put report into standard Moodle form section
 
 2016-08-29 (65)
- -  add new settings to allow rubc/guide points and assign/course grades to be displayed in user tiles 
+ - add new settings to allow rubc/guide points and assign/course grades to be displayed in user tiles
 
 2016-08-26 (64)
- -  add new setting: showusergrades 
+ - add new setting: showusergrades
 
 2016-08-26 (63)
- -  add new setting: showusergrades 
-
-2016-08-26 (63)
- -  remove leading zeroes from double digit dates 
+ - remove leading zeroes from double digit dates
 
 2016-08-25 (62)
- -  add points report dialog box to show details of point awards for a single student 
+ - add points report dialog box to show details of point awards for a single student
 
 2016-08-24 (61)
- -  standardize 'die;' to 'die();' 
+ - standardize 'die;' to 'die();'
 
 2016-08-20 (60)
- -  improve efficiency of code to split real names into separate lines in student tiles 
+ - improve efficiency of code to split real names into separate lines in student tiles
 
 2016-08-19 (59)
- -  add new setting to allow default real name to be splt into two lines if required 
+ - add new setting to allow default real name to be splt into two lines if required
 
 2016-08-18 (58)
- -  fix use of 'marking guide' grading method on the main page for awarding points 
+ - fix use of 'marking guide' grading method on the main page for awarding points
 
 2016-08-17 (57)
- -  allow advanced grading systems such as a 'rubric' and 'marking guide' 
+ - allow advanced grading systems such as a 'rubric' and 'marking guide'
 
 2016-08-09 (56)
- -  add new map-mode buttons to allow selection, marking absent, and report on both click-screens and tap-screens 
+ - add new map-mode buttons to allow selection, marking absent, and report on both click-screens and tap-screens
 
 2016-08-07 (55)
- -  add new map-mode buttons to allow selection, marking absent, and report on both click-screens and tap-screens 
+ - initial implementation of mapmode buttons
 
 2016-08-07 (55)
- -  initial implementation of mapmode buttons 
-
-2016-08-07 (55)
- -  finish implementation of selectable functionaliaty 
+ - finish implementation of selectable functionaliaty
 
 2016-07-24 (54)
- -  fix setting of default values in form settings 
+ - fix setting of default values in form settings
 
 2016-07-20 (53)
- -  further development of 'selectable' functionality 
+ - further development of 'selectable' functionality
 
 2016-07-20 (53)
- -  add on/off switch for development of jQuery selectable functionality 
+ - add on/off switch for development of jQuery selectable functionality
 
 2016-07-20 (52)
- -  fix undo of points 
+ - fix undo of points
 
 2016-07-17 (51)
- -  fix sending of new coordinates via ajax after map shuffle, rotate, reset, separate 
+ - fix sending of new coordinates via ajax after map shuffle, rotate, reset, separate
 
 2016-06-07 (49)
- -  first effort to implement selectable area 
+ - first effort to implement selectable area
 
 2016-06-07 (49)
- -   fix SQL sysntax error during upgrade 
+ - fix SQL sysntax error during upgrade
 
 2016-06-03 (48)
- -  fix SQL syntax error when initializing new pointstype field 
+ - fix SQL syntax error when initializing new pointstype field
 
 2016-06-02 (47)
- -  add new pointstype field to database 
+ - add new pointstype field to database
 
 2016-05-21 (46)
- -  Moodle 3.1 compatability: (1) add is_feedback_modified() method, and (2) use 'path-mod-assign' CSS class instead of 'page-mod-assignview' element id 
+ - Moodle 3.1 compatability: (1) add is_feedback_modified() method, and (2) use 'path-mod-assign' CSS class instead of 'page-mod-assignview' element id
 
 2016-05-12 (45)
- -  display warning message if there are no enrolled users in the current group/course 
-
-2016-05-12 (45)
- -  display warning message if there are no enrolled users in the current group/course 
+ - display warning message if there are no enrolled users in the current group/course
 
 2016-04-09 (44)
- -  don't use advanced settings on Moodle <= 2.5 
+ - don't use advanced settings on Moodle <= 2.5
 
 2016-02-25 (43)
- -  fix awaring of points when other feedback types are also enabled; fix selection of comments from menu of common comments awarded hitherto 
+ - fix awaring of points when other feedback types are also enabled; fix selection of comments from menu of common comments awarded hitherto
 
 2016-02-21 (42)
- -  fix setting of comment from drop-down menu in jQuery and PHP scripts 
+ - fix setting of comment from drop-down menu in jQuery and PHP scripts
 
 2015-12-16 (41)
- -  fix setting of comment from drop-down menu in jQuery and PHP scripts 
-
-2015-12-16 (41)
- -  fix SQL syntax for MSSQL 
+ - fix SQL syntax for MSSQL
 
 2015-12-06 (40)
- -  assign_feedback/points fix syntax error in restore script 
+ - assign_feedback/points fix syntax error in restore script
 
 2015-10-01 (39)
- -  simplify compacting of coordinates 
+ - simplify compacting of coordinates
 
 2015-10-01 (39)
- -  improve compacting of coordinates, but it is still not fully functional 
+ - improve compacting of coordinates, but it is still not fully functional
 
 2015-10-01 (39)
- -  standardize format of release string in version.php 
+ - standardize format of release string in version.php
 
 2015.10.01 (39)
- -  initial implementation of functionality to compact tiles 
+ - initial implementation of functionality to compact tiles
 
 2015.10.01 (39)
- -  handle left over students when creating circular islands 
+ - handle left over students when creating circular islands
 
 2015.10.01 (39)
- -  shorten strings to show today/total points 
+ - shorten strings to show today/total points
 
 2015.10.01 (38)
- -  add new layout for square islands 
+ - add new layout for square islands
 
 2015.09.23 (37)
- -  improve implementation of circle layout 
-
-2015.09.23 (37)
- -  improve implementation of circle layout 
+ - improve implementation of circle layout
 
 2015.09.23 (36)
- -  initial implementation of circle layout 
+ - initial implementation of circle layout
 
 2015.09.23 (36)
- -  improve logic in separation of overlapping user tiles 
+ - improve logic in separation of overlapping user tiles
 
 2015.09.18 (35)
- -  implement layouts -> lines functionality 
+ - implement layouts -> lines functionality
 
 2015.09.15 (33)
- -  add layouts square/load/delete 
+ - add layouts square/load/delete
 
 2015.09.14 (31)
- -  finish incomplete actions: separate, shuffle, rotate 
+ - finish incomplete actions: separate, shuffle, rotate
 
 2015.09.08 (30)
- -  try a grid-based algorithm for separating tiles 
+ - try a grid-based algorithm for separating tiles
 
 2015.09.08 (30)
- -  add console.log statements for debugging 
+ - add console.log statements for debugging
 
 2015.09.08 (30)
- -  add console.log statements for debugging 
+ - being implementing 'separate' functionality
 
 2015.09.08 (30)
- -  being implementing 'separate' functionality 
+ - add javascript class to separate overlapping user tiles in the user-map
 
 2015.09.08 (30)
- -  add javascript class to separate overlapping user tiles in the user-map 
+ - preliminary investigation of how to separate overlapping user tiles
 
 2015.09.08 (30)
- -  preliminary investigation of how to separate overlapping user tiles 
+ - animate the resize function
 
 2015.09.08 (30)
- -  animate the resize function 
-
-2015.09.08 (30)
- -  fix duplicate index name in install.xml 
+ - fix duplicate index name in install.xml
 
 2015.09.07 (29)
- -  fix error updating field used index during upgrade 
+ - fix error updating field used index during upgrade
 
 2015.09.07 (28)
- -  add text_for_grade() method to send of list of point awards as feedback in the gradebook 
+ - add text_for_grade() method to send of list of point awards as feedback in the gradebook
 
 2015.09.06 (27)
- -  start implementation of "separate" map action 
+ - start implementation of "separate" map action
 
 2015.09.06 (26)
- -  implement map actions: reset, clean up, resize 
+ - implement map actions: reset, clean up, resize
 
 2015.09.06 (25)
- -  put most javascript for awarding points into external file 
+ - put most javascript for awarding points into external file
 
 2015.09.06 (24)
- -  fix backup of maps/coords and add restore functionality 
+ - fix backup of maps/coords and add restore functionality
 
 2015.09.06 (23)
- -  prepare javascript to put into external file; add styles for map action buttons 
+ - prepare javascript to put into external file; add styles for map action buttons
 
 2015.08.26 (22)
- -  add backup functionality ("maps" table is not backed up yet) 
+ - add backup functionality ("maps" table is not backed up yet)
 
 2015.08.26 (22)
- -  fix display of feedback when first points are sent immediately after touching/clicking  student icon/name 
+ - fix display of feedback when first points are sent immediately after touching/clicking  student icon/name
 
 2015.08.24 (21)
- -  AJAX implement functionality to send points immediately after teacher clicks or touches a student icon 
+ - AJAX implement functionality to send points immediately after teacher clicks or touches a student icon
 
 2015.08.22 (20)
- -  add undo button to form that awards points 
+ - add undo button to form that awards points
 
 2015.08.19 (19)
- -  fix removal of old map data from form when new map is selected on page to award points 
+ - fix removal of old map data from form when new map is selected on page to award points
 
 2015.08.19 (19)
- -  add functionality to store and recall user map layouts 
+ - add functionality to store and recall user map layouts
 
 2015.08.12 (15)
- -  add new config settings: pointstype, increment 
+ - add new config settings: pointstype, increment
 
 2015.08.10 (14)
- -  fix initial setting of config values 
+ - fix initial setting of config values
 
 2015.08.10 (14)
- -  detect points config settings from incoming form data 
+ - detect points config settings from incoming form data
 
 2015.08.08 (13)
- -  improve display of handles to resize user-map 
-
-2015.08.08 (13)
- -  improve display of handles to resize user-map 
+ - improve display of handles to resize user-map
 
 2015.08.08 (12)
- -  add settings and layout sections to page for awarding incremental points 
+ - add settings and layout sections to page for awarding incremental points
 
 2015.08.08 (11)
- -  add new fields: width and height of user-map 
-
-2015.08.08 (11)
- -  add new fields: width and height of user-map 
-
-2015.08.08 (11)
- -  add new fields: width and height of user-map 
+ - add new fields: width and height of user-map
 
 2015.08.04 (10)
- -  add release info to version.php 
- -  fix minimum required release for Moodle 2.3 
- -  first attempt at adding layout controls to the main input form 
- -  first attempt at adding layout controls to the main input form 
- -  first attempt at adding layout controls to the main input form 
- -  first attempt at adding layout controls to the main input form 
- -  add new DB tables to store user-maps 
- -  add new DB tables to store user-maps 
- -  add new DB tables to store user-maps 
- -  add new DB tables to store user-maps 
- -  improve onclick event handlers to set bgcolor of spans when checkbox/radio elements are clicked directly 
- -  add group selection to award page, and add link to award page from assign(ment) view page 
- -  assignfeedack_points add new renderer/renderable files 
- -  fix error when creating new assignment 
- -  make min/max points and show fullname/picture setting in the standard GUI for Assign(ment) feedback plugins 
- -  make user area resizable and add records to table when changes are saved 
- -  add user pictures to award-points-form 
- -  make user names draggable on award-points-form 
- -  Initial version of assign feedback points plugin 
+ - add release info to version.php
+ - fix minimum required release for Moodle 2.3
+ - first attempt at adding layout controls to the main input form
+ - add new DB tables to store user-maps
+ - improve onclick event handlers to set bgcolor of spans when checkbox/radio elements are clicked directly
+ - add group selection to award page, and add link to award page from assign(ment) view page
+ - assignfeedack_points add new renderer/renderable files
+ - fix error when creating new assignment
+ - make min/max points and show fullname/picture setting in the standard GUI for Assign(ment) feedback plugins
+ - make user area resizable and add records to table when changes are saved
+ - add user pictures to award-points-form
+ - make user names draggable on award-points-form
+ - Initial version of assign feedback points plugin
