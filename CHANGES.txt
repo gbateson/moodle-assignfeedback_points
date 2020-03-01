@@ -2,6 +2,9 @@
 Change log for assignfeedback_points
 ========================================
 
+2020-03-01 (77)
+ - include current version in tool to redo upgrade
+
 2019-11-10 (76)
  - standardize layout and spelling in CHANGES.txt
 
