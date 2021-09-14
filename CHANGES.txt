@@ -2,6 +2,9 @@
 Change log for assignfeedback_points
 ========================================
 
+2021-09-14 (78)
+ - mod_assign modify markdown syntax for long help messages (for compatability with Moodle 3.11)
+
 2020-03-01 (77)
  - include current version in tool to redo upgrade
 

@@ -3154,9 +3154,14 @@ class assign_feedback_points extends assign_feedback_plugin {
     static public function get_activenamefields($userlist) {
         $activenamefields = array();
         $namefields = self::get_all_user_fields();
+        // remove deprecated fields
+        $namefields = array('yahooid', 'aimid', 'msnid', 'icqnumber');
         foreach ($namefields as $namefield) {
             $active = false;
             foreach ($userlist as $userid => $user) {
+                if (! property_exists($user, $namefield)) {
+                    continue;
+                }
                 if ($user->$namefield===null || $user->$namefield==='') {
                     continue;
                 }
@@ -3484,6 +3489,9 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_nametoken_field_options($plugin, $custom, $includedefault=true) {
 
+        // cache reference to string manager
+        $strman = get_string_manager();
+
         if ($includedefault) {
             $fields = array('' => '', 'default' => '');
         } else {
@@ -3513,12 +3521,18 @@ class assign_feedback_points extends assign_feedback_plugin {
                     case 'yahoo': $string = 'yahooid'; break;
                     default: $string = $field;
                 }
-                $string = get_string($string);
-                if ($is_ascii) {
-                    $is_ascii = preg_match($ascii, $string);
-                }
-                if ($is_ascii && $char=='' && preg_match($punct, $string, $chars)) {
-                    $char = $chars[0];
+                // Note that some fields are deprecated in Moodle >= 3.11.
+                // The "string_deprecated" method is avaiable since Moodle 2.8.
+                if (method_exists($strman, 'string_deprecated') && $strman->string_deprecated($string, 'core')) {
+                    $string = '';
+                } else {
+                    $string = get_string($string);
+                    if ($is_ascii) {
+                        $is_ascii = preg_match($ascii, $string);
+                    }
+                    if ($is_ascii && $char=='' && preg_match($punct, $string, $chars)) {
+                        $char = $chars[0];
+                    }
                 }
                 $fields[$field] = $string;
             }
@@ -3903,7 +3917,12 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
 
             // we need these fields to get fullname($user)
-            if (function_exists('get_all_user_name_fields')) {
+            if (class_exists('\core_user\fields')) {
+                // Moodle >= 3.11
+                foreach (\core_user\fields::get_name_fields() as $field) {
+                    $visiblefields[$field] = $field;
+                }
+            } else if (function_exists('get_all_user_name_fields')) {
                 // Moodle >= 2.6
                 $visiblefields += get_all_user_name_fields();
             }

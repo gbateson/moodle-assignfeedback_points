@@ -73,16 +73,16 @@ $string['feedback'] = 'Feedback';
 $string['filenameseparator'] = '-';
 $string['fixvowels_help'] = 'This setting specifies how to treat long vowels, specifically "ou", "aa", "ii", "uu", "ee", "oo", in romanized Japanese.
 
-**No**
-: The vowels in romanized names will not be altered.
+**No**  
+&nbsp; The vowels in romanized names will not be altered.
 
-**Shorten long vowels to single letters**
-: Long vowels will be shortened to single vowel letters
-: aa => a, ii => i, uu => u, ee => e, oo => oh, ou => o
+**Shorten long vowels to single letters**  
+&nbsp; Long vowels will be shortened to single vowel letters
+&nbsp; aa => a, ii => i, uu => u, ee => e, oo => oh, ou => o
 
-**Display long vowels using macrons**
-: Long vowels will be converted to macron letters
-: aa => ā, ii => ī, uu => ū, ee => ē, oo => ō, ou => ō
+**Display long vowels using macrons**  
+&nbsp; Long vowels will be converted to macron letters
+&nbsp; aa => ā, ii => ī, uu => ū, ee => ē, oo => ō, ou => ō
 
 Here are some examples of names with long vowels:
 
@@ -118,23 +118,23 @@ $string['load'] = 'Load';
 $string['lowercase'] = 'lower case';
 $string['mapaction_help'] = 'Click these buttons to perform operations on the user-map.
 
-**Reset**
-: All user-tiles will be moved back to their original position.
+**Reset**  
+&nbsp; All user-tiles will be moved back to their original position.
 
-**Clean up**
-: Each tile will be moved to its nearest tidy position.
+**Clean up**  
+&nbsp; Each tile will be moved to its nearest tidy position.
 
-**Separate**
-: User-tiles that overlap will be moved apart in the direction of the smallest overlap.
+**Separate**  
+&nbsp; User-tiles that overlap will be moved apart in the direction of the smallest overlap.
 
-**Shuffle**
-: The user tiles will be shuffled randonly and placed in new positions. Because the shuffling is random, some tiles may not move.
+**Shuffle**  
+&nbsp; The user tiles will be shuffled randonly and placed in new positions. Because the shuffling is random, some tiles may not move.
 
-**Resize**
-: The user-map will be shrunk or enlarged to completely surround all the user-tiles.
+**Resize**  
+&nbsp; The user-map will be shrunk or enlarged to completely surround all the user-tiles.
 
-**Rotate**
-: The entire user-map will be rotated by a ¼ turn in an anti-clockwise direction.';
+**Rotate**  
+&nbsp; The entire user-map will be rotated by a ¼ turn in an anti-clockwise direction.';
 $string['mapaction'] = 'User-map action';
 $string['mapmode_help'] = 'the action that will be taken when you click on a user in the user-map';
 $string['mapmode'] = 'User-map mode';
@@ -150,20 +150,20 @@ $string['nametoken_help'] = 'Specify the token that represents this name in the 
 
 In addition, the following formatting options are available:
 
-**Delimiter, Start and Count**
-: If a "Delimiter" character is specified, the name field will be split into parts on this character. The name parts are indexed starting at "1". The START and COUNT settings specify the range of name parts that will be extracted for display.
+**Delimiter, Start and Count**  
+&nbsp; If a "Delimiter" character is specified, the name field will be split into parts on this character. The name parts are indexed starting at "1". The START and COUNT settings specify the range of name parts that will be extracted for display.
 
-**Length, Head, Join and Tail**
-: If a length is specified, then names that are longer than this number of characters will be truncated as HEAD JOIN TAIL, where HEAD is the "Head" number of characters from the beginning of the name, JOIN is the "Join" string, and TAIL is the "Tail" number of characters from the end of the name..
+**Length, Head, Join and Tail**  
+&nbsp; If a length is specified, then names that are longer than this number of characters will be truncated as HEAD JOIN TAIL, where HEAD is the "Head" number of characters from the beginning of the name, JOIN is the "Join" string, and TAIL is the "Tail" number of characters from the end of the name..
 
-**Style**
-: If required, you can specify the HTML style tag to be used when displaying this name.
+**Style**  
+&nbsp; If required, you can specify the HTML style tag to be used when displaying this name.
 
-**Case**
-: If required, you can force the case to be used when displaying this name.
+**Case**  
+&nbsp; If required, you can force the case to be used when displaying this name.
 
-**Romanize**
-: If this setting is enabled, then where possible, Japanese, Korean and Chinese names will be converted to their English equivalents.';
+**Romanize**  
+&nbsp; If this setting is enabled, then where possible, Japanese, Korean and Chinese names will be converted to their English equivalents.';
 $string['nametoken'] = 'Name token [{$a}]';
 $string['nametokenjoindefault'] = ' ... ';
 $string['nametokentokendefault'] = 'name';
@@ -171,17 +171,17 @@ $string['nametokensaddsingle'] = 'Add a name token';
 $string['nametokensaddmultiple'] = 'Add {$a} name tokens';
 $string['nameformat_help'] = 'This string defines the display format for student names. The name format string can include field names, name tokens, newline tokens, and any other characters.
 
-**Field names**
-: A field name is one of the following fields from the user profile: firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename
+**Field names**  
+&nbsp; A field name is one of the following fields from the user profile: firstname, lastname, firstnamephonetic, lastnamephonetic, middlename, alternatename
 
-**Name tokens**
-: A name token is a short string of characters that acts as a placeholder in the name format string. Each name token is defined in a "Name token [...]" defintion. A name token definition defines which field from the user profile to display and may also specify how the field should be shortened and formatted.
+**Name tokens**  
+&nbsp; A name token is a short string of characters that acts as a placeholder in the name format string. Each name token is defined in a "Name token [...]" defintion. A name token definition defines which field from the user profile to display and may also specify how the field should be shortened and formatted.
 
-**Newline tokens**
-: A newline token is a short string that acts as a placeholder for a newline, or line break, in the format string. Usually, a newline token is just one character, but it can be any string of any length.
+**Newline tokens**  
+&nbsp; A newline token is a short string that acts as a placeholder for a newline, or line break, in the format string. Usually, a newline token is just one character, but it can be any string of any length.
 
-**Other characters**
-: Character strings other than those defined as name tokens or newline tokens will appear unchanged in the student names. Such characters may be useful for separating parts of names, and adding titles and punctuation to names.
+**Other characters**  
+&nbsp; Character strings other than those defined as name tokens or newline tokens will appear unchanged in the student names. Such characters may be useful for separating parts of names, and adding titles and punctuation to names.
 
 If the format string is empty, then a default name is generated based on the "fullnamedisplay" string for the current display language.';
 $string['nameformat'] = 'Name format';
@@ -215,29 +215,29 @@ $string['pointstoday'] = 'Points (today): {$a}';
 $string['pointstotal'] = 'Points (total): {$a}';
 $string['pointstype_help'] = 'This setting specifies how point awards are combined to calculate grades for this assignment. The following aggregation methods are available:
 
-**sum**
-: The assignment grade will be set to the sum of all points awarded. When using this method, the points act as incremental points.
+**sum**  
+&nbsp; The assignment grade will be set to the sum of all points awarded. When using this method, the points act as incremental points.
 
-**newest**
-: The assignment grade will be set to the value of the most recent point award.
+**newest**  
+&nbsp; The assignment grade will be set to the value of the most recent point award.
 
-**maximum**
-: The assignment grade will be set to the maximum number of points awarded.
+**maximum**  
+&nbsp; The assignment grade will be set to the maximum number of points awarded.
 
-**average**
-: The assignment grade will be set to the average number of points awarded.
+**average**  
+&nbsp; The assignment grade will be set to the average number of points awarded.
 
-**median**
-: The assignment grade will be set to the median value of points awarded. The median value is the midpoint value if the awards are arranged from lowest to highest.
+**median**  
+&nbsp; The assignment grade will be set to the median value of points awarded. The median value is the midpoint value if the awards are arranged from lowest to highest.
 
-**mode**
-: The assignment grade will be set to the mode value of points awarded. The mode value is the most frequently occurring value in the awards.
+**mode**  
+&nbsp; The assignment grade will be set to the mode value of points awarded. The mode value is the most frequently occurring value in the awards.
 
-**minimum**
-: The assignment grade will be set to the minimum number of points awarded.
+**minimum**  
+&nbsp; The assignment grade will be set to the minimum number of points awarded.
 
-**oldest**
-: The assignment grade will be set to the value of the oldest, i.e. the first, point award.
+**oldest**  
+&nbsp; The assignment grade will be set to the value of the oldest, i.e. the first, point award.
 
 ***Note:*** Points aggregation is only used for "Simple Direct Grading". It is not used for "Advanced grading" methods, such as a "Rubric" or "Marking guide".';
 $string['pointstype'] = 'Points aggregation';
@@ -258,27 +258,27 @@ $string['reset'] = 'Reset';
 $string['resize'] = 'Resize';
 $string['romanize_help'] = 'Specify whether this name field should be romanized.
 
-**No**
-: The name will not be romanized.
+**No**  
+&nbsp; The name will not be romanized.
 
-**Standardize romaji**
-: Romanized strings will be converted to standard Hepburn romanization, including the following transformations:
-: si => shi, ti => chi, tu => tsu, nb => mb
-: jya => ja, jyu => ju, jyo => jo
-: sya => sha, syu => shu, syo => sho
-: kiyou => kyou
-: riyou => ryou, riyuu => ryuu
-: jiyou => jou, jiyuu => juu, jiyun => jun
-: shiyou => shou, shiyuu => shuu, shiyun => shun,
+**Standardize romaji**  
+&nbsp; Romanized strings will be converted to standard Hepburn romanization, including the following transformations:
+&nbsp; si => shi, ti => chi, tu => tsu, nb => mb
+&nbsp; jya => ja, jyu => ju, jyo => jo
+&nbsp; sya => sha, syu => shu, syo => sho
+&nbsp; kiyou => kyou
+&nbsp; riyou => ryou, riyuu => ryuu
+&nbsp; jiyou => jou, jiyuu => juu, jiyun => jun
+&nbsp; shiyou => shou, shiyuu => shuu, shiyun => shun,
 
-**Romanize hiragana**
-: Any hiragana characters, e.g. ひらがな, will be converted to their romaji equivalents.
+**Romanize hiragana**  
+&nbsp; Any hiragana characters, e.g. ひらがな, will be converted to their romaji equivalents.
 
-**Romanize full-width katakana**
-: Any full-width katakana characters, e.g. カタカナ, will be converted to their romaji equivalents.
+**Romanize full-width katakana**  
+&nbsp; Any full-width katakana characters, e.g. カタカナ, will be converted to their romaji equivalents.
 
-**Romanize half-width katakana**
-: Any half-width katakana characters, e.g. ｶﾀｶﾅ, will be converted to their romaji equivalents.';
+**Romanize half-width katakana**  
+&nbsp; Any half-width katakana characters, e.g. ｶﾀｶﾅ, will be converted to their romaji equivalents.';
 $string['romanize'] = 'Romanize';
 $string['romanizehiragana'] = 'Romanize hiragana';
 $string['romanizekatakanafull'] = 'Romanize full-width katakana';
@@ -308,14 +308,14 @@ $string['showelement_help'] = 'If this setting is enabled, the checkboxes or rad
 $string['showelement'] = 'Show form element';
 $string['showfeedback_help'] = 'This setting controls whether feedback about AJAX operations is displayed.
 
-**No**
-: Feedback about AJAX operations is displayed
+**No**  
+&nbsp; Feedback about AJAX operations is displayed
 
-**Yes**
-: Feedback about AJAX operations is not displayed
+**Yes**  
+&nbsp; Feedback about AJAX operations is not displayed
 
-**Automatic**
-: Feedback about AJAX operations appears only when an AJAX operation is in progress. Otherwise, it is hidden.';
+**Automatic**  
+&nbsp; Feedback about AJAX operations appears only when an AJAX operation is in progress. Otherwise, it is hidden.';
 $string['showfeedback'] = 'Show AJAX feedback';
 $string['showguideformlabels_help'] = 'This setting specifies whether each criterion on the Marking guide should be shown in full, truncated, or hidden.';
 $string['showguideformlabels'] = 'Show criteria on Marking guide';
@@ -358,16 +358,16 @@ $string['split_help'] = 'These settings are optional. They specify how to extrac
 
 If a "Delimiter" character is specified, the name field will be split into parts on this character. The parts are indexed starting at "1". The START and COUNT settings specify the range of parts that will be extracted for display.
 
-**Start**
-: If the START setting is positive, it specifies the starting part counting forward from the ***beginning*** of this name field.
-: If the START setting is negative, it specifies the starting part counting back from the ***end*** of this name field.
-: If the START setting is zero or blank, the selected range will start at the first part of this name field.
+**Start**  
+&nbsp; If the START setting is positive, it specifies the starting part counting forward from the ***beginning*** of this name field.
+&nbsp; If the START setting is negative, it specifies the starting part counting back from the ***end*** of this name field.
+&nbsp; If the START setting is zero or blank, the selected range will start at the first part of this name field.
 
 
-**Count**
-: If the COUNT setting is positive, it specifies the final part counting ***forward*** from the START part.
-: If the COUNT setting is negative, it specifies the final part counting back from the ***end*** of this name field.
-: If the COUNT setting is zero or blank, the selected range will finish at the last part of this name field.';
+**Count**  
+&nbsp; If the COUNT setting is positive, it specifies the final part counting ***forward*** from the START part.
+&nbsp; If the COUNT setting is negative, it specifies the final part counting back from the ***end*** of this name field.
+&nbsp; If the COUNT setting is zero or blank, the selected range will finish at the last part of this name field.';
 $string['split'] = 'Delimiter';
 $string['square'] = 'Square';
 $string['start'] = 'Start';
