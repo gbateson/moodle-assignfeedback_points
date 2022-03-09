@@ -580,7 +580,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
             }
 
-            // if the "split" delimiter is not specified, disable "start" and "count"
+            // If no "split" delimiters are specified, disable "start" and "count".
             $mform->disabledIf("nametokens[$i][start]", "nametokens[$i][split]", 'eq', '');
             $mform->disabledIf("nametokens[$i][count]", "nametokens[$i][split]", 'eq', '');
 
@@ -701,7 +701,7 @@ class assign_feedback_points extends assign_feedback_plugin {
      * add_nametokens_setting
      *
      * @param object  $mform
-     * @param array   $elements (baed by reference)
+     * @param array   $elements (passed by reference)
      * @param object  $strman
      * @param string  name of $plugin
      * @param object  $custom settings for the form
@@ -748,13 +748,129 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         if ($spacetype) {
             switch ($spacetype) {
-                case 3: $space = get_string('nameseparator', $plugin); break;
-                case 2: $space = html_writer::empty_tag('br'); break;
-                case 1: $space = ' '; break;
+                case 3: $space = self::create_separator(get_string('nameseparator', $plugin)); break;
+                case 2: $space = self::create_linebreak(); break;
+                case 1: $space = self::create_separator(' '); break;
                 default: $space = ''; // shouldn't happen !!
             }
-            $elements[] = $mform->createElement('static', '', '', $space);
+            if ($space) {
+                $elements[] = $mform->createElement('static', '', '', $space);
+            }
         }
+    }
+
+    /**
+     * create_separator
+     *
+     * create a name separator string
+     *
+     * @param string $string
+     * @param object $mform (optional, default=NULL)
+     * @return void, but may update $mform, if supplied
+     */
+    static public function create_separator($string, $mform = null) {
+        if (self::use_bootstrap()) {
+            $string = str_replace(' ', '&nbsp;', $string);
+        }
+        return $string;
+    }
+
+    /**
+     * create_linebreak
+     *
+     * create a line break suitable for the current theme
+     *
+     * @param object $mform (optional, default=NULL)
+     * @return void, but may update $mform, if supplied
+     */
+    static public function create_linebreak($mform = null) {
+        if (self::use_bootstrap()) {
+            // Most modern themes use flex layout, so the only way to force a newline
+            // is to insert a DIV that is fullwidth and minimal height.
+            $params = array('class' => 'linebreak', 'style' => 'width: 100%; height: 0px;');
+            $linebreak = html_writer::tag('div', '', $params);
+        } else {
+            $params = array('class' => 'linebreak');
+            $linebreak = html_writer::empty_tag('br', $params);
+        }
+        return $linebreak;
+    }
+
+    /**
+     * use_bootstrap
+     *
+     * detect of current theme is using Boost
+     *
+     * @param integer
+     */
+    static public function use_bootstrap() {
+        global $CFG, $PAGE;
+        require_once($CFG->dirroot.'/lib/xmlize.php');
+
+        static $bootstrap = null;
+        if ($bootstrap === null) {
+            $bootstrap = 0;
+
+            $xmlfile = 'thirdpartylibs.xml';
+            $xml = '';
+
+            // Detect all themes with the required xml file.
+            if (class_exists('core_component') && method_exists('core_component', 'get_plugin_list_with_file')) {
+                // Moodle >= 2.6 [in "lib/classes/component.php"]
+                $themes = core_component::get_plugin_list_with_file('theme', $xmlfile, false);
+            } else if (function_exists('get_plugin_list_with_file')) {
+                // Moodle >= 2.2 (until 2.5) [in "lib/moodlelib.php"]
+                $themes = get_plugin_list_with_file('theme', $xmlfile, false);
+            } else {
+                // Moodle <= 2.1
+                $themes = array();
+            }
+
+            // Get full path to xml file.
+            if (array_key_exists('bootstrapbase', $themes)) {
+                // Moodle >= 2.5 (until 3.6)
+                $xmlfile = $themes['bootstrapbase'];
+            } else if (array_key_exists('boost', $themes)) {
+                // Moodle >= 3.2
+                $xmlfile = $themes['boost'];
+            } else {
+                // Moodle <= 2.4
+                $xmlfile = '';
+            }
+
+            // Extract XML from xml file.
+            if ($xmlfile) {
+                if ($xml = file_get_contents($xmlfile)) {
+                    $xml = xmlize($xml);
+                }
+            }
+
+            // Extract Bootstrap version from XML.
+            if (is_array($xml) && array_key_exists('libraries', $xml)) {
+                $library = &$xml['libraries']['#']['library'];
+                $i = 0;
+                while ($bootstrap == 0 && array_key_exists($i, $library)) {
+                    $name = $library[$i]['#']['name'][0]['#'];
+                    if ($name == 'Twitter Bootstrap') {
+                        $version = $library[$i]['#']['version'][0]['#'];
+                        $bootstrap = intval($version);
+                    }
+                    $i++;
+                }
+            }
+
+            // If $bootstrap has still not been detected, use simple fallback.
+            if ($bootstrap == 0) {
+                if (file_exists($CFG->dirroot.'/theme/boost')) {
+                    // Moodle >= 3.2
+                    $bootstrap = 4;
+                } else if (file_exists($CFG->dirroot.'/theme/bootstrapbase')) {
+                    // Moodle >= 2.5 (until 3.6)
+                    $bootstrap = 3;
+                }
+            }
+        }
+        return $bootstrap;
     }
 
     /**
@@ -767,10 +883,50 @@ class assign_feedback_points extends assign_feedback_plugin {
      * @param object  $custom (optional, default=null)
      */
     static public function add_field_jquery($mform, $plugin, $custom) {
-        global $CFG, $DB, $OUTPUT;
+        global $PAGE;
 
-        // add jQuery script to this page
-        self::requires_jquery('/mod/assign/feedback/points/awardpoints.js', $plugin);
+        $script = '';
+
+        if (method_exists($PAGE->requires, 'js_call_amd')) {
+            // Moodle >= 2.9
+            $params = array();
+            $PAGE->requires->js_call_amd('assignfeedback_points/form', 'init', $params);
+            $PAGE->requires->jquery_plugin('ui-css');
+        } else if (method_exists($PAGE->requires, 'jquery')) {
+            // Moodle >= 2.5
+            $PAGE->requires->jquery();
+            $PAGE->requires->jquery_plugin('ui');
+            $PAGE->requires->jquery_plugin('ui-css');
+            $PAGE->requires->jquery_plugin('ui.touch-punch', $plugin);
+            $script = '/mod/assign/feedback/points/awardpoints.js';
+        } else {
+            // Moodle <= 2.4
+            $jquery = '/mod/assign/feedback/points/jquery';
+            $PAGE->requires->css($jquery.'/jquery-ui.css');
+            $PAGE->requires->js($jquery.'/jquery.js', true);
+            $PAGE->requires->js($jquery.'/jquery-ui.js', true);
+            $PAGE->requires->js($jquery.'/jquery-ui.touch-punch.js', true);
+            $script = '/mod/assign/feedback/points/awardpoints.js';
+        }
+        if ($script) {
+            // Moodle <= 2.8
+            $PAGE->requires->js($script);
+            $js = self::get_jquery_js($mform, $plugin, $custom);
+            $mform->addElement('html', $js);
+        }
+    }
+
+    /**
+     * get_jquery_js
+     *
+     * format Javascript containing code to initialize settings for the points interface.
+     *
+     * @param object  $mform
+     * @param string  $plugin
+     * @param object  $custom
+     * @return string Javascript to initialize JS params
+     */
+    static public function get_jquery_js($mform, $plugin, $custom) {
 
         $js = '';
         $js .= '<script type="text/javascript">'."\n";
@@ -780,16 +936,27 @@ class assign_feedback_points extends assign_feedback_plugin {
         $js .= '        window.PTS = {};'."\n";
         $js .= '    }'."\n";
 
-        $js .= '    PTS.moodletheme           = "'.self::js_safe($CFG->theme).'";'."\n";
+        $params = self::get_jquery_params($mform, $plugin, $custom);
+        foreach ($params as $name => $value) {
+            $js .= "    PTS.$name = $value;\n";
+        }
 
-        $js .= '    PTS.str = {};'."\n";
-        $js .= '    PTS.str.reset            = "'.self::js_safe(get_string('reset')).'";'."\n";
-        $js .= '    PTS.str.showless         = "'.self::js_safe(get_string('showless', 'form')).'";'."\n";
-        $js .= '    PTS.str.showmore         = "'.self::js_safe(get_string('showmore', 'form')).'";'."\n";
-        $js .= '    PTS.str.newlineempty     = "'.self::js_safe(get_string('newlineempty', $plugin)).'";'."\n";
-        $js .= '    PTS.str.newlinespace     = "'.self::js_safe(get_string('newlinespace', $plugin)).'";'."\n";
+        $js .= '//]]>'."\n";
+        $js .= '</script>'."\n";
+        return $js;
+    }
 
-        $js .= '    PTS.str.contactingserver = "'.self::js_safe(get_string('contactingserver', $plugin)).'";'."\n";
+    /**
+     * add_field_jquery
+     *
+     * create array of paramenters to pass to Javascript
+     *
+     * @param object  $mform
+     * @param string  $plugin
+     * @param object  $custom
+     */
+    static public function get_jquery_params($mform, $plugin, $custom) {
+        global $CFG, $DB, $OUTPUT;
 
         // determine html tag used to enclose group elements
         // templatable forms on Moodle >= 2.9 use "LABEL" tags
@@ -956,88 +1123,96 @@ class assign_feedback_points extends assign_feedback_plugin {
         $criteriascores = json_encode($criteriascores);
         $usercriteriascores = json_encode($usercriteriascores);
 
-        $js .= '    PTS.gradingmethod         = "'.$custom->grading->method.'";'."\n";
-        $js .= '    PTS.gradingcontainer      = "#fitem_id_advancedgrading";'."\n";
+        $urlaward  = '/mod/assign/feedback/points/awardpoints.ajax.php';
+        $urlaward  = new moodle_url($urlaward, array('id' => $custom->cm->id));
 
-        $js .= '    PTS.elementtype           = "'.($custom->config->multipleusers ? 'checkbox' : 'radio').'";'."\n";
-        $js .= '    PTS.elementdisplay        = "'.($custom->config->showelement  ? ' ' : 'none').'";'."\n";
+        $urlreport = '/mod/assign/feedback/points/reportpoints.ajax.php';
+        $urlreport = new moodle_url($urlreport, array('id' => $custom->cm->id));
 
-        $js .= '    PTS.pointstype            = '.intval($custom->config->pointstype).";\n";
-        $js .= '    PTS.pointsperrow          = '.intval($custom->config->pointsperrow).";\n";
-        $js .= '    PTS.mapactionsperrow      = 0;'.";\n";
-        $js .= '    PTS.sendimmediately       = '.intval($custom->config->sendimmediately).";\n";
-        $js .= '    PTS.showfeedback          = '.intval($custom->config->showfeedback).";\n";
-        $js .= '    PTS.showresetbuttons      = '.intval($custom->config->showresetbuttons).";\n";
+        return array(
+            'str' => '{}',
+            'str.reset' => '"'.self::js_safe(get_string('reset')).'"',
+            'str.showless' => '"'.self::js_safe(get_string('showless', 'form')).'"',
+            'str.showmore' => '"'.self::js_safe(get_string('showmore', 'form')).'"',
+            'str.newlineempty' => '"'.self::js_safe(get_string('newlineempty', $plugin)).'"',
+            'str.newlinespace' => '"'.self::js_safe(get_string('newlinespace', $plugin)).'"',
+            'str.contactingserver' => '"'.self::js_safe(get_string('contactingserver', $plugin)).'"',
 
-        $js .= '    PTS.showpointstoday       = '.$showpointstoday.";\n";
-        $js .= '    PTS.showpointstotal       = '.$showpointstotal.";\n";
+            'moodletheme' => '"'.self::js_safe($CFG->theme).'"',
 
-        $js .= '    PTS.showrubricscores      = '.$showrubricscores.";\n";
-        $js .= '    PTS.showrubricremarks     = '.$showrubricremarks.";\n";
-        $js .= '    PTS.showrubrictotal       = '.$showrubrictotal.";\n";
+            'gradingmethod' => '"'.$custom->grading->method.'"',
+            'gradingcontainer' => '"#fitem_id_advancedgrading"',
 
-        $js .= '    PTS.showrubricformscores  = '.$showrubricformscores.";\n";
-        $js .= '    PTS.GRADINGTEXT_SHORTEN   = '.self::GRADINGTEXT_SHORTEN.";\n";
+            'elementtype' => '"'.($custom->config->multipleusers ? 'checkbox' : 'radio').'"',
+            'elementdisplay' => '"'.($custom->config->showelement  ? ' ' : 'none').'"',
 
-        $js .= '    PTS.showguidescores       = '.$showguidescores.";\n";
-        $js .= '    PTS.showguideremarks      = '.$showguideremarks.";\n";
-        $js .= '    PTS.showguidetotal        = '.$showguidetotal.";\n";
+            'pointstype' => intval($custom->config->pointstype),
+            'pointsperrow' => intval($custom->config->pointsperrow),
+            'mapactionsperrow' => 0,
+            'sendimmediately' => intval($custom->config->sendimmediately),
+            'showfeedback' => intval($custom->config->showfeedback),
+            'showresetbuttons' => intval($custom->config->showresetbuttons),
 
-        $js .= '    PTS.usercriteriascores    = '.$usercriteriascores.";\n";
-        $js .= '    PTS.criteriascores        = '.$criteriascores.";\n";
+            'showpointstoday' => $showpointstoday,
+            'showpointstotal' => $showpointstotal,
 
-        $js .= '    PTS.theme_type            = "'.$theme_type.'";'."\n";
-        $js .= '    PTS.THEME_TYPE_SPAN       = '.self::THEME_TYPE_SPAN."\n";
-        $js .= '    PTS.THEME_TYPE_LABEL      = '.self::THEME_TYPE_LABEL."\n";
-        $js .= '    PTS.group_element_tag     = "'.$group_element_tag.'";'."\n";
-        $js .= '    PTS.GROUP_ELEMENT_TAG     = PTS.group_element_tag.toUpperCase();'."\n";
+            'showrubricscores' => $showrubricscores,
+            'showrubricremarks' => $showrubricremarks,
+            'showrubrictotal' => $showrubrictotal,
 
-        $js .= '    PTS.mapaction_container   = "'.$mapaction_container.'";'."\n";
-        $js .= '    PTS.mapaction_min_width   = 48;'."\n";
-        $js .= '    PTS.mapaction_min_height  = 18;'."\n";
+            'showrubricformscores' => $showrubricformscores,
+            'GRADINGTEXT_SHORTEN' => self::GRADINGTEXT_SHORTEN,
 
-        $js .= '    PTS.mapmode_container     = "'.$mapmode_container.'";'."\n";
-        $js .= '    PTS.mapmode_min_width     = 48;'."\n";
-        $js .= '    PTS.mapmode_min_height    = 18;'."\n";
+            'showguidescores' => $showguidescores,
+            'showguideremarks' => $showguideremarks,
+            'showguidetotal' => $showguidetotal,
 
-        $js .= '    PTS.user_container        = "'.$user_container.'";'."\n";
-        $js .= '    PTS.user_min_width        = 60;'."\n";
-        $js .= '    PTS.user_min_height       = 18;'."\n";
+            'usercriteriascores' => $usercriteriascores,
+            'criteriascores' => $criteriascores,
 
-        $js .= '    PTS.points_container      = "'.$points_container.'";'."\n";
-        $js .= '    PTS.points_min_width      = (PTS.theme_type==PTS.THEME_TYPE_LABEL ? 48 : 36);'."\n";
-        $js .= '    PTS.points_min_height     = 24;'."\n";
+            'theme_type' => $theme_type,
+            'THEME_TYPE_SPAN' => self::THEME_TYPE_SPAN,
+            'THEME_TYPE_LABEL' => self::THEME_TYPE_LABEL,
+            'group_element_tag' => '"'.$group_element_tag.'"',
+            'GROUP_ELEMENT_TAG' => '"'.strtoupper($group_element_tag).'"',
 
-        $js .= '    PTS.layouts_container     = "'.$layouts_container.'"'.";\n";
+            'mapaction_container' => '"'.$mapaction_container.'"',
+            'mapaction_min_width' => 48,
+            'mapaction_min_height' => 18,
 
-        $js .= '    PTS.report_container_id   = "id_report_container";'."\n";
-        $js .= '    PTS.report_container      = "#" + PTS.report_container_id;'."\n";
+            'mapmode_container' => '"'.$mapmode_container.'"',
+            'mapmode_min_width' => 48,
+            'mapmode_min_height' => 18,
 
-        $url  = '/mod/assign/feedback/points/awardpoints.ajax.php';
-        $url  = new moodle_url($url, array('id' => $custom->cm->id));
-        $js .= '    PTS.awardpoints_ajax_php  = "'.self::js_safe($url).'";'."\n";
+            'user_container' => '"'.$user_container.'"',
+            'user_min_width' => 60,
+            'user_min_height' => 18,
 
-        $url = '/mod/assign/feedback/points/reportpoints.ajax.php';
-        $url = new moodle_url($url, array('id' => $custom->cm->id));
-        $js .= '    PTS.reportpoints_ajax_php = "'.self::js_safe($url).'";'."\n";
+            'points_container' => '"'.$points_container.'"',
+            'points_min_width' => ($theme_type==self::THEME_TYPE_LABEL ? 48 : 36),
+            'points_min_height' => 24,
 
-        $js .= '    PTS.groupid               = '.intval($custom->groupid).";\n";
-        $js .= '    PTS.sesskey               = "'.sesskey().'";'."\n";
+            'layouts_container' => '"'.$layouts_container.'"',
 
-        $js .= '    PTS.cleanup               = {duration : 400};'."\n";
-        $js .= '    PTS.separate              = {duration : 400, grid : {x : 12, y : 8}};'."\n";
-        $js .= '    PTS.rotate                = {duration : 400};'."\n";
-        $js .= '    PTS.resize                = {duration : 400};'."\n";
-        $js .= '    PTS.shuffle               = {duration : 400};'."\n";
+            'report_container_id' => '"id_report_container"',
+            'report_container' => '"#id_report_container"',
 
-        $js .= '    PTS.allowselectable       = '.intval($custom->config->allowselectable).';'."\n";
+            'awardpoints_ajax_php' => '"'.self::js_safe($urlaward).'"',
+            'reportpoints_ajax_php' => '"'.self::js_safe($urlreport).'"',
 
-        $js .= '    PTS.sortby                = '.json_encode($custom->sortby).';'."\n";
+            'groupid' => intval($custom->groupid),
+            'sesskey' => '"'.sesskey().'"',
 
-        $js .= '//]]>'."\n";
-        $js .= '</script>'."\n";
+            'cleanup' => '{duration : 400}',
+            'separate' => '{duration : 400, grid : {x : 12, y : 8}}',
+            'rotate' => '{duration : 400}',
+            'resize' => '{duration : 400}',
+            'shuffle' => '{duration : 400}',
 
-        $mform->addElement('html', $js);
+            'allowselectable' => intval($custom->config->allowselectable),
+
+            'sortby' => json_encode($custom->sortby)
+        );
     }
 
     /**
@@ -1481,8 +1656,9 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     protected function format_userlist_names(&$userlist, $config) {
 
-        // cache the <br /> tag
-        $br = html_writer::empty_tag('br');
+        // cache the linebreak and white space strings.
+        $newline = self::create_linebreak();
+        $space = self::create_separator(' ');
 
         // valid fields in user object
         $namefields = self::get_all_user_fields();
@@ -1536,7 +1712,11 @@ class assign_feedback_points extends assign_feedback_plugin {
                 }
 
                 if ($nametoken->split) {
-                    $text = explode($nametoken->split, $text);
+                    if (self::textlib('strlen', $nametoken->split) == 1) {
+                        $text = explode($nametoken->split, $text);
+                    } else {
+                        $text = preg_split('/['.preg_quote($nametoken->split, '/').']/u', $text);
+                    }
                     $start = ($nametoken->start - ($nametoken->start > 0 ? 1 : 0));
                     $count = ($nametoken->count ? $nametoken->count : count($text));
                     $text = implode('', array_splice($text, $start, $count));
@@ -1635,8 +1815,8 @@ class assign_feedback_points extends assign_feedback_plugin {
             if ($config->newlinetoken) {
                 // https://pureform.wordpress.com/2008/01/04/matching-a-word-characters-outside-of-html-tags/
                 $search = '/('.preg_quote($config->newlinetoken, '/').')+(?!([^<]+)?>)/u';
-                $displayname = preg_replace($search, $br, $displayname);
-                $feedbackname = preg_replace($search, ' ', $feedbackname);
+                $displayname = preg_replace($search, $newline, $displayname);
+                $feedbackname = preg_replace($search, $space, $feedbackname);
             }
 
             $userlist[$id]->displayname = $displayname;
@@ -3153,17 +3333,23 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_activenamefields($userlist) {
         $activenamefields = array();
+
+       // We exclude the description because it is too long.
+       // $exclude = array('yahooid', 'aimid', 'msnid', 'icqnumber', 'description');
+        $exclude = array('description');
+
         $namefields = self::get_all_user_fields();
-        // remove deprecated fields
-        $namefields = array('yahooid', 'aimid', 'msnid', 'icqnumber');
         foreach ($namefields as $namefield) {
             $active = false;
             foreach ($userlist as $userid => $user) {
+                if (in_array($namefield, $exclude)) {
+                    continue; // skip excluded field
+                }
                 if (! property_exists($user, $namefield)) {
-                    continue;
+                    continue; // skip non-existant field
                 }
                 if ($user->$namefield===null || $user->$namefield==='') {
-                    continue;
+                    continue; // skip empty field
                 }
                 $active = true;
                 break;
@@ -3680,39 +3866,6 @@ class assign_feedback_points extends assign_feedback_plugin {
         return array(0 => get_string('no'),
                      1 => get_string('yes'),
                      2 => get_string('automatically', $plugin));
-    }
-
-    /**
-     * requires_jquery
-     *
-     * add standard jquery base to this page
-     *
-     * @param array extra JS $scripts to be added to this $PAGE
-     * @param string name of the this $plugin e.g. assignfeedback_points
-     * @return void, but will add several JS files to this $PAGE
-     */
-    static public function requires_jquery($scripts, $plugin) {
-        global $PAGE;
-        if (method_exists($PAGE->requires, 'jquery')) {
-            // Moodle >= 2.5
-            $PAGE->requires->jquery();
-            $PAGE->requires->jquery_plugin('ui');
-            $PAGE->requires->jquery_plugin('ui-css');
-            $PAGE->requires->jquery_plugin('ui.touch-punch', $plugin);
-        } else {
-            // Moodle <= 2.4
-            $jquery = '/mod/assign/feedback/points/jquery';
-            $PAGE->requires->css($jquery.'/jquery-ui.css');
-            $PAGE->requires->js($jquery.'/jquery.js', true);
-            $PAGE->requires->js($jquery.'/jquery-ui.js', true);
-            $PAGE->requires->js($jquery.'/jquery-ui.touch-punch.js', true);
-        }
-        if (is_scalar($scripts)) {
-            $scripts = array($scripts);
-        }
-        foreach ($scripts as $script) {
-            $PAGE->requires->js($script);
-        }
     }
 
     /**

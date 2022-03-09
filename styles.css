@@ -9,200 +9,146 @@
 ** feedback: undo link
 ***********************************/
 
-#assignfeedback_points_award_points_form div.fitem div.felement #undolink {
+#assignfeedback_points_award_points_form #undolink {
     background-color : #005aa8;
     background-image : linear-gradient(to bottom,#0070a8,#0038a8);
     background-repeat: repeat-x;
-    border-color     : rgba(0,0,0,0.1) rgba(0,0,0,0.1) rgba(0,0,0,0.25);
-    border-style     : solid;
-    border-width     : 2px;
-    color            : #ffffff;
-    display          : inline-block;
-    margin-left      : 8px;
-    min-width        : 48px;
-    padding          : 2px 4px;
-    text-align       : center;
-    /* css3    */ border-radius: 4px;
-    /* Opera   */ -o-border-radius: 4px;
-    /* Firefox */ -moz-border-radius: 4px;
-    /* Webkit  */ -webkit-border-radius: 4px;
-    filter           : progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0070a8',endColorstr='#ff0038a8',GradientType=0);
-    filter           : progid:DXImageTransform.Microsoft.gradient(enabled=false);
+    border-color : rgba(0,0,0,0.1) rgba(0,0,0,0.1) rgba(0,0,0,0.25);
+    border-radius: 4px;
+    border-style : solid;
+    border-width : 2px;
+    color : #ffffff;
+    display : inline-block;
+    margin-left : 8px;
+    min-width : 48px;
+    padding : 2px 4px;
+    text-align : center;
+    filter : progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0070a8',endColorstr='#ff0038a8',GradientType=0);
+    filter : progid:DXImageTransform.Microsoft.gradient(enabled=false);
 }
 
 /***********************************
 ** all containers
 ***********************************/
 
-#id_awardpoints_hdr div.felement[data-fieldtype="group"] {
-    padding-left  : 0px;
+#id_awardpoints_hdr .felement {
+    padding-left : 0px;
     padding-right : 0px;
 }
 
 /***********************************
 ** user container
 ***********************************/
-
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement {
-    border    : solid 2px #ff9999;
-    max-width :               95%;
-    min-width :                5%;
-    /* cross-browser rounded corners (Note: Safari and Chrome use Webkit) */
-    /* css3    */ border-radius: 8px;
-    /* Opera   */ -o-border-radius: 8px;
-    /* Firefox */ -moz-border-radius: 8px;
-    /* Webkit  */ -webkit-border-radius: 8px;
+#fgroup_id_awardtoelements .felement fieldset > div {
+    border : solid 2px #ff9999;
+    border-radius: 8px;
+    max-width : 95%;
+    min-width : 5%;
 }
 
 /***********************************
 ** individual actions, users and points
 ***********************************/
 
-body.path-mod-assign #fgroup_id_mapactionelements fieldset.fgroup span,
-body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span,
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span,
-body.path-mod-assign #fgroup_id_pointselements fieldset.fgroup span,
-#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement > label,
-#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement > label,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label,
-#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement > label {
-    border-style    :   solid;
-    border-width    :     1px;
-    border-color    : #999999;
-    display         :   block;
-    float           :    left;
-    margin          : 4px 8px;
-    text-align      :  center;
-    /* css3    */ border-radius: 8px;
-    /* Opera   */ -o-border-radius: 8px;
-    /* Firefox */ -moz-border-radius: 8px;
-    /* Webkit  */ -webkit-border-radius: 8px;
-}
-
-body.path-mod-assign #fgroup_id_mapactionelements fieldset.fgroup span,
-body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span,
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span,
-body.path-mod-assign #fgroup_id_pointselements fieldset.fgroup span {
-    padding         : 2px 4px;
-}
-
-#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement > label,
-#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement > label,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label,
-#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement > label {
-    padding         : 4px 8px;
+#fgroup_id_mapactionelements .felement label,
+#fgroup_id_mapmodeelements .felement label,
+#fgroup_id_awardtoelements .felement label,
+#fgroup_id_pointselements .felement label {
+    border-radius: 8px;
+    border-style : solid;
+    border-width : 1px;
+    border-color : #999999;
+    display : block;
+    float : left;
+    margin : 4px 8px;
+    padding : 2px 4px;
+    text-align : center;
 }
 
 /***********************************
 ** actions, modes: labels
 ***********************************/
 
-body.path-mod-assign #fgroup_id_mapactionelements fieldset.fgroup span label,
-body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span label,
-#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement > label,
-#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement > label {
-    font-size   : 12px;
-}
-
-body.path-mod-assign #fgroup_id_mapactionelements fieldset.fgroup span label,
-body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span label {
-    padding     :  0px;
+#fgroup_id_mapactionelements .felement label,
+#fgroup_id_mapmodeelements .felement label {
+    font-size : 12px;
 }
 
 /***********************************
 ** users: labels
 ***********************************/
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label {
-    font-size   : 11px;
-    line-height :  1.4;
+#fgroup_id_awardtoelements .felement label {
+    font-size : 11px;
+    line-height : 1.4;
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label {
-    padding     :  0px;
+#fgroup_id_awardtoelements .felement label em {
+    display : block;
+    font-style : italic;
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label em {
-    display     : block;
-    font-style  : italic;
+#fgroup_id_awardtoelements .felement label em.name {
+    font-style : normal;
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.name,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label em.name {
-    font-style  : normal;
+#fgroup_id_awardtoelements .felement label em.alignleft {
+    text-align : left;
 }
-
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.alignleft,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label em.alignleft {
-    text-align  : left;
+#fgroup_id_awardtoelements .felement label em.alignright {
+    text-align : right;
 }
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.alignright,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label em.alignright {
-    text-align  : right;
+#fgroup_id_awardtoelements .felement label em.aligncenter {
+    text-align : center;
 }
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.aligncenter,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label em.aligncenter {
-    text-align  : center;
-}
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.alignjustify,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label em.alignjustify {
-    height          :   1.4em;
-    text-align      : justify;
+#fgroup_id_awardtoelements .felement label em.alignjustify {
+    height : 1.4em;
+    text-align : justify;
     text-align-last : justify;
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span label em.alignjustify:after,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label em.alignjustify:after {
+#fgroup_id_awardtoelements .felement label em.alignjustify:after {
     content : "";
     display : inline-block ;
-    width   : 100%;
+    width : 100%;
 }
 
 /***********************************
 ** mapaction: normal, hover, checked
 ***********************************/
 
-body.path-mod-assign #fgroup_id_mapactionelements fieldset.fgroup span,
-#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement > label {
+#fgroup_id_mapactionelements .felement label {
     background-color : #ebccff; /* gentle purple */
-    border-color     : #9900ff; /* dark purple */
+    border-color : #9900ff; /* dark purple */
 }
 
-body.path-mod-assign #fgroup_id_mapactionelements fieldset.fgroup span:hover,
-#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement > label:hover {
+#fgroup_id_mapactionelements .felement label:hover {
     background-color : #daa3ff; /* pale purple */
 }
 
-body.path-mod-assign #fgroup_id_mapactionelements fieldset.fgroup span.checked,
-#id_awardpoints_hdr div.form-group.row:nth-child(3) div.felement > label.checked {
+#fgroup_id_mapactionelements .felement label.checked {
     background-color : #c266ff; /* dark purple */
 }
 
 #id_awardpoints_hdr #id_sortbymenu {
     background-color : #ffffff;
-    border-color     : #999999;
+    border-color : #999999;
 }
 
 /***********************************
 ** mapmode: normal, hover, checked
 ***********************************/
 
-body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span,
-#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement > label {
+#fgroup_id_mapmodeelements .felement label {
     background-color : #ffcce6; /* gentle pink */
-    border-color     : #ff0080; /* dark pink */
+    border-color : #ff0080; /* dark pink */
 }
 
-body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span:hover,
-#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement > label:hover {
+#fgroup_id_mapmodeelements .felement label:hover {
     background-color : #ff99cc; /* pale pink */
 }
 
-body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span.checked,
-#id_awardpoints_hdr div.form-group.row:nth-child(4) div.felement > label.checked {
+#fgroup_id_mapmodeelements .felement label.checked {
     background-color : #ff66b3; /* dark pink */
 }
 
@@ -212,41 +158,34 @@ body.path-mod-assign #fgroup_id_mapmodeelements fieldset.fgroup span.checked,
 ** NOTE: order is important :-)
 ***********************************/
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label {
+#fgroup_id_awardtoelements .felement label {
     background-color : #ddffdd; /* gentle green */
-    border-color     : #37ff37; /* dark green */
+    border-color : #37ff37; /* dark green */
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span:hover,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label:hover {
+#fgroup_id_awardtoelements .felement label:hover {
     background-color : #a5ffa5; /* pale green */
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span.absent,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label.absent {
+#fgroup_id_awardtoelements .felement label.absent {
     background-color : #eeeeee; /* light grey */
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span.ui-selecting,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label.ui-selecting {
+#fgroup_id_awardtoelements .felement label.ui-selecting {
     background-color : #ffdaa3; /* pale orange */
-    border-color     : #ff9900; /* dark orange */
+    border-color : #ff9900; /* dark orange */
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span.ui-selected,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label.ui-selected {
+#fgroup_id_awardtoelements .felement label.ui-selected {
     background-color : #ffc266; /* dark orange */
-    border-color     : #ff9900; /* dark orange */
+    border-color : #ff9900; /* dark orange */
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span.checked,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label.checked {
+#fgroup_id_awardtoelements .felement label.checked {
     background-color : #00cc00; /* dark green */
 }
 
-body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span.nousersfound,
-#id_awardpoints_hdr div.form-group.row:nth-child(5) div.felement > label.nousersfound {
+#fgroup_id_awardtoelements .felement label.nousersfound {
     font-size: 1.5em;
 }
 
@@ -254,19 +193,16 @@ body.path-mod-assign #fgroup_id_awardtoelements fieldset.fgroup span.nousersfoun
 ** points: normal, hover, checked
 ***********************************/
 
-body.path-mod-assign #fgroup_id_pointselements fieldset.fgroup span,
-#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement > label {
+#fgroup_id_pointselements .felement label {
     background-color : #ffebcc; /* gentle orange */
-    border-color     : #ff9900; /* dark orange */
+    border-color : #ff9900; /* dark orange */
 }
 
-body.path-mod-assign #fgroup_id_pointselements fieldset.fgroup span:hover,
-#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement > label:hover {
+#fgroup_id_pointselements .felement label:hover {
     background-color : #ffdaa3; /* pale orange */
 }
 
-body.path-mod-assign #fgroup_id_pointselements fieldset.fgroup span.checked,
-#id_awardpoints_hdr div.form-group.row:nth-child(6) div.felement > label.checked {
+#fgroup_id_pointselements .felement label.checked {
     background-color : #ffc266; /* dark orange */
 }
 
@@ -274,125 +210,113 @@ body.path-mod-assign #fgroup_id_pointselements fieldset.fgroup span.checked,
 ** handles to resize user container
 ***********************************/
 
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-handle,
-#assignfeedback_points_award_points_form div.ui-resizable-handle {
+#assignfeedback_points_award_points_form .ui-resizable-handle,
+#assignfeedback_points_award_points_form .ui-resizable-handle {
     position : absolute;
 }
 
 /** north handle **/
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-n,
-#assignfeedback_points_award_points_form div.ui-resizable-n {
-    top    : 0px;
-    left   : 50%;
+#assignfeedback_points_award_points_form .ui-resizable-n,
+#assignfeedback_points_award_points_form .ui-resizable-n {
+    top : 0px;
+    left : 50%;
     height : 0px;
-    width  : 0px;
+    width : 0px;
     cursor : ns-resize;
-    margin-left   : -6px;
-    border-left   :  6px solid transparent;
-    border-right  :  6px solid transparent;
+    margin-left : -6px;
+    border-left : 6px solid transparent;
+    border-right : 6px solid transparent;
     border-bottom : 10px solid limegreen;
 }
 
 /** east handle **/
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-e,
-#assignfeedback_points_award_points_form div.ui-resizable-e {
-    right  : 0px;
-    top    : 50%;
+#assignfeedback_points_award_points_form .ui-resizable-e,
+#assignfeedback_points_award_points_form .ui-resizable-e {
+    right : 0px;
+    top : 50%;
     height : 0px;
-    width  : 0px;
+    width : 0px;
     cursor : ew-resize;
-    margin-top    : -6px;
-    border-top    :  6px solid transparent;
-    border-bottom :  6px solid transparent;
-    border-left   : 10px solid limegreen;
+    margin-top : -6px;
+    border-top : 6px solid transparent;
+    border-bottom : 6px solid transparent;
+    border-left : 10px solid limegreen;
 }
 
 /** south handle **/
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s,
-#assignfeedback_points_award_points_form div.ui-resizable-s {
+#assignfeedback_points_award_points_form .ui-resizable-s,
+#assignfeedback_points_award_points_form .ui-resizable-s {
     bottom : 0px;
-    left   : 50%;
+    left : 50%;
     height : 0px;
-    width  : 0px;
+    width : 0px;
     cursor : ns-resize;
-    margin-left   : -6px;
-    border-left   :  6px solid transparent;
-    border-right  :  6px solid transparent;
-    border-top    : 10px solid limegreen;
+    margin-left : -6px;
+    border-left : 6px solid transparent;
+    border-right : 6px solid transparent;
+    border-top : 10px solid limegreen;
 }
 
 /** west handle **/
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-w,
-#assignfeedback_points_award_points_form div.ui-resizable-w {
-    left   : 0px;
-    top    : 50%;
+#assignfeedback_points_award_points_form .ui-resizable-w,
+#assignfeedback_points_award_points_form .ui-resizable-w {
+    left : 0px;
+    top : 50%;
     height : 0px;
-    width  : 0px;
+    width : 0px;
     cursor : ew-resize;
-    margin-top    : -6px;
-    border-top    :  6px solid transparent;
-    border-bottom :  6px solid transparent;
-    border-right  : 10px solid limegreen;
+    margin-top : -6px;
+    border-top : 6px solid transparent;
+    border-bottom : 6px solid transparent;
+    border-right : 10px solid limegreen;
 }
 
 /** north-west handle **/
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-nw,
-#assignfeedback_points_award_points_form div.ui-resizable-nw {
-    left   : 0px;
-    top    : 0px;
+#assignfeedback_points_award_points_form .ui-resizable-nw,
+#assignfeedback_points_award_points_form .ui-resizable-nw {
+    left : 0px;
+    top : 0px;
     height : 10px;
-    width  : 10px;
+    width : 10px;
     cursor : nwse-resize;
     background-color: limegreen;
-    /* css3    */ border-top-left-radius: 8px;
-    /* Opera   */ -o-border-top-left-radius: 8px;
-    /* Firefox */ -moz-border-top-left-radius: 8px;
-    /* Webkit  */ -webkit-border-top-left-radius: 8px;
+    border-top-left-radius: 8px;
 }
 
 /** north-east handle **/
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-ne,
-#assignfeedback_points_award_points_form div.ui-resizable-ne {
-    top    : 0px;
-    right  : 0px;
+#assignfeedback_points_award_points_form .ui-resizable-ne,
+#assignfeedback_points_award_points_form .ui-resizable-ne {
+    top : 0px;
+    right : 0px;
     height : 10px;
-    width  : 10px;
+    width : 10px;
     cursor : nesw-resize;
     background-color: limegreen;
-    /* css3    */ border-top-right-radius: 8px;
-    /* Opera   */ -o-border-top-right-radius: 8px;
-    /* Firefox */ -moz-border-top-right-radius: 8px;
-    /* Webkit  */ -webkit-border-top-right-radius: 8px;
+    border-top-right-radius: 8px;
 }
 
 /** south-west handle **/
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-sw,
-#assignfeedback_points_award_points_form div.ui-resizable-sw {
+#assignfeedback_points_award_points_form .ui-resizable-sw,
+#assignfeedback_points_award_points_form .ui-resizable-sw {
     bottom : 0px;
-    left   : 0px;
+    left : 0px;
     height : 10px;
-    width  : 10px;
+    width : 10px;
     cursor : nesw-resize;
     background-color: limegreen;
-    /* css3    */ border-bottom-left-radius: 8px;
-    /* Opera   */ -o-border-bottom-left-radius: 8px;
-    /* Firefox */ -moz-border-bottom-left-radius: 8px;
-    /* Webkit  */ -webkit-border-bottom-left-radius: 8px;
+    border-bottom-left-radius: 8px;
 }
 
 /** south-east handle **/
-body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-se,
-#assignfeedback_points_award_points_form div.ui-resizable-se {
+#assignfeedback_points_award_points_form .ui-resizable-se,
+#assignfeedback_points_award_points_form .ui-resizable-se {
     bottom : 0px;
-    right  : 0px;
+    right : 0px;
     height : 10px;
-    width  : 10px;
+    width : 10px;
     cursor : nwse-resize;
     background-color: limegreen;
-    /* css3    */ border-bottom-right-radius: 8px;
-    /* Opera   */ -o-border-bottom-right-radius: 8px;
-    /* Firefox */ -moz-border-bottom-right-radius: 8px;
-    /* Webkit  */ -webkit-border-bottom-right-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 /***********************************
@@ -402,7 +326,7 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
 #assignfeedback_points_award_points_form #guide-advancedgrading,
 #assignfeedback_points_award_points_form #rubric-advancedgrading {
     overflow: visible;
-    width :      100%;
+    width : 100%;
 }
 #assignfeedback_points_award_points_form #guide-advancedgrading {
     max-width : 640px;
@@ -411,14 +335,14 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
     display:     none;
 }
 #assignfeedback_points_award_points_form #guide-advancedgrading textarea {
-    height     : 60px;
+    height : 60px;
     max-width : 320px;
-    width :       85%;
+    width : 85%;
 }
 #assignfeedback_points_award_points_form #rubric-advancedgrading textarea {
-    height     : 20px;
+    height : 20px;
     max-width : 320px;
-    width :      auto;
+    width : auto;
 }
 #assignfeedback_points_award_points_form #guide-advancedgrading .criterion .score {
     min-width:     80px;
@@ -430,12 +354,12 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
 }
 
 #assignfeedback_points_award_points_form #advancedgrading-criteria .criteria-reset-cell {
-    text-align :  center;
+    text-align : center;
     vertical-align : top;
 }
 
 #assignfeedback_points_award_points_form #advancedgrading-criteria .criteria-reset-button {
-    margin  :     0px;
+    margin : 0px;
     padding : 4px 8px;
 }
 
@@ -450,23 +374,19 @@ body.path-mod-assign #assignfeedback_points_award_points_form div.ui-resizable-s
 ** Layouts
 ***********************************/
 
-body.path-mod-assign #fgroup_id_layoutselements input[type="radio"],
-#id_layouts_hdr div.form-group.row:nth-child(1) div.felement input[type="radio"] {
-    margin-right :  2px;
-    margin-left  : 16px;
+#fgroup_id_layoutselements input[type="radio"] {
+    margin-right : 2px;
+    margin-left : 16px;
 }
 
-body.path-mod-assign #fgroup_id_layoutselements select,
-body.path-mod-assign #fgroup_id_layoutselements input[type="text"],
-#id_layouts_hdr div.form-group.row:nth-child(1) div.felement select,
-#id_layouts_hdr div.form-group.row:nth-child(1) div.felement input[type="text"] {
-    margin-right  :  4px;
-    margin-left   :  4px;
+#fgroup_id_layoutselements select,
+#fgroup_id_layoutselements input[type="text"] {
+    margin-right : 4px;
+    margin-left : 4px;
     margin-bottom : 10px;
 }
 
-body.path-mod-assign #fgroup_id_layoutselements input.indent,
-#id_layouts_hdr div.form-group.row:nth-child(1) div.felement > label.indent {
+#fgroup_id_layoutselements input.indent {
     margin-left : 72px;
 }
 
@@ -474,7 +394,7 @@ body.path-mod-assign #fgroup_id_layoutselements input.indent,
 ** Names
 ***********************************/
 
-body.path-mod-assign #assignfeedback_points_award_points_form input[size] {
+#assignfeedback_points_award_points_form input[size] {
     width: initial;
 }
 
@@ -484,31 +404,31 @@ body.path-mod-assign #assignfeedback_points_award_points_form input[size] {
 ** (2) the "Award points" form
 ***********************************/
 
-body.path-mod-assign #id_settings_hdr .settingtitle,
+#id_settings_hdr .settingtitle,
 #assignfeedback_points_award_points_form .settingtitle {
-    display     : inline-block;
-    font-weight :  bold;
-    margin-left :   0px;
+    display : inline-block;
+    font-weight : bold;
+    margin-left : 0px;
     margin-right:   6px;
-    text-align  : right;
+    text-align : right;
 }
 
-body.path-mod-assign #id_settings_hdr .settingtitle.wide,
+#id_settings_hdr .settingtitle.wide,
 #assignfeedback_points_award_points_form .settingtitle.wide {
-    min-width   : 120px;
+    min-width : 120px;
 }
 
-body.path-mod-assign #id_settings_hdr .settingtitle.thin,
+#id_settings_hdr .settingtitle.thin,
 #assignfeedback_points_award_points_form .settingtitle.thin {
-    min-width   :  50px;
+    min-width : 50px;
 }
 
-body.path-mod-assign #id_names_hdr [name^=nametokens].active:not([disabled]) {
+#id_names_hdr [name^=nametokens].active:not([disabled]) {
     border: 2px solid #65d065;
 }
 
 /** workaround for modified behavior of disabledIf in Moodle >= 3.4 */
-body.path-mod-assign #id_names_hdr [name^=nametokens].hideme {
+#id_names_hdr [name^=nametokens].hideme {
 	display: none;
 }
 
@@ -516,17 +436,14 @@ body.path-mod-assign #id_names_hdr [name^=nametokens].hideme {
 ** Points report dialog box
 ***********************************/
 
-body.path-mod-assign .ui-button-icon-only .ui-button-text, .ui-button-icons-only .ui-button-text {
+.ui-button-icon-only .ui-button-text, .ui-button-icons-only .ui-button-text {
     padding : 0px;
 }
 
-body.path-mod-assign #id_assignfeedback_points_report caption {
+#id_assignfeedback_points_report caption {
     background-color: #eeeeee;
     border: 1px solid #cccccc;
-    /* css3    */ border-radius: 4px;
-    /* Opera   */ -o-border-radius: 4px;
-    /* Firefox */ -moz-border-radius: 4px;
-    /* Webkit  */ -webkit-border-radius: 4px;
+    border-radius: 4px;
     color:            #e08703;
     font-size:           18px;
     font-weight:       normal;
@@ -535,27 +452,27 @@ body.path-mod-assign #id_assignfeedback_points_report caption {
     text-align:        center;
 }
 
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.totals {
+#id_assignfeedback_points_report.generaltable tbody>tr.totals {
     text-transform: uppercase;
 }
 
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>th,
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>td {
+#id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>th,
+#id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>td {
     background-color: #fff5e6; /* light orange */
 }
 
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>th:hover,
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>td:hover {
+#id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>th:hover,
+#id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(odd)>td:hover {
     background-color: #ffebcc; /* pale orange */
 }
 
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>th,
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>td {
+#id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>th,
+#id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>td {
     background-color: #ffe0b3; /* medium orange */
 }
 
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>th:hover,
-body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>td:hover {
+#id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>th:hover,
+#id_assignfeedback_points_report.generaltable tbody>tr.active:nth-child(even)>td:hover {
     background-color: #ffd699; /* dark orange */
 }
 
@@ -564,26 +481,26 @@ body.path-mod-assign #id_assignfeedback_points_report.generaltable tbody>tr.acti
 ** and gradebook feedback
 ***********************************/
 
-body.path-mod-assign .gradingtable .assignfeedback_points,
+.gradingtable .assignfeedback_points,
 body.path-grade-report-user .user-grade .assignfeedback_points {
-    font-size       :    12px;
-    line-height     :    16px;
-    list-style-type :    none;
-    margin          :     0px;
-    padding         : 2px 4px;
+    font-size : 12px;
+    line-height : 16px;
+    list-style-type : none;
+    margin : 0px;
+    padding : 2px 4px;
 }
 
-body.path-mod-assign .gradingtable .assignfeedback_points li.feedback,
+.gradingtable .assignfeedback_points li.feedback,
 body.path-grade-report-user .user-grade .assignfeedback_points li.feedback { margin: 0px; padding: 2px 0px; }
 
-body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span,
+.gradingtable .assignfeedback_points li.feedback span,
 body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span {}
 
-body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span.timeawarded,
+.gradingtable .assignfeedback_points li.feedback span.timeawarded,
 body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.timeawarded { font-weight: bold;}
 
-body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span.points,
+.gradingtable .assignfeedback_points li.feedback span.points,
 body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.points {}
 
-body.path-mod-assign .gradingtable .assignfeedback_points li.feedback span.comment,
+.gradingtable .assignfeedback_points li.feedback span.comment,
 body.path-grade-report-user .user-grade .assignfeedback_points li.feedback span.comment {font-style: italic;}

@@ -245,7 +245,7 @@ class assignfeedback_points_award_points_form extends moodleform {
         $elements = array();
         foreach ($mapactions as $value => $text) {
             $elements[] = $mform->createElement('radio', $name, '', $text, $value);
-            if ($value=='sortby') {
+            if ($value == 'sortby') {
                 $options = assign_feedback_points::get_sortby_options($plugin, $custom);
                 $elements[] = $mform->createElement('select', $value.'menu', '', $options);
             }
