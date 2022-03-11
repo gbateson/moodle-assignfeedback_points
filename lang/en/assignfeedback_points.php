@@ -380,6 +380,7 @@ $string['textsettings_help'] = 'These settings specify how to format long text s
 
 If the number of characters in a string exceeds the "Length" value here, then the string will be reformatted as HEAD JOIN TAIL, where HEAD is the "Head" number of characters from the beginning of the name, JOIN is the "Join" string, and TAIL is the "Tail" number of characters from the end of the string.';
 $string['textsettings'] = 'Text length';
+$string['tokenbasedonfield'] = '{$a->token} (based on {$a->field})';
 $string['totals'] = 'Totals';
 $string['timeawarded'] = 'Time awarded';
 $string['timecancelled'] = 'Time cancelled';

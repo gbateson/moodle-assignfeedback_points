@@ -889,7 +889,16 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         if (method_exists($PAGE->requires, 'js_call_amd')) {
             // Moodle >= 2.9
-            $params = array();
+            $params = self::get_jquery_params($mform, $plugin, $custom);
+            // If sortby string is not too long we send it now;
+            // otherwise, we'll send it later via AJAX.
+            $sortby = '';
+            if (array_key_exists('sortby', $params)) {
+                if (strlen($params['sortby']) <= 255) {
+                    $sortby = $params['sortby'];
+                }
+            }
+            $params = array('sortby' => $sortby);
             $PAGE->requires->js_call_amd('assignfeedback_points/form', 'init', $params);
             $PAGE->requires->jquery_plugin('ui-css');
         } else if (method_exists($PAGE->requires, 'jquery')) {
@@ -1454,15 +1463,15 @@ class assign_feedback_points extends assign_feedback_plugin {
             case optional_param('submitbutton', null, PARAM_RAW): $action = 'submit'; break;
             case optional_param('importbutton', null, PARAM_RAW): $action = 'import'; break;
             case optional_param('exportbutton', null, PARAM_RAW): $action = 'export'; break;
-            default: $action = '';
+            default: $action = optional_param('action', '', PARAM_ALPHANUM);
         }
-        if ($action=='' && count($_POST)) {
+        if ($action == '' && count($_POST)) {
             $action = 'submit'; // auto submit
         }
 
         $config = $this->get_all_config($plugin);
 
-        if ($action=='import') {
+        if ($action == 'import') {
             $config = self::import_settings($plugin, $config);
             foreach ($config as $name => $value) {
                 if (is_array($value)) {
@@ -1501,9 +1510,9 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // get original groupid
         $groupid = optional_param('groupid', false, PARAM_INT);
-        if ($groupid===false) {
+        if ($groupid === false) {
             $groupid = groups_get_activity_group($cm, false);
-            if ($groupid===false) {
+            if ($groupid === false) {
                 $groupid = 0;
             }
         }
@@ -1516,19 +1525,30 @@ class assign_feedback_points extends assign_feedback_plugin {
         $userlist = $this->assignment->list_participants($groupid, false);
         $this->format_userlist_names($userlist, $config);
 
-        if ($action=='export') {
+        if ($action == 'export') {
             self::export_settings($plugin, $config, $instance, $this->get_version());
+        }
+
+        if ($action == 'sortby') {
+            $custom = (object)array(
+                'config' => $config,
+                'namefields' => self::get_activenamefields($userlist)
+            );
+            // Set $feedback as the "sortby" array.
+            $feedback = self::get_sortby($userlist, $custom);
         }
 
         if ($undo) {
             // Handle an "undo" request - i.e. cancel previously awarded points.
             // Note that "undo" is available only for simple grading using points.
             $this->process_undo($feedback, $userlist, $instance, $plugin, $time);
-        } else if ($action=='import') {
+        } else if ($action == 'import') {
             // do nothing
-        } else if ($action=='export') {
+        } else if ($action == 'export') {
             // do nothing
-        } else if ($action=='submit') {
+        } else if ($action == 'sortby') {
+            // do nothing
+        } else if ($action == 'submit') {
 
             if ($ajax) {
                 // don't save settings
@@ -1626,21 +1646,23 @@ class assign_feedback_points extends assign_feedback_plugin {
             }
         }
 
-        if ($feedback->text) {
-            $feedback->text = html_writer::tag('span', $feedback->text, array('id' => 'feedback'));
-        }
-        if (empty($feedback->values) || $ajax==0) {
-            $feedback = $feedback->text;
-        } else {
-            unset($feedback->stringname);
-            unset($feedback->points);
-            unset($feedback->usercount);
-            unset($feedback->userlist);
-            unset($feedback->undo);
-            unset($feedback->type);
+        if (is_object($feedback)) {
+            if ($feedback->text) {
+                $feedback->text = html_writer::tag('span', $feedback->text, array('id' => 'feedback'));
+            }
+            if (empty($feedback->values) || $ajax==0) {
+                $feedback = $feedback->text;
+            } else {
+                unset($feedback->stringname);
+                unset($feedback->points);
+                unset($feedback->usercount);
+                unset($feedback->userlist);
+                unset($feedback->undo);
+                unset($feedback->type);
+            }
         }
 
-        if ($action=='export') {
+        if ($action == 'export') {
             self::export_settings($plugin, $config, $instance, $this->get_version());
         }
 
@@ -3370,24 +3392,40 @@ class assign_feedback_points extends assign_feedback_plugin {
      */
     static public function get_sortby($userlist, $custom) {
         if (empty($custom->config->nametokens)) {
-            $nametokens = false;
+            // There are no custom name tokens so we use all the
+            // standard name fields that are used by these users.
             $sortfields = $custom->namefields;
         } else {
-            $nametokens = true;
             $sortfields = $custom->config->nametokens;
+            // Add any standard name fields that are used by these users.
+            foreach (self::get_sortby_fields() as $field) {
+                if (in_array($field, $custom->namefields)) {
+                    $sortfields[] = $field;
+                }
+            }
         }
+
         $sortby = array();
         foreach ($sortfields as $i => $sortfield) {
+
+            // Cache the following boolean flags,
+            // because they are used often in the loop below.
+            if ($is_array = is_array($sortfield)) {
+                $sortfield = $sortfield['token'];
+                $is_string = false;
+            } else {
+                // If $sortfield is not an array, we expect
+                // it will be a string but let's make sure :-)
+                $is_string = is_string($sortfield);
+            }
+
             $count = 0;
             $ids = array();
             $sortids = array();
-            if ($nametokens) {
-                $sortfield = $sortfield['token'];
-            }
             foreach ($userlist as $id => $user) {
-                if ($nametokens && array_key_exists($i, $user->nametokens)) {
+                if ($is_array && array_key_exists($i, $user->nametokens)) {
                     $value = $user->nametokens[$i];
-                } else if (property_exists($user, $sortfield)) {
+                } else if ($is_string && property_exists($user, $sortfield)) {
                     $value = $user->$sortfield;
                 } else {
                     $value = '';
@@ -3406,11 +3444,12 @@ class assign_feedback_points extends assign_feedback_plugin {
                     $count++;
                 }
             }
+
             if ($count) {
                 // ToDo: add a sortlocale setting to name tokens
                 // e.g. ja_JP.UTF-8, ko_KR.UTF-8, zh_CN.UTF-8
                 // https://docs.moodle.org/dev/Table_of_locales
-                if ($nametokens && isset($custom->config->nametokens[$i]->sortlocale)) {
+                if ($is_array && isset($custom->config->nametokens[$i]->sortlocale)) {
                     $locale = $custom->config->nametokens[$i]->sortlocale;
                 } else {
                     $locale = null;
@@ -3430,6 +3469,7 @@ class assign_feedback_points extends assign_feedback_plugin {
                 $sortby[$sortfield] = array_keys($ids);
             }
         }
+
         return $sortby;
     }
 
@@ -3650,19 +3690,37 @@ class assign_feedback_points extends assign_feedback_plugin {
 
         // otherwise, cache formatted fields names
         $fields = self::get_nametoken_field_options($plugin, $custom, true);
-
         $options = array();
         foreach ($custom->config->nametokens as $i => $nametoken) {
-            // $string['tokenbasedonfield'] = '{$a->token} (based on {$a->field})';
-            //$a = (object)array(
-            //    'nametoken' => get_string('nametoken', $plugin, $i),
-            //    'token' => $nametoken['token'],
-            //    'field' => $fields[$nametoken['field']]
-            //);
-            //$text = get_string('tokenbasedonfield', $plugin, $a);
-            $options[$nametoken['token']] = $nametoken['token'];
+            $token = $nametoken['token'];
+            $field = $nametoken['field'];
+            if (array_key_exists($field, $fields)) {
+                $field = $fields[$field];
+            }
+            $a = (object)array('token' => $token, 'field' => $field);
+            $options[$token] = get_string('tokenbasedonfield', $plugin, $a);
         }
+
+        foreach (self::get_sortby_fields() as $field) {
+            if (array_key_exists($field, $fields) && empty($options[$field])) {
+                $options[$field] = $fields[$field];
+            }
+        }
+
         return $options;
+    }
+
+    /**
+     * get_sortby_fields
+     *
+     * @return array of esential sortby fields
+     */
+    static public function get_sortby_fields() {
+        return array(
+            'firstname', 'firstnamephonetic',
+            'lastname', 'lastnamephonetic',
+            'email'
+        );
     }
 
     /**
@@ -3678,26 +3736,13 @@ class assign_feedback_points extends assign_feedback_plugin {
         // cache reference to string manager
         $strman = get_string_manager();
 
+        $fields = self::get_all_user_fields();
+
         if ($includedefault) {
-            $fields = array('' => '', 'default' => '');
-        } else {
-            $fields = array();
+            $fields = array('' => '', 'default' => 'default') + $fields;
         }
-        $fields += self::get_all_user_fields();
 
-        $default = array_filter(array_keys($fields));
-        $default = array_combine($default, $default);
-        $default = fullname((object)$default);
-
-        $space = '/[[:space:]]/u';
-        $punct = '/[[:punct:]]/u';
-        $ascii = '/^[\x00-\xff]*$/u';
-
-        $has_space = preg_match($space, $default);
-        $is_ascii = ($has_space ? true : false);
-
-        $char = ''; // a punctuation char
-        foreach (array_keys($fields) as $field) {
+        foreach ($fields as $field => $string) {
             if ($field) {
                 switch ($field) {
                     case 'aim': $string = 'aimid'; break;
@@ -3705,37 +3750,31 @@ class assign_feedback_points extends assign_feedback_plugin {
                     case 'icq': $string = 'icqnumber'; break;
                     case 'skype': $string = 'skypeid'; break;
                     case 'yahoo': $string = 'yahooid'; break;
-                    default: $string = $field;
                 }
                 // Note that some fields are deprecated in Moodle >= 3.11.
                 // The "string_deprecated" method is avaiable since Moodle 2.8.
                 if (method_exists($strman, 'string_deprecated') && $strman->string_deprecated($string, 'core')) {
-                    $string = '';
+                    // do nothing
                 } else {
-                    $string = get_string($string);
-                    if ($is_ascii) {
-                        $is_ascii = preg_match($ascii, $string);
-                    }
-                    if ($is_ascii && $char=='' && preg_match($punct, $string, $chars)) {
-                        $char = $chars[0];
-                    }
-                }
-                $fields[$field] = $string;
-            }
-        }
-
-        if ($has_space) {
-            $search = '/[[:punct:][:space:]]+/u';
-            $replace = ($is_ascii ? $char : '');
-            foreach (array_keys($fields) as $field) {
-                if ($field) {
-                    $fields[$field] = preg_replace($search, $replace, $fields[$field]);
+                    $fields[$field] = get_string($string);
                 }
             }
         }
 
         if ($includedefault) {
-            $default = fullname((object)$fields);
+            $ascii = '/^[\x00-\xff]*$/u';
+            $default = array();
+            foreach ($fields as $field => $string) {
+                if ($field && $string) {
+                    if (preg_match($ascii, $string)) {
+                        $default[$field] = '['.$string.']';
+                    } else {
+                        $default[$field] = '［'.$string.'］';
+                    }
+                }
+            }
+            $default = (object)$default;
+            $default = fullname($default);
             $fields['default'] .= ": $default";
         }
 
@@ -4049,7 +4088,7 @@ class assign_feedback_points extends assign_feedback_plugin {
         global $PAGE;
         static $fields = null;
 
-        if ($fields===null) {
+        if ($fields === null) {
             $visiblefields = array();
 
             // get capabilities (see "user/lib.php")

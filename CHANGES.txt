@@ -2,6 +2,9 @@
 Change log for assignfeedback_points
 ========================================
 
+2022-03-11 (80)
+ - fix setting of sortby array and passing it via AJAX
+
 2022-03-09 (79)
  - compatability with Boost-based themes in Moodle 3.11
 

@@ -63,7 +63,7 @@ $points = new assign_feedback_points($assign, 'points');
 // process incoming formdata
 list($multipleusers, $groupid, $map, $feedback, $userlist, $grading) = $points->process_formdata();
 
-if (is_object($feedback)) {
+if (is_object($feedback) || is_array($feedback)) {
     $feedback = json_encode($feedback);
 }
 
